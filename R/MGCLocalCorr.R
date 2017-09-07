@@ -1,6 +1,6 @@
 #' Compute all local correlation coefficients in O(n^2 log n)
 #'
-#' @param X is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data; 
+#' @param X is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
 #' @param Y is a second distance matrix or a n*d data matrix, with the same distance matrix check as X;
 #' @param option is a string that specifies which global correlation to build up-on, including 'mgc','dcor','mantel', and 'rank'.
 #'
@@ -9,7 +9,7 @@
 #' @return varX contains all local variances for X; varY contains all local covariances for Y.
 #'
 #' @export
-#' 
+#'
 MGCLocalCorr <- function(X,Y,option){
   if (missing(option)){
     option='mgc'; # use mgc by default
@@ -61,8 +61,6 @@ MGCLocalCorr <- function(X,Y,option){
 #'
 #' @return covXY is all local covariances computed iteratively.
 #'
-#' @export
-#' 
 LocalCov <- function(A,B,RX,RY){
   n=nrow(A);nX=max(RX);nY=max(RY);
   covXY=matrix(0,nX,nY);#varX=rep(0,nX);varY=rep(0,nY);

@@ -10,7 +10,7 @@
 #' @return RX and RY are the column rank matrices of X and Y respectively.
 #'
 #' @export
-#' 
+#'
 MGCDistTransform <- function(X,Y,option,optionRk){
   if (missing(option)){
     option='mgc'; # default to mgc transform
@@ -73,7 +73,7 @@ DistCentering<-function(X,option,optionRk){
 }
 
 #' An auxiliary function that sorts the entries within each column by ascending order:
-#' #' For ties, the minimum ranking is used,
+#' For ties, the minimum ranking is used,
 #' e.g. if there are repeating distance entries, the order is like 1,2,3,3,4,..,n-1.
 #'
 #' @param dis is a symmetric distance matrix.

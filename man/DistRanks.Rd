@@ -3,7 +3,7 @@
 \name{DistRanks}
 \alias{DistRanks}
 \title{An auxiliary function that sorts the entries within each column by ascending order:
-#' For ties, the minimum ranking is used,
+For ties, the minimum ranking is used,
 e.g. if there are repeating distance entries, the order is like 1,2,3,3,4,..,n-1.}
 \usage{
 DistRanks(dis)
@@ -16,6 +16,6 @@ disRank is the column rank matrices of X.
 }
 \description{
 An auxiliary function that sorts the entries within each column by ascending order:
-#' For ties, the minimum ranking is used,
+For ties, the minimum ranking is used,
 e.g. if there are repeating distance entries, the order is like 1,2,3,3,4,..,n-1.
 }
