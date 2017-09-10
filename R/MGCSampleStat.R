@@ -1,6 +1,6 @@
 #' The main function that computes the MGC measure between two datasets:
 #' It first computes all local correlations,
-#' then thresholding and use the smoothed maximal of the local correlations.
+#' then use the maximal statistic among all local correlations based on thresholding.
 #'
 #' @param A is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
 #' @param B is a second distance matrix or a n*d data matrix, with the same distance matrix check as A;
@@ -26,7 +26,7 @@ MGCSampleStat <- function(A,B,option){
   } else {
     sz=nrow(A)-1; # sample size minus 1
     R=Thresholding(localCorr,m,n,sz); # find a connected region of significant local correlations
-    res=Smoothing(localCorr,m,n,R); # find the smoothed maximal within the thresholded region
+    res=Smoothing(localCorr,m,n,R); # find the maximal within the significant region
   }
 
   result=list(statMGC=res$statMGC,localCorr=localCorr,optimalScale=res$optimalScale);
@@ -78,9 +78,7 @@ Thresholding <- function(localCorr,m,n,sz){
 }
 
 #' An auxiliary function that finds the smoothed maximal within the significant region R:
-#' If area of R is too small, return the last local corr;
-#' otherwise, for each maximal in the region, check all adjacent scales and take the minimum,
-#' and take the maximum between the smoothed maximal and last local corr.
+#' If area of R is too small, return the last local corr; otherwise take the maximum within R.
 #'
 #' @param localCorr is all local correlations;
 #' @param m is the number of rows of localCorr;
@@ -95,32 +93,33 @@ Smoothing <- function(localCorr,m,n,R){
   statMGC=localCorr[m,n]; # default sample mgc to local corr at maximal scale
   optimalScale=m*n; # default the optimal scale to maximal scale
   if (norm(R,"F")!=0){
-    tau=1; # number of adjacent scales to smooth with
+    # tau=1; # number of adjacent scales to smooth with
     if (sum(R[2:m,2:n])>=2*(min(m,n)-1)){ # proceed only when the region area is sufficiently large
-      ind=which((localCorr>=max(localCorr[R]))&(R==1)); # find all scales within R that maximize the local correlation
+      tmp=max(localCorr[R]);
+      ind=which((localCorr>=tmp)&(R==1)); # find all scales within R that maximize the local correlation
       k = ((ind-1) %% m) + 1
       l = floor((ind-1) / m) + 1
 
-      ln=ceiling(tau); # number of adjacent rows to check
-      km=ceiling(tau); # number of adjacent columns to check
-      for (i in (1:length(k))){
-        ki=k[i];
-        li=l[i];
+      #ln=ceiling(tau); # number of adjacent rows to check
+      #km=ceiling(tau); # number of adjacent columns to check
+      #for (i in (1:length(k))){
+       # ki=k[i];
+      #  li=l[i];
 
         # index of adjacent rows and columns
-        left=max(2,li-ln);
-        right=min(n,li+ln);
-        upper=max(2,ki-km);
-        down=min(m,ki+km);
+       # left=max(2,li-ln);
+      #  right=min(n,li+ln);
+       # upper=max(2,ki-km);
+      #  down=min(m,ki+km);
 
-        tmp1=min(localCorr[upper:down,li]); # take minimal correlation at given row and along adjacent columns
-        tmp2=min(localCorr[ki,left:right]); # take minimal correlation at given column and along adjacent rows
-        tmp=max(tmp1,tmp2); # take the min for sample mgc
+       # tmp1=min(localCorr[upper:down,li]); # take minimal correlation at given row and along adjacent columns
+      #  tmp2=min(localCorr[ki,left:right]); # take minimal correlation at given column and along adjacent rows
+       # tmp=max(tmp1,tmp2); # take the min for sample mgc
         if (tmp>=statMGC){
           statMGC=tmp;
           optimalScale=(l-1)*m+k; # take the scale of maximal stat and change to single index
         }
-      }
+      #}
     }
   }
   result=list(statMGC=statMGC,optimalScale=optimalScale);
