@@ -4,12 +4,12 @@
 \alias{discr.discr}
 \title{Discriminability}
 \usage{
-discr.discr(D, ids, thresh = 0, verbose = FALSE)
+discr.discr(X, ids, thresh = 0, verbose = FALSE)
 }
 \arguments{
-\item{D}{is interpreted as:
+\item{X}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{D is a square matrix with zeros on diagonal}
+   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
    \item{a [n x d] data matrix}{Otherwise}
 }}
 

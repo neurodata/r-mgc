@@ -22,14 +22,10 @@ wget http://openconnecto.me/mrdata/share/demo_data/R-pkgs/BIDs_ts_graphs/BIDs_ou
 tar -xvzf BIDs_outputs_ndmg.tar.gz
 ```
 
-To follow this tutorial, you must have the fmriutils package installed. This package can be installed with the following command from your R console:
+To follow this tutorial, you must have the fmriutils package installed. This package can be installed by following the instructions at [fmriutils-repo](https://github.com/neurodata/fmriutils).
 
-```
-require(devtools)
-install_github('neurodata/fmriutils')
-```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 require(fmriutils)
 require(MGC)
 # load timeseries from the BNU1 and HNU1 datasets, for the aal-2mm atlas
@@ -42,7 +38,7 @@ labels <- gobj$subjects  # use subjects as our labels
 
 We can take a look at one of the connectomes for the first scan easily:
 
-```{r, fig.height=6, fig.width=7}
+```{r, fig.height=6, fig.width=7, warning=FALSE, message=FALSE}
 fmriu.plot.plot_graph(graphs[[1]], legend.name="correlation")  # visualize the graphs
 ```
 
@@ -51,26 +47,26 @@ fmriu.plot.plot_graph(graphs[[1]], legend.name="correlation")  # visualize the g
 
 The `MGC` package expects data to be formatted in `[nxd]` arrays, for `n` observations of `d` variables. We can easily restructure our graphs accordingly:
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 graphs <- fmriu.list2array(graphs, flatten=TRUE)  # convert list of graphs to [n, r, r] array, and flatten to [n, r^2]
 ```
 
 # Running discriminability
 
 Next, we will run discriminability on our graphs. We will use our subjects as our labels:
-```{r}
+```{r, warning=FALSE, message=FALSE}
 D <- discr.distance(graphs)
 discr.discr(D, labels)
 ```
 As we can see, the discriminability score is perfect. We can also take a look at the distance matrix:
 
-```{r, fig.height=6, fig.width=7}
+```{r, fig.height=6, fig.width=7, warning=FALSE, message=FALSE}
 fmriu.plot.plot_graph(D, limits=c(min(D), max(D)), xlabel = "Scan", ylabel = "Scan", legend.name = "distance")
 ```
 
 As our scans are ordered by subject label, we can see that for each scan in our dataset, the corresponding "closest" scan as indicated by distance is the complementary scanning session for that particular subject. Note, for instance, that the closest scan to the first scan (not including the first scan itself) is the second scan, which is the second scan of subject `0025864` in the `BNU1` dataset.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 print(labels[c(1,2)])
 print(gobj$sessions[c(1,2)])
 print(gobj$dataset[c(1,2)])

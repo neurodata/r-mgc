@@ -72,9 +72,9 @@ discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
 #'
 #' A function for computing the discriminability from a distance matrix and a set of associated labels.
 #'
-#' @param D is interpreted as:
+#' @param X is interpreted as:
 #' \describe{
-#'    \item{a [n x n] distance matrix}{D is a square matrix with zeros on diagonal}
+#'    \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
 #'    \item{a [n x d] data matrix}{Otherwise}
 #' }
 #' @param ids [n]: a vector containing the labels for our n observations.
@@ -89,7 +89,7 @@ discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
 #' @author Eric Bridgeford and Gregory Kiar
 #' @seealso{discr.distance}
 #' @export
-discr.discr <- function(D, ids, thresh=0, verbose=FALSE) {
+discr.discr <- function(X, ids, thresh=0, verbose=FALSE) {
   # Use the data size and diagonal element to determine if the given data is a distance matrix or not
   if (nrow(as.matrix(X)) != ncol(as.matrix(X)) | sum(diag(X)^2) > 0){
     X <- discr.distance(X)
