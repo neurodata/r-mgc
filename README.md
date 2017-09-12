@@ -18,6 +18,7 @@ Still from your R terminal (or GUI such as RStudio), type:
 
 ```
 require(devtools)
+install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'stats'))
 install_github('ebridge2/mgc')
 ```
 
