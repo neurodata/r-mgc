@@ -1,30 +1,33 @@
 #' Transform the distance matrices, with column-wise ranking if needed.
 #'
-#' @param X is a distance matrix;
-#' @param Y is a second distance matrix;
-#' @param option is a string that specifies which global correlation to build up-on, including 'mgc','dcor','mantel', and 'rank';
-#' @param optionRk is a string that specifies whether ranking within column is computed or not.
-#'
-#' @return A list contains the following output:
-#' @return A and B are the centered distance matrices;
-#' @return RX and RY are the column rank matrices of X and Y respectively.
+#' @param X [nxn] is a distance matrix;
+#' @param Y [nxn] is a second distance matrix;
+#' @param option='mgc' is a string that specifies which global correlation to build up-on.
+#' \describe{
+#'    \item{'mgc'}{use the MGC global correlation.}
+#'    \item{'dcor'}{use the dcor global correlation.}
+#'    \item{'mantel'}{use the mantel global correlation.}
+#'    \item{'rank'}{use the rank global correlation.}
+#' }
+#' @param optionRk=TRUE is a string that specifies whether ranking within column is computed or not. If option='rank', ranking will be performed regardless of the value specified by optionRk.
+#' @return A [nxn] the centered distance matrix for X.
+#' @return B [nxn] the centered distance matrix for Y.
+#' @return RX [nxn] the column-rank matrices of X.
+#' @return RY [nxn] the column-rank matrices of Y.
 #'
 #' @export
 #'
-MGCDistTransform <- function(X,Y,option,optionRk){
-  if (missing(option)){
-    option='mgc'; # default to mgc transform
-  }
-  if (missing(optionRk) || option=='rank'){
-    optionRk=1; # do ranking or not, 0 to no ranking
+mgc.distTransform <- function(X, Y, option='mgc', optionRk=TRUE){
+  if (option=='rank') {
+    optionRk=TRUE # do ranking or not, 0 to no ranking
   }
 
   # Depending on the choice of the global correlation, properly transform each distance matrix
-  tA=DistCentering(X,option,optionRk);
-  tB=DistCentering(Y,option,optionRk);
+  tA = DistCentering(X, option, optionRk)
+  tB = DistCentering(Y, option, optionRk)
 
-  result=list(A=tA$A,RX=tA$RX,B=tB$A,RY=tB$RX);
-  return(result);
+  result = list(A=tA$A, RX=tA$RX, B=tB$A, RY=tB$RX)
+  return(result)
 }
 
 #' An auxiliary function that properly transforms the distance matrix X
