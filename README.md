@@ -4,7 +4,7 @@ R package for MGC code
 
 ## Installation:
 
-Set up `devtools` package for R:
+### Set up `devtools` package for R:
 
 ```
 sudo apt-get -y install libcurl4-openssl-dev libssl-dev libxml2-dev
@@ -12,11 +12,12 @@ sudo apt-get -y install libcurl4-openssl-dev libssl-dev libxml2-dev
 
 Optionally, set up the `fmriutils` package (required for several tutorials) following the [fmriutils-repo](https://github.com/neurodata/fmriutils) install instructions.
 
-Install the `MGC` package:
+### Install the `MGC` package:
 
 Still from your R terminal (or GUI such as RStudio), type:
 
 ```
+require(devtools)
 install_github('ebridge2/mgc')
 ```
 
