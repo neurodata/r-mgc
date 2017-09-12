@@ -1,7 +1,15 @@
 #' The main function that tests independent between two data sets by MGC and permutation test.
 #'
-#' @param X is a [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data;
-#' @param Y is a second [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data;
+#' @param X is interpreted as:
+#' \describe{
+#'    \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
+#'    \item{a [n x d] data matrix}{Otherwise}
+#' }
+#' @param Y is interpreted as:
+#' \describe{
+#'    \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
+#'    \item{a [n x d] data matrix}{Otherwise}
+#' }
 #' @param rep=1000 specifies the number of replicates to use for the permutation test;
 #' @param option='mgc' is a string that specifies which global correlation to build up-on.
 #' \describe{

@@ -9,9 +9,17 @@ then use the maximal statistic among all local correlations based on thresholdin
 mgc.sample(A, B, option = "mgc")
 }
 \arguments{
-\item{A}{[n, d] is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;}
+\item{A}{is interpreted as:
+\describe{
+   \item{a [nxn] distance matrix}{A is a square matrix with zeros on diagonal}
+   \item{a [nxd] data matrix}{Otherwise}
+}}
 
-\item{B}{[n, d] is a second distance matrix or a n*d data matrix, with the same distance matrix check as A;}
+\item{B}{is interpreted as:
+\describe{
+   \item{a [nxn] distance matrix}{B is a square matrix with zeros on diagonal}
+   \item{a [nxd] data matrix}{Otherwise}
+}}
 
 \item{option='mgc'}{is a string that specifies which global correlation to build up-on.
 \describe{

@@ -7,9 +7,17 @@
 mgc.test(X, Y, rep = 1000, option = "mgc")
 }
 \arguments{
-\item{X}{is a [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data;}
+\item{X}{is interpreted as:
+\describe{
+   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
+   \item{a [n x d] data matrix}{Otherwise}
+}}
 
-\item{Y}{is a second [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data;}
+\item{Y}{is interpreted as:
+\describe{
+   \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
+   \item{a [n x d] data matrix}{Otherwise}
+}}
 
 \item{rep=1000}{specifies the number of replicates to use for the permutation test;}
 

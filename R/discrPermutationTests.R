@@ -188,6 +188,3 @@ discr.test.reliability_bootstrap<-function(ids1,obs1,nrep=100){
   }
   return(rels)
 }
-
-
-

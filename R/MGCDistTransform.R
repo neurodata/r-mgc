@@ -17,7 +17,7 @@
 #'
 #' @export
 #'
-mgc.dist <- function(X, Y, option='mgc', optionRk=TRUE){
+mgc.distTransform <- function(X, Y, option='mgc', optionRk=TRUE){
   if (option=='rank') {
     optionRk=TRUE # do ranking or not, 0 to no ranking
   }

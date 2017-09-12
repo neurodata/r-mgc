@@ -2,8 +2,16 @@
 #' It first computes all local correlations,
 #' then use the maximal statistic among all local correlations based on thresholding.
 #'
-#' @param A [n, d] is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
-#' @param B [n, d] is a second distance matrix or a n*d data matrix, with the same distance matrix check as A;
+#' @param A is interpreted as:
+#' \describe{
+#'    \item{a [nxn] distance matrix}{A is a square matrix with zeros on diagonal}
+#'    \item{a [nxd] data matrix}{Otherwise}
+#' }
+#' @param B is interpreted as:
+#' \describe{
+#'    \item{a [nxn] distance matrix}{B is a square matrix with zeros on diagonal}
+#'    \item{a [nxd] data matrix}{Otherwise}
+#' }
 #' @param option='mgc' is a string that specifies which global correlation to build up-on.
 #' \describe{
 #'    \item{'mgc'}{use the MGC global correlation.}

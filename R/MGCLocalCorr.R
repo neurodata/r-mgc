@@ -1,7 +1,15 @@
 #' Compute all local correlation coefficients in O(n^2 log n)
 #'
-#' @param X is a [n, n] distance matrix or a [n, d] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
-#' @param Y is a second [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data
+#' @param X is interpreted as:
+#' \describe{
+#'    \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
+#'    \item{a [n x d] data matrix}{Otherwise}
+#' }
+#' @param Y is interpreted as:
+#' \describe{
+#'    \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
+#'    \item{a [n x d] data matrix}{Otherwise}
+#' }
 #' @param option='mgc' is a string that specifies which global correlation to build up-on.
 #' \describe{
 #'    \item{'mgc'}{use the MGC global correlation.}
@@ -27,7 +35,7 @@ mgc.localcorr <- function(X,Y,option='mgc'){
     # print('The second data is not a Euclidean distance matrix; transformed to distance matrix instead.')
   }
 
-  tmp=mgc.dist(X,Y,option);
+  tmp=mgc.distTransform(X,Y,option);
   corr=LocalCov(tmp$A,t(tmp$B),tmp$RX,t(tmp$RY)); # compute all local covariances
   varX=LocalCov(tmp$A,t(tmp$A),tmp$RX,t(tmp$RX)); # compute local variances for first data
   varY=LocalCov(tmp$B,t(tmp$B),tmp$RY,t(tmp$RY)); # compute local variances for second data

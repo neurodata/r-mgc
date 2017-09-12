@@ -7,9 +7,17 @@
 mgc.localcorr(X, Y, option = "mgc")
 }
 \arguments{
-\item{X}{is a [n, n] distance matrix or a [n, d] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;}
+\item{X}{is interpreted as:
+\describe{
+   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
+   \item{a [n x d] data matrix}{Otherwise}
+}}
 
-\item{Y}{is a second [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data}
+\item{Y}{is interpreted as:
+\describe{
+   \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
+   \item{a [n x d] data matrix}{Otherwise}
+}}
 
 \item{option='mgc'}{is a string that specifies which global correlation to build up-on.
 \describe{
