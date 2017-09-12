@@ -1,19 +1,22 @@
 #' Compute all local correlation coefficients in O(n^2 log n)
 #'
-#' @param X is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
-#' @param Y is a second distance matrix or a n*d data matrix, with the same distance matrix check as X;
-#' @param option is a string that specifies which global correlation to build up-on, including 'mgc','dcor','mantel', and 'rank'.
-#'
+#' @param X is a [n, n] distance matrix or a [n, d] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
+#' @param Y is a second [nxn] distance matrix or a [nxd] data matrix; if it is not a square matrix with zeros on diagonal, it is treated as [nxd] data
+#' @param option='mgc' is a string that specifies which global correlation to build up-on.
+#' \describe{
+#'    \item{'mgc'}{use the MGC global correlation.}
+#'    \item{'dcor'}{use the dcor global correlation.}
+#'    \item{'mantel'}{use the mantel global correlation.}
+#'    \item{'rank'}{use the rank global correlation.}
+#' }
 #' @return A list contains the following output:
 #' @return corr consists of all local correlations within [-1,1] by double matrix index;
 #' @return varX contains all local variances for X; varY contains all local covariances for Y.
 #'
+#' @author C. Shen
 #' @export
 #'
-MGCLocalCorr <- function(X,Y,option){
-  if (missing(option)){
-    option='mgc'; # use mgc by default
-  }
+mgc.localcorr <- function(X,Y,option='mgc'){
   # Use the data size and diagonal element to determine if the given data is a distance matrix or not
   if (nrow(as.matrix(X))!=ncol(as.matrix(X))|sum(diag(X)^2)>0){
     X=as.matrix(dist(X,method='euclidean'));
@@ -24,7 +27,7 @@ MGCLocalCorr <- function(X,Y,option){
     # print('The second data is not a Euclidean distance matrix; transformed to distance matrix instead.')
   }
 
-  tmp=MGCDistTransform(X,Y,option);
+  tmp=mgc.dist(X,Y,option);
   corr=LocalCov(tmp$A,t(tmp$B),tmp$RX,t(tmp$RY)); # compute all local covariances
   varX=LocalCov(tmp$A,t(tmp$A),tmp$RX,t(tmp$RX)); # compute local variances for first data
   varY=LocalCov(tmp$B,t(tmp$B),tmp$RY,t(tmp$RY)); # compute local variances for second data

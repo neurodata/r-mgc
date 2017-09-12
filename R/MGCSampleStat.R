@@ -2,22 +2,23 @@
 #' It first computes all local correlations,
 #' then use the maximal statistic among all local correlations based on thresholding.
 #'
-#' @param A is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
-#' @param B is a second distance matrix or a n*d data matrix, with the same distance matrix check as A;
-#' @param option is a string that specifies which global correlation to build up-on, including 'mgc','dcor','mantel', and 'rank'.
-#'
-#' @return A list contains the following output:
+#' @param A [n, d] is a distance matrix or a n*d data matrix; if it is not a square matrix with zeros on diagonal, it is treated as n*d data;
+#' @param B [n, d] is a second distance matrix or a n*d data matrix, with the same distance matrix check as A;
+#' @param option='mgc' is a string that specifies which global correlation to build up-on.
+#' \describe{
+#'    \item{'mgc'}{use the MGC global correlation.}
+#'    \item{'dcor'}{use the dcor global correlation.}
+#'    \item{'mantel'}{use the mantel global correlation.}
+#'    \item{'rank'}{use the rank global correlation.}
+#' }
 #' @return statMGC is the sample MGC statistic within [-1,1];
 #' @return localCorr consists of all local correlations by double matrix index;
 #' @return optimalScale the estimated optimal scale in matrix single index.
-#'
+#' @author C. Shen
 #' @export
 #'
-MGCSampleStat <- function(A,B,option){
-  if (missing(option)){
-    option='mgc';
-  }
-  localCorr=MGCLocalCorr(A,B,option)$corr; # compute all localCorr
+mgc.sample <- function(A, B, option='mgc'){
+  localCorr=mgc.localcorr(A,B,option)$corr; # compute all localCorr
   m=nrow(localCorr);
   n=ncol(localCorr);
   if (m==1||n==1){
@@ -41,7 +42,7 @@ MGCSampleStat <- function(A,B,option){
 #' @param sz is the sample size of original data (which may not equal m or n in case of repeating data).
 #'
 #' @return R is a binary matrix of size m and n, with 1's indicating the significant region.
-#'
+#' @author C. Shen
 #' @import SDMTools
 #'
 Thresholding <- function(localCorr,m,n,sz){
@@ -89,6 +90,7 @@ Thresholding <- function(localCorr,m,n,sz){
 #' @return statMGC is the sample MGC statistic within [-1,1];
 #' @return optimalScale the estimated optimal scale in matrix single index.
 #'
+#' @author C. Shen
 Smoothing <- function(localCorr,m,n,R){
   statMGC=localCorr[m,n]; # default sample mgc to local corr at maximal scale
   optimalScale=m*n; # default the optimal scale to maximal scale

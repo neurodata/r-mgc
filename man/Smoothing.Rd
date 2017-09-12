@@ -27,3 +27,6 @@ optimalScale the estimated optimal scale in matrix single index.
 An auxiliary function that finds the smoothed maximal within the significant region R:
 If area of R is too small, return the last local corr; otherwise take the maximum within R.
 }
+\author{
+C. Shen
+}
