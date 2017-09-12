@@ -13,14 +13,14 @@ Depends:
     R (>= 3.4.1),
     SDMTools
 Imports:
-  fmriutils,
   ggplot2,
   reshape2,
   Rmisc,
   stats
 Suggests: testthat,
-    knitr,
-    rmarkdown
+  fmriutils,
+  knitr,
+  rmarkdown
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
