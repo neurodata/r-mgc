@@ -5,12 +5,19 @@ Version: 0.1.0
 Author: Cencheng Shen
 Maintainer: The package maintainer <cshen6@jhu.edu>
 Description: Implements a number of data exploration tasks based on MGC: 
-    computing the correlation measure, test independence via MGC and permutation test, 
+    computing the correlation measure, test independence via MGC and permutation test,
     k-sample test via MGC and permutation test (tba), feature screening via MGC (tba). 
-    Applicable to Euclidean data, distance matrices, and graphs (tba).
+    Applicable to Euclidean data, distance matrices, graphs (tba). Contains extensions
+    to discriminability.
 Depends:
     R (>= 3.4.1),
     SDMTools
+Imports: 
+  ggplot2,
+  reshape2,
+  Rmisc,
+  stats
+Suggests: testthat
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
