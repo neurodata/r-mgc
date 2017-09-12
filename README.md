@@ -24,7 +24,7 @@ install_github('ebridge2/mgc')
 
 ### Discriminability
 
-Check out our demo tutorial for [discriminability-brain analysis]().
+Check out our demo tutorial for [discriminability-mri analysis](http://ericwb.me/mgc/discriminability_brains.html).
 
 ### MGC
 Into your R console, type the following:
