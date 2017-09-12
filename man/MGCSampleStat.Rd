@@ -4,7 +4,7 @@
 \alias{MGCSampleStat}
 \title{The main function that computes the MGC measure between two datasets:
 It first computes all local correlations,
-then thresholding and use the smoothed maximal of the local correlations.}
+then use the maximal statistic among all local correlations based on thresholding.}
 \usage{
 MGCSampleStat(A, B, option)
 }
@@ -27,5 +27,5 @@ optimalScale the estimated optimal scale in matrix single index.
 \description{
 The main function that computes the MGC measure between two datasets:
 It first computes all local correlations,
-then thresholding and use the smoothed maximal of the local correlations.
+then use the maximal statistic among all local correlations based on thresholding.
 }

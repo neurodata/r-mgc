@@ -2,22 +2,22 @@
 #'
 #' A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
 #'
-#' @param D[nxn]: the distance matrix to run a permutation test for. An [nxn] matrix.
-#' @param labels[n]: the labels organized appropriately with the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.
-#' @param nrep=100: the number of permutations to perform.
-#' @param verbose=FALSE: whether to print the itereation numbers.
-#' @return srel: the relative, unpermuted discriminability you want to see is significant.
-#' @return null: the discriminability scores of the permuted data.
-#' @return pval: the pvalue associated with the permutation test.
+#' @param D [nxn] the distance matrix to run a permutation test for. An [nxn] matrix.
+#' @param labels [n] the labels organized appropriately with the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.
+#' @param nrep=100 the number of permutations to perform.
+#' @param verbose=FALSE whether to print the itereation numbers.
+#' @return srel the relative, unpermuted discriminability you want to see is significant.
+#' @return null the discriminability scores of the permuted data.
+#' @return pval the pvalue associated with the permutation test.
 #' @author Shangsi Wang
 #' @export
-discr.tests.one_sample_test <- function(D, labels, nperm=100, verbose=FALSE) {
+discr.test.one_sample <- function(D, labels, nperm=100, verbose=FALSE) {
   # test whether discriminability differs from 0.5
   N <- dim(D)[1]
   if (is.null((N))) {
     stop('Invalid datatype for N')
   }
-  tr <- mean(discr.rdf(D, ids))
+  tr <- discr.(discr.rdf(D, ids))
 
   nr <- rep(0,nperm)
   for (i in 1:nperm){
@@ -37,15 +37,15 @@ discr.tests.one_sample_test <- function(D, labels, nperm=100, verbose=FALSE) {
 #'
 #' A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
 #'
-#' @param D1[nxn]: the first distance matrix to run a permutation test for. An [nxn] matrix.
-#' @param D2[nxn]: the second distance matrix to run a permutation test for. An [nxn] matrix.
-#' @param labels[n]: the labels organized appropriately with the distance matrices. Label 1 should correspond to the first column, 2 the second, and so on.
-#' @param verbose=FALSE: whether to print the itereation numbers.
-#' @param nperm=100: the number of permutations to perform.
-#' @return pval: the pvalue associated with the permutation test.
+#' @param D1 [nxn] the first distance matrix to run a permutation test for. An [nxn] matrix.
+#' @param D2 [nxn] the second distance matrix to run a permutation test for. An [nxn] matrix.
+#' @param labels [n] the labels organized appropriately with the distance matrices. Label 1 should correspond to the first column, 2 the second, and so on.
+#' @param verbose=FALSE whether to print the itereation numbers.
+#' @param nperm=100 the number of permutations to perform.
+#' @return pval the pvalue associated with the permutation test.
 #' @author Shangsi Wang
 #' @export
-discr.tests.two_sample_test <- function(dist1, dist2, ids, nperm=100, verbose=FALSE){
+discr.test.two_sample <- function(dist1, dist2, ids, nperm=100, verbose=FALSE){
   # test two discriminability are the same
   N1 <- dim(dist1)[1]
   N2 <- dim(dist2)[1]
@@ -98,7 +98,7 @@ discr.tests.two_sample_test <- function(dist1, dist2, ids, nperm=100, verbose=FA
 
 }
 
-discr.tests.dis_vec<-function(distvec,i,ids){
+discr.test.dis_vec<-function(distvec,i,ids){
   N <- length(distvec)
   ind <- which(grepl(ids[i],ids))
   rdf <- c()
@@ -115,7 +115,7 @@ discr.tests.dis_vec<-function(distvec,i,ids){
   return(c(mean(rdf),count))
 }
 
-discr.tests.reliability_bootstrap<-function(ids1,obs1,nrep=100){
+discr.test.reliability_bootstrap<-function(ids1,obs1,nrep=100){
   # test two discriminability are the same
   N <- length(ids1)
   if (is.null(N) ) {

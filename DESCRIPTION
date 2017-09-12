@@ -12,7 +12,8 @@ Description: Implements a number of data exploration tasks based on MGC:
 Depends:
     R (>= 3.4.1),
     SDMTools
-Imports: 
+Imports:
+  fmriutils,
   ggplot2,
   reshape2,
   Rmisc,

@@ -3,20 +3,20 @@
 #' A function that  returns density estimates of intra and inter subject distances.
 #'
 #' @param D [n, n]: a distance matrix corresponding to the distances between n scans.
-#' @param id [n]: a vector where each entry is the subject id of each of the n scans.
+#' @param ids [n]: a vector where each entry is the subject id of each of the n scans.
 #' @return f_intra [x]: a density estimate of the intra subject relationship.
 #' @return f_inter [x]: a density estimate of the inter subject relationship.
 #' @return H [1]: the hellinger distance between the intra and inter subject relationships.
 #' @author Eric Bridgeford
 #' @export
-discr.kde_subject <- function(D, id) {
+discr.kde_subject <- function(D, ids) {
   print("computing hellinger distances and densities...")
   intra <- vector() # array for intra
   inter <- vector() # array for inter
-  numsubs <- length(id)
+  numsubs <- length(ids)
   for (i in 1:(numsubs-1)) {
     for (j in (i+1):numsubs) {
-      if (isTRUE(all.equal(id[i],id[j]))) {
+      if (isTRUE(all.equal(ids[i],ids[j]))) {
         intra <- c(intra, D[i,j]) # if we are intra sub, then append here
       } else {
         inter <- c(inter, D[i,j]) # else we are inter subject

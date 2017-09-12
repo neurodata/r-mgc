@@ -2,13 +2,12 @@
 #'
 #' A function for computing the reliability density function of a dataset.
 #'
-#' @param dist [n, n]: a distance matrix for n subjects.
+#' @param D [n, n] a distance matrix for n subjects.
 #' @param ids [n]: a vector containing the subject ids for each subject.
 #' @return rdf [n]: the reliability per subject.
 #' @author Shangsi Wang, Eric Bridgeford and Gregory Kiar
-#' @export
-discr.rdf <- function(dist, ids) {
-  N <- dim(dist)[1]
+discr.rdf <- function(D, ids) {
+  N <- dim(D)[1]
   if (is.null((N))) {
     stop('Invalid datatype for N')
   }
@@ -28,9 +27,9 @@ discr.rdf <- function(dist, ids) {
     ind <- which(ids[i] == ids) # all the indices that are the same subject, but different scan
     for (j in ind) {
       if (!isTRUE(all.equal(j, i))) { # if j != i, then we want j to have a close distance to i, and estimate where it ranks
-        di <- dist[i,] # get the entire ra for the particular scan
+        di <- D[i,] # get the entire ra for the particular scan
         di[ind] <- Inf # don't want to consider the particular scan itself
-        d <- dist[i,j] # the distance between the particular scan of a subject and another scan of the subject
+        d <- D[i,j] # the distance between the particular scan of a subject and another scan of the subject
         rdf[count] <- 1 - (sum(di[!is.nan(di)] < d) + 0.5*sum(di[!is.nan(di)] == d)) / (N-length(ind)) # 1 for less than, .5 if equal, then average
         count <-  count + 1
       }
@@ -39,9 +38,9 @@ discr.rdf <- function(dist, ids) {
   return(rdf[1:count-1]) # return only the occupied portion
 }
 
-#' Discrmininability
+#' Mean Normalized Rank
 #'
-#' A function for computing the discriminability.
+#' A function for computing the mnr from an rdf.
 #'
 #' @param rdf [n]: the reliability density function.
 #' @param remove_outliers=TRUE boolean indicating whether to ignore subjects with rdf below a certain cutoff.
@@ -49,8 +48,7 @@ discr.rdf <- function(dist, ids) {
 #' @param output=FALSE a boolean indicating whether to ignore output.
 #' @return discr [1]: the discriminability statistic.
 #' @author Eric Bridgeford and Gregory Kiar
-#' @export
-discr.discr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
+discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
   if (remove_outliers) {
     discr <- mean(rdf[which(rdf[!is.nan(rdf)] > thresh)]) # mean of the rdf
     ol <- length(which(rdf<thresh))
@@ -68,4 +66,22 @@ discr.discr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
     print(paste('discr:', discr))
   }
   return(discr)
+}
+
+#' Discriminability
+#' Mean Normalized Rank
+#'
+#' A function for computing the discriminability from a distance matrix and a set of associated labels.
+#'
+#' @param D [n, n] a distance matrix for n subjects.
+#' @param ids [n]: a vector containing the subject ids for each subject.
+#' @param remove_outliers=TRUE boolean indicating whether to ignore subjects with rdf below a certain cutoff.
+#' @param thresh=0 [1]: the threshold below which to ignore subjects.
+#' @param output=FALSE a boolean indicating whether to ignore output.
+#' @return discr [1]: the discriminability statistic.
+#' @author Eric Bridgeford and Gregory Kiar
+#' @seealso{discr.distance}
+#' @export
+discr.discr <- function(D, ids, remove_outliers=TRUE, thresh=0, output=FALSE) {
+  return(discr.mnr(discr.rdf(D, ids), remove_outliers=remove_outliers, thresh=thresh, output=output))
 }
