@@ -4,10 +4,14 @@ R package for MGC code
 
 ## Installation:
 
+The following installation has been checked on a fresh Ubuntu 16.04 instance with R version 3.4.1 installed.
+
 ### Set up `devtools` package for R:
 
+From an R terminal (or GUI such as RStudio), type:
+
 ```
-sudo apt-get -y install libcurl4-openssl-dev libssl-dev libxml2-dev
+install.packages('devtools')
 ```
 
 Optionally, set up the `fmriutils` package (required for several tutorials) following the [fmriutils-repo](https://github.com/neurodata/fmriutils) install instructions.
@@ -18,7 +22,7 @@ Still from your R terminal (or GUI such as RStudio), type:
 
 ```
 require(devtools)
-install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'stats'))
+install.packages(c('ggplot2', 'reshape2', 'Rmisc'))
 install_github('ebridge2/mgc')
 ```
 
