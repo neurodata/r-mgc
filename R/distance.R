@@ -13,7 +13,7 @@
 #' @export
 discr.distance <- function(X, method='2') {
   if (method == '2') {
-    D <- dist(X, diag=TRUE, upper=TRUE)
+    D <- as.matrix(dist(X, diag=TRUE, upper=TRUE))
   } else {
     stop('You have not passed a valid method. Please select one of the following: [\'2\'].')
   }
