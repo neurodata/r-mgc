@@ -10,16 +10,8 @@ Set up `devtools` package for R:
 sudo apt-get -y install libcurl4-openssl-dev libssl-dev libxml2-dev
 ```
 
-Set up the `fmriutils` package:
+Optionally, set up the `fmriutils` package (required for several tutorials) following the [fmriutils-repo](https://github.com/neurodata/fmriutils) install instructions.
 
-Next, we can install the R package dependencies directly. From an R terminal (or a GUI such as Rstudio), type:
-```
-install.packages(c('devtools', 'Rcpp', 'RSpectra', 'stringr', 'ggplot2', 'reshape2', 'abind', 'plyr'))
-require(devtools)
-install_github('igraph/rigraph')  # installs latest version of igraph
-install_github('neurodata/fmriutils')
-require('fmriutils')
-```
 Install the `MGC` package:
 
 Still from your R terminal (or GUI such as RStudio), type:
