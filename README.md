@@ -32,15 +32,16 @@ install_github('ebridge2/mgc')
 
 ```
 library(MGC)
+discr.run_demo()
 ```
 
-Check out our demo tutorial for applying discriminability to fMRI data at [discriminability-mri analysis](http://neurodata.io/mgc/discriminability_brains.html).
+Check out our demo tutorial for applying discriminability to fMRI data at [discriminability-mri analysis](http://ericwb.me/mgc/discriminability_brains.html).
 
 ### MGC
 Into your R console, type the following:
 
 ```
 library(MGC)
-run_demo()  # runs the MGC demo
+mgc.run_demo()  # runs the MGC demo
 ```
 which takes < 10 seconds to run, which shows the actual MGC and p-value for testing on linear and quadratic data.
