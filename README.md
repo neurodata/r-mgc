@@ -34,6 +34,11 @@ install_github('ebridge2/mgc')
 library(MGC)
 discr.run_demo()
 ```
+or alternatively, check out the interactive vignette:
+
+```
+vignette('discriminability')
+```
 
 Check out our demo tutorial for applying discriminability to fMRI data at [discriminability-mri analysis](http://ericwb.me/mgc/discriminability_brains.html).
 
