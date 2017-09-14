@@ -3,9 +3,7 @@
 \name{Smoothing}
 \alias{Smoothing}
 \title{An auxiliary function that finds the smoothed maximal within the significant region R:
-If area of R is too small, return the last local corr;
-otherwise, for each maximal in the region, check all adjacent scales and take the minimum,
-and take the maximum between the smoothed maximal and last local corr.}
+If area of R is too small, return the last local corr; otherwise take the maximum within R.}
 \usage{
 Smoothing(localCorr, m, n, R)
 }
@@ -27,7 +25,8 @@ optimalScale the estimated optimal scale in matrix single index.
 }
 \description{
 An auxiliary function that finds the smoothed maximal within the significant region R:
-If area of R is too small, return the last local corr;
-otherwise, for each maximal in the region, check all adjacent scales and take the minimum,
-and take the maximum between the smoothed maximal and last local corr.
+If area of R is too small, return the last local corr; otherwise take the maximum within R.
+}
+\author{
+C. Shen
 }

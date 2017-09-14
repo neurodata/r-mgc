@@ -21,3 +21,6 @@ R is a binary matrix of size m and n, with 1's indicating the significant region
 \description{
 An auxiliary function that finds a region of significance in the local correlation map by thresholding.
 }
+\author{
+C. Shen
+}
