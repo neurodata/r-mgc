@@ -32,8 +32,8 @@ test.twosample = function(type,n,deg,noise,rep){
     rep=100;
   }
   alpha=0.05;
-  d=2;
-  rotate=matrix(c(cos(deg),sin(deg),-sin(deg),cos(deg)),d,d);
+  d=1;
+  rotate=matrix(c(cos(deg),sin(deg),-sin(deg),cos(deg)),2,2);
   pmgc=matrix(0,1,rep);
   pdcor=matrix(0,1,rep);
   phhg=matrix(0,1,rep);
@@ -42,9 +42,9 @@ test.twosample = function(type,n,deg,noise,rep){
   rep2=100; # replicates for permutation test
   for (i in (1:rep)){
     result=GenerateSimulations(type,n,d,1, noise);
-    x1=result$x;
+    x1=cbind(result$x,result$y);
     result=GenerateSimulations(type,n,d,1, noise);
-    x2=result$x;
+    x2=cbind(result$x,result$y);
     x=rbind(x1,x2%*%rotate);
     y=rbind(matrix(0,n,1),matrix(1,n,1));
     Dx = as.matrix(dist(x, diag = TRUE, upper = TRUE))
