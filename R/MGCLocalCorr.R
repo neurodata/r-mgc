@@ -113,8 +113,8 @@ LocalCov <- function(A,B,RX,RY){
   covXY=(covXY-EX%*%t(EY)/n/(n));
   # varX=varX-EX^2/n^2;
   # varY=varY-EY^2/n^2;
-  covXY[1,1:nY]=0; # local cov without any neighbor is meaningless and set to 0 instead
-  covXY[1:nX,1]=0;
+  # covXY[1,1:nY]=0; # local cov without any neighbor is meaningless and set to 0 instead
+  # covXY[1:nX,1]=0;
 
   return(covXY);
 }

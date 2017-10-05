@@ -63,7 +63,7 @@ Thresholding <- function(localCorr,m,n,sz){
 
   opt=0; # set opt=1 and add the negative local correlation as a non-parametric and data-adaptive threshold
   if (opt==1){
-    thres1=localCorr[2:m,2:n];
+    thres1=localCorr;
     thres1=thres1[thres1<0]; # all negative correlations
     thres1=5*sqrt(sum(thres1^2)/length(thres1));  # the standard deviation of negative correlations
     # Use the maximal of paratemetric and non-parametric thresholds
@@ -104,7 +104,7 @@ Smoothing <- function(localCorr,m,n,R){
   optimalScale=m*n; # default the optimal scale to maximal scale
   if (norm(R,"F")!=0){
     # tau=1; # number of adjacent scales to smooth with
-    if (sum(R[2:m,2:n])>=2*(min(m,n)-1)){ # proceed only when the region area is sufficiently large
+    if (sum(R)>=2*(min(m,n))){ # proceed only when the region area is sufficiently large
       tmp=max(localCorr[R]);
       ind=which((localCorr>=tmp)&(R==1)); # find all scales within R that maximize the local correlation
       k = ((ind-1) %% m) + 1
