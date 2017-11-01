@@ -16,11 +16,11 @@ In modern scientific discovery, it is becoming increasingly critical to uncover 
 
 # Repo Contents
 
-- [./R]: `R` package code.
-- [./docs]: package documentation.
-- [./man]: package manual for help in R session.
-- [./tests]: `R` unit tests written using the `testthat` package.
-- [./vignettes]: `R` vignettes for R session html help pages.
+- [R](./R): `R` package code.
+- [docs](./docs): package documentation.
+- [man](./man): package manual for help in R session.
+- [tests](./tests): `R` unit tests written using the `testthat` package.
+- [vignettes](./vignettes): `R` vignettes for R session html help pages.
 
 This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems.
 
