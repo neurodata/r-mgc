@@ -8,7 +8,7 @@
 - [Installation Guide](#installation-guide)
 - [Demo](#demo)
 - [License](./LICENSE)
-- [Issues](./issues)
+- [Issues](https://github.com/neurodata/mgc/issues)
 
 # Overview
 
