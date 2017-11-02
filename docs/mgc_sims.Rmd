@@ -1,0 +1,89 @@
+---
+title: "MGC Simulations"
+author: "Eric Bridgeford"
+date: "November 2, 2017"
+output: html_document
+---
+
+# MGC Simulations
+
+In this experiment, we will take a look at the 20 canonical simulations analyzed in the [MGC Paper repository](https://github.com/neurodata-papers/MGC). For details on the simulations, please check out the appendix to the paper, which can be found on arXiv [MGC paper link](https://arxiv.org/abs/1609.05148), with available pseudo code.
+
+# Data
+
+# Simulations
+
+In the below simulations, we let $X \sim Unif(-1, 1)$, and $x$ is $n$ samples from $X$.
+
+```{r}
+gen.coefs <- function(d) {
+  A = as.array(1/1:d, dim=c(d, 1))
+  return(A)
+}
+
+gen.x <- function(n, d) {
+  return(t(replicate(n, runif(d, -1, 1))))
+}
+```
+
+## Linear Relationship
+
+### 1 Dimensional
+
+```{r}
+
+gen.y.linear <- function(x, A, eps) {
+  er <- rnorm(n, mean=0, sd=1)
+  return(x%*%A + eps*er)  # y = xA + nu  
+}
+
+n <- 100
+d <- 1
+xld <- gen.x(n, d)
+Ald <- as.vector(1)
+ylinld <- gen.y.linear(xld, A, 0.2)
+```
+
+### High Dimensional
+
+```{r}
+
+```
+
+## Exponential
+
+## Cubic
+
+## Joint Normal
+
+## Step Function
+
+## Quadratic
+
+## W shape
+
+## Spiral
+
+## Bernoulli
+
+## Logarithmic
+
+## Fourth Root
+
+## Circle
+
+## Ellipse
+
+## Diamond
+
+## Multiplicative
+
+## Independence
+
+# Comparison
+
+## 1 Dimensional
+
+## High Dimensional
+
+# Geometries
