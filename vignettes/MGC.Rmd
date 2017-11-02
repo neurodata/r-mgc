@@ -1,6 +1,6 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "MGC Testing"
+author: "Eric Bridgeford"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -17,7 +17,7 @@ In this notebook, we will discuss the basics of the MGC statistic in a real data
 
 Here, we Define $X \sim Unif(-1, 1)$, where $x \in \mathbb{R}^n$ is $n$ samples from $X$. We also have some other vector $y$ where $y = x\beta + \nu$, where $\nu$ is $n$ samples from $N \sim \mathcal{N}(0, \epsilon)$ of random noise. Using MGC, we expect to uncover a linear dependence of $y$ on $x$.
 
-```{r}
+```{r, fig.width=5, fig.height=5}
 require(MGC)
 require(ggplot2)
 require(latex2exp)
@@ -46,14 +46,17 @@ ggplot(dat, aes(x=x, y=y)) +
 
 We construct naive distance matrices for $x$ and $y$:
 
-```{r}
+```{r, fig.width=5, fig.height=5}
 Xd = dist(x, diag=TRUE, upper=TRUE)
 Yd = dist(y, diag=TRUE, upper=TRUE)
+```
 
+and finally, visualize the results of the `MGC` with 100 permutation replicates:
+```{r, fig.width=5, fig.height=5}
 res <- mgc.test(Xd, Yd, rep=100)  # 100 permutations test
 mgc.plot.plot_matrix(res$localCorr, xlabel=TeX("k"), ylabel=TeX("l"), title = TeX("Local $p$-values for Linear Dependence"), legend.name=TeX("p"))  # plot local p-values
 print(res$optimalScale)
 print(res$statMGC)
 ```
 
-As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between $x$ and $y$. 
+As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between $x$ and $y$, and as we can see in the local $p$-values plot, $k=n=50$ and $l=n=50$ (scale 2500) shows the best $p$.
