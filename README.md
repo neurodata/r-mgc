@@ -68,13 +68,13 @@ The `MGC` demo can be run as follows:
 
 ```
 require(MGC)
-mgc.sample(x=MGC::test_xunif, y=MGC::test_ylin)  # test with a linear relationship between x and y
+set.seed(12345)
+mgc.sample(MGC::test_xunif, MGC::test_ylin)  # test with a linear relationship between x and y
 ```
 
 and is expected  to produce the following result (results will not be exact as the data is randomly generated) approximately *instantaneously*:
 
-```
-$statMGC
+```$statMGC
 [1] 0.891153
 
 $localCorr
