@@ -2,10 +2,10 @@
 % Please edit documentation in R/run_demo.R
 \name{mgc.run_demo}
 \alias{mgc.run_demo}
-\title{A simple demo function to illustrate MGC on linear and quadratic relationships at size 20.}
+\title{A simple demo function to illustrate MGC on test data.}
 \usage{
-mgc.run_demo()
+mgc.run_demo(x, y)
 }
 \description{
-A simple demo function to illustrate MGC on linear and quadratic relationships at size 20.
+A simple demo function to illustrate MGC on test data.
 }

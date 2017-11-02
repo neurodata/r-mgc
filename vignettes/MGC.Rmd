@@ -1,0 +1,59 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MGC Statistic}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# MGC Statistic
+
+In this notebook, we will discuss the basics of the MGC statistic in a real data context, and demonstrate some of the useful plots that users may want to visualize the results with.
+
+## Data
+
+Here, we Define $X \sim Unif(-1, 1)$, where $x \in \mathbb{R}^n$ is $n$ samples from $X$. We also have some other vector $y$ where $y = x\beta + \nu$, where $\nu$ is $n$ samples from $N \sim \mathcal{N}(0, \epsilon)$ of random noise. Using MGC, we expect to uncover a linear dependence of $y$ on $x$.
+
+```{r}
+require(MGC)
+require(ggplot2)
+require(latex2exp)
+
+n = 50  # 50 samples
+d = 1  # simple 1-d case
+eps = 0.2  # magnitude of noise
+x = runif(n, min=-1, max=1)  # X ~ Unif(-1, 1)
+
+A=matrix(0,d,1)
+for (i in (1:d)){
+  A[i]=1/i
+}
+
+nu = eps*rnorm(n, mean=0, sd=1)  # nu \sim 
+y = x%*%A + nu
+
+dat = data.frame(x=x, y=y)
+
+ggplot(dat, aes(x=x, y=y)) +
+  geom_point() +
+  xlab(TeX("$x$")) +
+  ylab(TeX("$y = x + \\nu$")) +
+  ggtitle(TeX("Linear Relationship of $x$ on $y$; $var(\\nu) = 0.2$"))
+```
+
+We construct naive distance matrices for $x$ and $y$:
+
+```{r}
+Xd = dist(x, diag=TRUE, upper=TRUE)
+Yd = dist(y, diag=TRUE, upper=TRUE)
+
+res <- mgc.test(Xd, Yd, rep=100)  # 100 permutations test
+mgc.plot.plot_matrix(res$localCorr, xlabel=TeX("k"), ylabel=TeX("l"), title = TeX("Local $p$-values for Linear Dependence"), legend.name=TeX("p"))  # plot local p-values
+print(res$optimalScale)
+print(res$statMGC)
+```
+
+As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between $x$ and $y$. 
