@@ -73,7 +73,7 @@ set.seed(12345)
 mgc.sample(MGC::test_xunif, MGC::test_ylin)  # test with a linear relationship between x and y
 ```
 
-and is expected  to produce the following result (results will not be exact as the data is randomly generated) approximately *instantaneously*:
+and is expected  to produce the following result exactly approximately *instantaneously*:
 
 ```$statMGC
 [1] 0.891153
