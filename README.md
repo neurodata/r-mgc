@@ -9,6 +9,7 @@
 - [Demo](#demo)
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
+- [Usage](#usage)
 
 # Overview
 
@@ -59,6 +60,8 @@ install_github('neurodata/mgc')  # install MGC
 require(MGC)  # source the package now that it is set up
 ```
 
+The package should take approximately 8 seconds on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+
 # Demo
 
 The `MGC` demo can be run as follows:
@@ -67,7 +70,7 @@ The `MGC` demo can be run as follows:
 mgc.run_demo()  # run the demo
 ```
 
-and is expected  to produce the following result (results will not be exact as the data is randomly generated):
+and is expected  to produce the following result (results will not be exact as the data is randomly generated) in about 10 seconds:
 
 ```
 Under Linear Dependency of 20 observations, MGC Statistic, p-value, and optimal scales (matrix single index) are:  1 , 0 , 156 173 174 175 176 191 192 193 194 195 196 210 211 212 213 214 215 216 230 231 233 234 235 236 249 250 251 252 256 269 270 271 272 274 275 276 289 290 291 292 294 296 308 309 310 311 312 313 314 315 
@@ -80,7 +83,8 @@ The `discriminability` demo can be run as follows:
 discr.run_demo()
 ```
 
-and is expected to produce the following result:
+
+and is expected to produce the following result, again in about 10 seconds:
 
 ```
 [1] "Parameters of first random variable: mu=0.00, sd=0.20"
@@ -88,3 +92,86 @@ and is expected to produce the following result:
 [1] "Discriminability statistic for 2 observations per random variable: 1.00"
 ```
 
+
+
+# Usage
+
+Instructions for usage of the `MGC` statistic can be invoked from the `R` terminal window:
+
+```
+help(MGC)
+```
+
+which produces the `man` page:
+
+```
+The main function that computes the MGC measure between two datasets: It first computes all local correlations, then use the maximal statistic among all local correlations based on thresholding.
+
+Description
+
+The main function that computes the MGC measure between two datasets: It first computes all local correlations, then use the maximal statistic among all local correlations based on thresholding.
+
+Usage
+
+mgc.sample(A, B, option = "mgc")
+Arguments
+
++ A	is interpreted as:
+a [nxn] distance matrix, A is a square matrix with zeros on diagonal
+a [nxd] data matrix, Otherwise
++ B	is interpreted as:
+a [nxn] distance matrix, B is a square matrix with zeros on diagonal
+a [nxd] data matrix, Otherwise
++ option='mgc'	is a string that specifies which global correlation to build up-on.
+    + 'mgc' use the MGC global correlation.
+    + 'dcor' use the dcor global correlation.
+    + 'mantel' use the mantel global correlation.
+    + 'rank' use the rank global correlation.
+
+and Returns:
++ statMGC is the sample MGC statistic within [-1,1];
+
++ localCorr consists of all local correlations by double matrix index;
+
++ optimalScale the estimated optimal scale in matrix single index.
+
+Author(s)
+
+C. Shen
+```
+
+The discriminability statistic can be invoked as follows:
+
+```
+help(discr.discr)
+```
+
+and shows:
+
+```
+Description
+
+A function for computing the discriminability from a distance matrix and a set of associated labels.
+
+Usage
+
+discr.discr(X, ids, thresh = 0, verbose = FALSE)
+Arguments
+
++ X	is interpreted as:
+    + a [n x n] distance matrix if X is a square matrix with zeros on diagonal
+    + a [n x d] data matrix, Otherwise
++ ids	[n] is a vector containing the labels for our n observations.
++ remove_outliers=TRUE	boolean indicating whether to ignore observations with rdf below a certain cutoff.
++ thresh=0	the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation.
++ verbose=FALSE	a boolean indicating whether to:
+    + TRUE print output to console
+    + FALSE Do not print output to console
+
+Returns
++ discr the discriminability statistic.
+
+Author(s)
+
+Eric Bridgeford and Gregory Kiar
+```
