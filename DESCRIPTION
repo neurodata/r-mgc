@@ -18,7 +18,6 @@ Imports:
   Rmisc,
   stats
 Suggests: testthat,
-  fmriutils,
   knitr,
   rmarkdown
 License: MIT + file LICENSE
