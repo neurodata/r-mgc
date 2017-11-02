@@ -10,6 +10,7 @@
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
 - [Usage](#usage)
+- [Pseudocode](#pseudocode)
 
 # Overview
 
@@ -230,3 +231,7 @@ Author(s)
 
 Eric Bridgeford and Gregory Kiar
 ```
+
+# Pseudocode
+
+Pseudocode for the meethods employed in the `MGC` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30). 
