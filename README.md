@@ -49,7 +49,7 @@ sudo apt-get install r-base r-base-dev
 From inside an `R` session, we can install the `MGC` dependencies with the following command:
 
 ```
-install.packages(c('ggplot2', 'reshape2', 'Rmisc'))  # set up package dependencies
+install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
 ```
 
 ### Optional
@@ -62,25 +62,21 @@ install.packages(c('testthat', 'knitr', 'rmarkdown'))
 
 # Installation Guide
 
-From inside an `R` session, we must first install and source `devtools`:
-
-```
-install.packages('devtools')  # set up devtools
-require(devtools)  # source it
-```
-
 ## No Vignettes
 
 From the same `R` session, type:
 
 ```
+require(devtools)
 install_github('neurodata/mgc')  # install MGC
 require(MGC)  # source the package now that it is set up
 ```
 
+The package should take approximately 4 seconds on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+
 ## Vignettes
 
-From the same `R` session, type:
+If the user wishes to use the interactive demos (`R` vignettes) or run the tests, from the same `R` session, type:
 
 ```
 install_github('neurodata/mgc', build_vignettes=TRUE)  # install MGC with the vignettes
@@ -88,7 +84,7 @@ require(MGC)  # source the package now that it is set up
 vignette("MGC Statistic", package="MGC")  # view one of the basic vignettes
 ```
 
-The package should take approximately 8 seconds on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+The package should take approximately 8 seconds with vignettes on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
 
 # Demo
 
@@ -180,8 +176,6 @@ a more interactive demo is provided in the package vignette:
 ```
 vignette("MGC Statistic", package="MGC")
 ```
-
-
 
 # Usage
 
