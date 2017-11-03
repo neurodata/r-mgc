@@ -139,6 +139,12 @@ print(res$statMGC)
 
 ![image](https://user-images.githubusercontent.com/8883547/32355967-7de64590-c008-11e7-9c3b-e24470fdbdaa.png)
 
+with the following statistic:
+
+```
+0.7337225
+```
+
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
 
 
@@ -225,9 +231,9 @@ which should show approximately *instantaneously*:
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
 ```{r, fig.width=6, fig.height=4}
-Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,]))
+Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
-mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name="dist(x, y)"))
+mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name="dist(x, y)")
 ```
 
 which produces the following distance matrix. The block structure indicates that the flowers from a particular species have more similar properties (as defined by the euclidian distance) to the flowers in the same species than to flowers of different species:
@@ -244,6 +250,12 @@ which should show:
 
 ```
 0.9320476
+```
+
+A more interactive demo can be found in the discriminability vignette (if installed):
+
+```
+vignette("Discriminability", package="MGC")
 ```
 
 ### Usage
