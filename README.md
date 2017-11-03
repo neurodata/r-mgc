@@ -6,7 +6,10 @@
 - [Repo Contents](#repo-contents)
 - [System Requirements](#system-requirements)
 - [Installation Guide](#installation-guide)
-- [Demo and Usage](#demo-usage)
+- [Demo](#demo)
+    + [MGC](#mgc-demo)
+    + [Discriminability](#discriminability-demo)
+ - [Usage](#usage)
     + [MGC](#mgc-usage)
     + [Discriminability](#discriminability-usage)
 - [License](./LICENSE)
@@ -29,9 +32,15 @@ This package is supported for *Linux*, *Mac OSX*, and *Windows* operating system
 
 # System Requirements
 
+## Hardware Requirements
+
+The following tutorial was tested on Ubuntu 16.04.
+
+## Software Requirements
+
 Before setting up the MGC package, users should have R version 3.4.0 or higher, and several packages set up from CRAN.
 
-## Installing R version 3.4.2 on Ubuntu
+### Installing R version 3.4.2 on Ubuntu 16.04
 
 the latest version of R can be installed by adding the latest repository to `apt`:
 
@@ -43,9 +52,9 @@ sudo apt-get update
 sudo apt-get install r-base r-base-dev
 ```
 
-## Package dependencies
+### Package dependencies
 
-### Required
+#### Required
 
 From inside an `R` session, we can install the `MGC` dependencies with the following command:
 
@@ -53,7 +62,7 @@ From inside an `R` session, we can install the `MGC` dependencies with the follo
 install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
 ```
 
-### Optional
+#### Optional
 
 If the user wishes to use the interactive demos (`R` vignettes) or run the tests, then the following packages must also be set up:
 
@@ -61,10 +70,9 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 install.packages(c('testthat', 'knitr', 'rmarkdown'))
 ```
 
-### Version Documentation
+#### Package Versions
 
-While package versions should not be a problem, the remainder of this tutorial was tested with the following versions of required/optional software:
-
+The MGC package functions with all packages in their latest versions as they appear on CRAN on October 15, 2017. Users can check [CRAN snapshot](https://mran.microsoft.com/timemachine/) for details. The versions of software are, specifically:
 ```
 ggplot2: 2.2.1
 reshape2: 1.4.2
@@ -103,11 +111,9 @@ vignette("MGC Statistic", package="MGC")  # view one of the basic vignettes
 
 The package should take approximately 8 seconds with vignettes on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
 
-# Demo and Usage
+# Demo
 
-## MGC Usage
-
-### Simulated Dataset
+## MGC Demo
 
 The `MGC` demo can be run as follows:
 
@@ -125,9 +131,50 @@ and is expected  to produce the following result exactly approximately *instanta
 0.891153
 ```
 
-### Real Dataset
+a more interactive demo is provided in the package vignette (if installed):
 
-In the below demo, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
+```
+vignette("MGC Statistic", package="MGC")
+```
+
+
+## Discriminability Demo
+
+### Simulated Dataset
+
+Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
+
+```
+require(MGC)
+
+nsrc <- 5
+nobs <- 10
+d <- 20
+src_id <- array(1:nsrc)
+set.seed(12345)
+labs <- sample(rep(src_id, nobs))
+dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
+discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
+```
+
+which should show approximately *instantaneously*:
+
+```
+0.9983889
+```
+
+A more interactive demo can be found in the discriminability vignette (if installed):
+
+```
+vignette("Discriminability", package="MGC")
+```
+
+
+# Usage
+
+## MGC Usage
+
+In the below tutorial, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
 ```
 require(MGC)
@@ -147,13 +194,6 @@ with the following statistic:
 ```
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
-
-
-a more interactive demo is provided in the package vignette (if installed):
-
-```
-vignette("MGC Statistic", package="MGC")
-```
 
 ### Usage
 
@@ -200,33 +240,7 @@ Author(s)
 
 C. Shen
 ```
-
 ## Discriminability Usage
-
-### Simulated Dataset
-
-Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
-
-```
-require(MGC)
-
-nsrc <- 5
-nobs <- 10
-d <- 20
-src_id <- array(1:nsrc)
-set.seed(12345)
-labs <- sample(rep(src_id, nobs))
-dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
-discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
-```
-
-which should show approximately *instantaneously*:
-
-```
-0.9983889
-```
-
-### Real Dataset
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
@@ -251,12 +265,6 @@ which should show:
 
 ```
 0.9320476
-```
-
-A more interactive demo can be found in the discriminability vignette (if installed):
-
-```
-vignette("Discriminability", package="MGC")
 ```
 
 ### Usage
