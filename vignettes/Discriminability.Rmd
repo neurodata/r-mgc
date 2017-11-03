@@ -24,6 +24,7 @@ require(latex2exp)
 nsrc <- 5
 nobs <- 10
 d <- 20
+set.seed(12345)
 src_id <- array(1:nsrc)
 labs <- sample(rep(src_id, nobs))
 dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
@@ -55,7 +56,7 @@ mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", tit
 we expect a high discriminability since the within-species relationship is clearly strong (the distances are low for same-species):
 
 ```{r}
-discr.discr(iris[,c(1,2,3,4)], as.vector(iris$Species))
+  discr.discr(iris[,c(1,2,3,4)], as.vector(iris$Species))
 ```
 
 which is reflected in the high discriminability score.
