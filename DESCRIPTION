@@ -3,7 +3,7 @@ Type: Package
 Title: The Multiscale Generalized Correlation (MGC) Package
 Version: 0.1.0
 Author: Cencheng Shen, Eric Bridgeford, and Shangsi Wang
-Maintainer: The package maintainer <cshen6@jhu.edu>
+Maintainer: The package maintainer <ebridge2@jhu.edu>
 Description: Implements a number of data exploration tasks based on MGC: 
     computing the correlation measure, test independence via MGC and permutation test,
     k-sample test via MGC and permutation test (tba), feature screening via MGC (tba). 
@@ -19,7 +19,8 @@ Imports:
   stats
 Suggests: testthat,
   knitr,
-  rmarkdown
+  rmarkdown,
+  latex2exp
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

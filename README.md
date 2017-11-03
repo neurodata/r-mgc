@@ -115,7 +115,7 @@ install_github('neurodata/mgc')  # install MGC
 require(MGC)  # source the package now that it is set up
 ```
 
-The package should take approximately 4 seconds on a recommended computer. 
+The package should take approximately 10 seconds on a recommended computer. 
 
 ## Vignettes
 
@@ -123,6 +123,8 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 
 ```
 require(devtools)
+install_github('neurodata/mgc')  # install MGC
+require(MGC)  # source the package now that it is set up
 install_github('neurodata/mgc', build_vignettes=TRUE, force=TRUE)  # install MGC with the vignettes
 require(MGC)  # source the package now that it is set up
 vignette("MGC", package="MGC")  # view one of the basic vignettes
@@ -153,6 +155,7 @@ and is expected  to produce the following result exactly approximately *instanta
 a more interactive demo is provided in the package vignette (if installed):
 
 ```
+library(MGC)
 vignette("MGC", package="MGC")
 ```
 
@@ -164,7 +167,7 @@ vignette("MGC", package="MGC")
 Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
 
 ```
-require(MGC)
+library(MGC)
 
 nsrc <- 5
 nobs <- 10
@@ -173,7 +176,7 @@ src_id <- array(1:nsrc)
 set.seed(12345)
 labs <- sample(rep(src_id, nobs))
 dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
-discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
+discr.stat(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
 ```
 
 which should show approximately *instantaneously*:
@@ -185,6 +188,7 @@ which should show approximately *instantaneously*:
 A more interactive demo can be found in the discriminability vignette (if installed):
 
 ```
+library(MGC)
 vignette("Discriminability", package="MGC")
 ```
 
@@ -196,7 +200,7 @@ vignette("Discriminability", package="MGC")
 In the below tutorial, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
 ```
-require(MGC)
+library(MGC)
 set.seed(12345)
 res <- mgc.sample(iris[,1], iris[,3])
 mgc.plot.plot_matrix(res$localCorr, title="MGC Corr Map, Sepal Length and Petal Length",
@@ -264,7 +268,7 @@ C. Shen
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
 ```{r, fig.width=6, fig.height=4}
-require(MGC)
+library(MGC)
 Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
 mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name="dist(x, y)")
@@ -277,7 +281,7 @@ which produces the following distance matrix. The block structure indicates that
 this is confirmed by the high discriminability statistic which should occur approximately *instantaneously*:
 
 ```
-discr.discr(iris[,c(1,2,3,4)], as.vector(iris$Species))
+discr.stat(iris[,c(1,2,3,4)], as.vector(iris$Species))
 ```
 
 which should show:

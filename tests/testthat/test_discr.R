@@ -50,10 +50,10 @@ X[3,] <- x1
 X[4,] <- x2
 test_that("Discriminability in perfect match case gets score of 1", {
   labels <- c(0, 1, 0, 1)
-  expect_equal(discr.discr(discr.distance(X), ids=labels), 1)
+  expect_equal(discr.stat(discr.distance(X), ids=labels), 1)
 })
 
 test_that("Discriminability in no match case gets score of 1/(nscan*n)", {
   labels <- c(1, 1, 0, 0)
-  expect_equal(discr.discr(discr.distance(X), ids=labels), .25)
+  expect_equal(discr.stat(discr.distance(X), ids=labels), .25)
 })
