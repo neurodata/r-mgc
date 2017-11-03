@@ -124,9 +124,10 @@ The package should take approximately 4 seconds on a recommended computer.
 If the user wishes to use the interactive demos (`R` vignettes) or run the tests, from the same `R` session, type:
 
 ```
+require(devtools)
 install_github('neurodata/mgc', build_vignettes=TRUE)  # install MGC with the vignettes
 require(MGC)  # source the package now that it is set up
-vignette("MGC Statistic", package="MGC")  # view one of the basic vignettes
+vignette("MGC", package="MGC")  # view one of the basic vignettes
 ```
 
 The package should take approximately 8 seconds with vignettes on a recommended computer. 
@@ -154,7 +155,7 @@ and is expected  to produce the following result exactly approximately *instanta
 a more interactive demo is provided in the package vignette (if installed):
 
 ```
-vignette("MGC Statistic", package="MGC")
+vignette("MGC", package="MGC")
 ```
 
 
