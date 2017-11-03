@@ -186,7 +186,7 @@ vignette("Discriminability", package="MGC")
 
 # Instructions for Use
 
-## MGC Usage
+## MGC
 
 In the below tutorial, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
@@ -209,9 +209,9 @@ with the following statistic:
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
 
-### Usage
+### Help
 
-Instructions for usage of the `MGC` statistic can be invoked from the `R` terminal window:
+Instructions for help using the `MGC` statistic can be invoked from the `R` terminal window:
 
 ```
 help(MGC)
@@ -254,7 +254,7 @@ Author(s)
 
 C. Shen
 ```
-## Discriminability Usage
+## Discriminability
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
@@ -281,9 +281,9 @@ which should show:
 0.9320476
 ```
 
-### Usage
+### Help
 
-The discriminability statistic can be invoked as follows:
+The help page for the discriminability statistic can be invoked as follows:
 
 ```
 help(discr.discr)
