@@ -90,9 +90,10 @@ discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
 #' @seealso{discr.distance}
 #' @export
 discr.discr <- function(X, ids, thresh=0, verbose=FALSE) {
+  X <- as.matrix(X)
   # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(as.matrix(X)) != ncol(as.matrix(X)) | sum(diag(X)^2) > 0){
-    X <- discr.distance(X)
+  if (nrow(X) != ncol(X) | sum(diag(X)^2) > 0){
+    X <- as.matrix(dist(X))
   }
   return(discr.mnr(discr.rdf(X, ids), thresh=thresh, output=(verbose)))
 }
