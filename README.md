@@ -10,8 +10,8 @@
     + [MGC](#mgc-demo)
     + [Discriminability](#discriminability-demo)
  - [Instructions for Use](#instructions-for-use)
-    + [MGC](#mgc-usage)
-    + [Discriminability](#discriminability-usage)
+    + [MGC](#mgc-use)
+    + [Discriminability](#discriminability-use)
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
 - [Pseudocode](#pseudocode)
@@ -186,7 +186,7 @@ vignette("Discriminability", package="MGC")
 
 # Instructions for Use
 
-## MGC
+## MGC Use
 
 In the below tutorial, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
@@ -254,7 +254,7 @@ Author(s)
 
 C. Shen
 ```
-## Discriminability
+## Discriminability Use
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
