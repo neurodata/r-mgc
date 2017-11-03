@@ -52,6 +52,8 @@ sudo apt-get update
 sudo apt-get install r-base r-base-dev
 ```
 
+which should install in about 20 seconds.
+
 ### Package dependencies
 
 #### Required
