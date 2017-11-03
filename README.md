@@ -33,14 +33,24 @@ In modern scientific discovery, it is becoming increasingly critical to uncover 
 
 ## Hardware Requirements
 
+The `MGC` package requires only a standard computer with enough RAM to support the operations defined by a user. For minimal performance, this will be a computer with about 2 GB of RAM. For optimal performance, we recommend a computer with the following specs:
 
-This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems. The following tutorial was tested on Ubuntu 16.04.
+RAM: 16+ GB
+CPU: 4+ cores, 3.3+ GHz/core
 
 ## Software Requirements
 
-Before setting up the MGC package, users should have R version 3.4.0 or higher, and several packages set up from CRAN.
+### OS Requirements
 
-### Installing R version 3.4.2 on Ubuntu 16.04
+This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems. The package has been tested on the following systems:
+
+Linux: Ubuntu 16.04
+Mac OSX:
+Windows:
+
+Before setting up the `MGC` package, users should have `R` version 3.4.0 or higher, and several packages set up from CRAN.
+
+#### Installing R version 3.4.2 on Ubuntu 16.04
 
 the latest version of R can be installed by adding the latest repository to `apt`:
 
@@ -54,9 +64,11 @@ sudo apt-get install r-base r-base-dev
 
 which should install in about 20 seconds.
 
-### Package dependencies
+#### Package dependencies
 
-#### Required
+Users should install the following packages prior to installing `MGC`:
+
+##### Required
 
 From inside an `R` session, we can install the `MGC` dependencies with the following command:
 
@@ -64,7 +76,7 @@ From inside an `R` session, we can install the `MGC` dependencies with the follo
 install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
 ```
 
-#### Optional
+##### Optional
 
 If the user wishes to use the interactive demos (`R` vignettes) or run the tests, then the following packages must also be set up:
 
@@ -74,7 +86,7 @@ install.packages(c('testthat', 'knitr', 'rmarkdown'))
 
 #### Package Versions
 
-The MGC package functions with all packages in their latest versions as they appear on CRAN on October 15, 2017. Users can check [CRAN snapshot](https://mran.microsoft.com/timemachine/) for details. The versions of software are, specifically:
+The MGC package functions with all packages in their latest versions as they appear on `CRAN` on October 15, 2017. Users can check [CRAN snapshot](https://mran.microsoft.com/timemachine/) for details. The versions of software are, specifically:
 ```
 ggplot2: 2.2.1
 reshape2: 1.4.2
