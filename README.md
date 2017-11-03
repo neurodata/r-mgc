@@ -38,7 +38,7 @@ The `MGC` package requires only a standard computer with enough RAM to support t
 RAM: 16+ GB  
 CPU: 4+ cores, 3.3+ GHz/core
 
-The runtimes below are generated using a computer with the recommended specs (16 GB RAM, 4 cores@3.3 GHz).
+The runtimes below are generated using a computer with the recommended specs (16 GB RAM, 4 cores@3.3 GHz) and internet of speed 25 Mbps.
 
 ## Software Requirements
 
@@ -78,6 +78,8 @@ From inside an `R` session, we can install the `MGC` dependencies with the follo
 install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
 ```
 
+which will install in about 20 seconds.
+
 ##### Optional
 
 If the user wishes to use the interactive demos (`R` vignettes) or run the tests, then the following packages must also be set up:
@@ -85,6 +87,8 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 ```
 install.packages(c('testthat', 'knitr', 'rmarkdown'))
 ```
+
+which will install in about 20 seconds.
 
 #### Package Versions
 
@@ -113,7 +117,7 @@ install_github('neurodata/mgc')  # install MGC
 require(MGC)  # source the package now that it is set up
 ```
 
-The package should take approximately 4 seconds on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+The package should take approximately 4 seconds on a recommended computer. 
 
 ## Vignettes
 
