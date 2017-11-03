@@ -68,27 +68,13 @@ which should install in about 20 seconds.
 
 #### Package dependencies
 
-Users should install the following packages prior to installing `MGC`:
-
-##### Required
-
-From inside an `R` session, we can install the `MGC` dependencies with the following command:
+Users should install the following packages prior to installing `mgc`, from an `R` terminal:
 
 ```
-install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
+install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools', 'testthat', 'knitr', 'rmarkdown', 'latex2exp', 'MASS'))
 ```
 
-which will install in about 60 seconds.
-
-##### Optional
-
-If the user wishes to use the interactive demos (`R` vignettes) or run the tests, then the following packages must also be set up:
-
-```
-install.packages(c('testthat', 'knitr', 'rmarkdown', 'latex2exp'))
-```
-
-which will install in about 20 seconds.
+which will install in about 80 seconds on a recommended machine.
 
 #### Package Versions
 
@@ -101,6 +87,8 @@ devtools: 1.13.3
 testthat: 0.2.0
 knitr: 1.17
 rmarkdown: 1.6
+latex2exp: 0.4.0
+MASS: 7.3
 ```
 
 If you are having an issue that you believe to be tied to software versioning issues, please drop us an [Issue](https://github.com/neurodata/mgc/issues). 
@@ -111,24 +99,12 @@ From an `R` session, type:
 
 ```
 require(devtools)
-install_github('neurodata/mgc')  # install mgc
-require(mgc)  # source the package now that it is set up
-```
-
-The package should take approximately 15 seconds on a recommended computer. 
-
-## Vignettes
-
-If the user wishes to use the interactive demos (`R` vignettes) or run the tests, from the same `R` session, type (after installing as above):
-
-```
-require(devtools)
 install_github('neurodata/mgc', build_vignettes=TRUE)  # install mgc with the vignettes
 require(mgc)  # source the package now that it is set up
 vignette("MGC", package="mgc")  # view one of the basic vignettes
 ```
 
-The package should take approximately 20 seconds with vignettes on a recommended computer. 
+The package should take approximately 20 seconds to install with vignettes on a recommended computer. 
 
 # Demo
 
@@ -150,7 +126,7 @@ and is expected  to produce the following result exactly approximately *instanta
 0.891153
 ```
 
-a more interactive demo is provided in the package vignette (if installed):
+a more interactive demo is provided in the package vignette:
 
 ```
 library(mgc)
@@ -183,7 +159,7 @@ which should show approximately *instantaneously*:
 0.9983889
 ```
 
-A more interactive demo can be found in the discriminability vignette (if installed):
+A more interactive demo can be found in the discriminability vignette:
 
 ```
 library(mgc)
@@ -221,7 +197,7 @@ viewing the corr map above we see that the relationship betweel Sepal and Petal 
 Instructions for help using the `MGC` statistic can be invoked from the `R` terminal window:
 
 ```
-help(mgc.sample)
+help("mgc.sample")
 ```
 
 which produces the `man` page:
@@ -293,8 +269,7 @@ which should show:
 The help page for the discriminability statistic can be invoked as follows:
 
 ```
-library(mgc)
-help(discr.stat)
+help("discr.stat")
 ```
 
 and shows:
