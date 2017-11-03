@@ -44,7 +44,7 @@ The runtimes below are generated using a computer with the recommended specs (16
 
 ### OS Requirements
 
-This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems. The package has been tested on the following systems:
+This package is supported for *Linux* operating systems. The package has been tested on the following systems:
 
 Linux: Ubuntu 16.04  
 Mac OSX:  
@@ -78,14 +78,14 @@ From inside an `R` session, we can install the `MGC` dependencies with the follo
 install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
 ```
 
-which will install in about 20 seconds.
+which will install in about 60 seconds.
 
 ##### Optional
 
 If the user wishes to use the interactive demos (`R` vignettes) or run the tests, then the following packages must also be set up:
 
 ```
-install.packages(c('testthat', 'knitr', 'rmarkdown'))
+install.packages(c('testthat', 'knitr', 'rmarkdown', 'latex2exp'))
 ```
 
 which will install in about 20 seconds.
@@ -107,9 +107,7 @@ If you are having an issue that you believe to be tied to software versioning is
 
 # Installation Guide
 
-## No Vignettes
-
-From the same `R` session, type:
+From an `R` session, type:
 
 ```
 require(devtools)
@@ -121,11 +119,11 @@ The package should take approximately 4 seconds on a recommended computer.
 
 ## Vignettes
 
-If the user wishes to use the interactive demos (`R` vignettes) or run the tests, from the same `R` session, type:
+If the user wishes to use the interactive demos (`R` vignettes) or run the tests, from the same `R` session, type (after installing as above):
 
 ```
 require(devtools)
-install_github('neurodata/mgc', build_vignettes=TRUE)  # install MGC with the vignettes
+install_github('neurodata/mgc', build_vignettes=TRUE, force=TRUE)  # install MGC with the vignettes
 require(MGC)  # source the package now that it is set up
 vignette("MGC", package="MGC")  # view one of the basic vignettes
 ```
