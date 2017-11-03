@@ -2,7 +2,7 @@
 % Please edit documentation in R/discrStat.R
 \name{discr.stat}
 \alias{discr.stat}
-\title{Discriminability}
+\title{Discriminability Statistic}
 \usage{
 discr.stat(X, ids, thresh = 0, verbose = FALSE)
 }

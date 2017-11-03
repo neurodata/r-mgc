@@ -18,7 +18,7 @@ In this notebook, we will discuss the basics of the discriminability statistic i
 Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source $i = 1:n$ is a random variable where measurements taken at the source for the $j^{th}$ dimension is $X_{ij} \sim \mathcal{N}(i, 0.5)$.
 
 ```{r}
-library(MGC)
+library(mgc)
 require(latex2exp)
 
 nsrc <- 5

@@ -1,3 +1,5 @@
+#' MGC Local Correlations
+#'
 #' Compute all local correlation coefficients in O(n^2 log n)
 #'
 #' @param X is interpreted as:

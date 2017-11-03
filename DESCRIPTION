@@ -1,4 +1,4 @@
-Package: MGC
+Package: mgc
 Type: Package
 Title: The Multiscale Generalized Correlation (MGC) Package
 Version: 0.1.0

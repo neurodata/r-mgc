@@ -92,7 +92,7 @@ which will install in about 20 seconds.
 
 #### Package Versions
 
-The MGC package functions with all packages in their latest versions as they appear on `CRAN` on October 15, 2017. Users can check [CRAN snapshot](https://mran.microsoft.com/timemachine/) for details. The versions of software are, specifically:
+The `mgc` package functions with all packages in their latest versions as they appear on `CRAN` on October 15, 2017. Users can check [CRAN snapshot](https://mran.microsoft.com/timemachine/) for details. The versions of software are, specifically:
 ```
 ggplot2: 2.2.1
 reshape2: 1.4.2
@@ -111,11 +111,11 @@ From an `R` session, type:
 
 ```
 require(devtools)
-install_github('neurodata/mgc')  # install MGC
-require(MGC)  # source the package now that it is set up
+install_github('neurodata/mgc')  # install mgc
+require(mgc)  # source the package now that it is set up
 ```
 
-The package should take approximately 10 seconds on a recommended computer. 
+The package should take approximately 15 seconds on a recommended computer. 
 
 ## Vignettes
 
@@ -123,25 +123,23 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 
 ```
 require(devtools)
-install_github('neurodata/mgc')  # install MGC
-require(MGC)  # source the package now that it is set up
-install_github('neurodata/mgc', build_vignettes=TRUE, force=TRUE)  # install MGC with the vignettes
-require(MGC)  # source the package now that it is set up
-vignette("MGC", package="MGC")  # view one of the basic vignettes
+install_github('neurodata/mgc', build_vignettes=TRUE)  # install mgc with the vignettes
+require(mgc)  # source the package now that it is set up
+vignette("MGC", package="mgc")  # view one of the basic vignettes
 ```
 
-The package should take approximately 8 seconds with vignettes on a recommended computer. 
+The package should take approximately 20 seconds with vignettes on a recommended computer. 
 
 # Demo
 
 ## MGC Demo
 
-The `MGC` demo can be run as follows:
+The `mgc` demo can be run as follows:
 
 ```
-require(MGC)
+require(mgc)
 set.seed(12345)
-mgc.sample(MGC::test_xunif, MGC::test_ylin)$statMGC  # test with a linear relationship between x and y
+mgc.sample(mgc::test_xunif, mgc::test_ylin)$statMGC  # test with a linear relationship between x and y
 ```
 
 the x data provided is by sampling 100 times from a uniform distribution on the interval [-1, 1], and the y data is formed by adding normally distributed error with variance 0.2 (indicating a linear relationship).
@@ -155,8 +153,8 @@ and is expected  to produce the following result exactly approximately *instanta
 a more interactive demo is provided in the package vignette (if installed):
 
 ```
-library(MGC)
-vignette("MGC", package="MGC")
+library(mgc)
+vignette("MGC", package="mgc")
 ```
 
 
@@ -167,7 +165,7 @@ vignette("MGC", package="MGC")
 Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
 
 ```
-library(MGC)
+library(mgc)
 
 nsrc <- 5
 nobs <- 10
@@ -188,8 +186,8 @@ which should show approximately *instantaneously*:
 A more interactive demo can be found in the discriminability vignette (if installed):
 
 ```
-library(MGC)
-vignette("Discriminability", package="MGC")
+library(mgc)
+vignette("Discriminability", package="mgc")
 ```
 
 
@@ -200,7 +198,7 @@ vignette("Discriminability", package="MGC")
 In the below tutorial, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
 ```
-library(MGC)
+library(mgc)
 set.seed(12345)
 res <- mgc.sample(iris[,1], iris[,3])
 mgc.plot.plot_matrix(res$localCorr, title="MGC Corr Map, Sepal Length and Petal Length",
@@ -223,13 +221,13 @@ viewing the corr map above we see that the relationship betweel Sepal and Petal 
 Instructions for help using the `MGC` statistic can be invoked from the `R` terminal window:
 
 ```
-help(MGC)
+help(mgc.sample)
 ```
 
 which produces the `man` page:
 
 ```
-The main function that computes the MGC measure between two datasets: It first computes all local correlations, then use the maximal statistic among all local correlations based on thresholding.
+MGC Sample
 
 Description
 
@@ -268,7 +266,7 @@ C. Shen
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
 ```{r, fig.width=6, fig.height=4}
-library(MGC)
+library(mgc)
 Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
 mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name="dist(x, y)")
@@ -295,19 +293,22 @@ which should show:
 The help page for the discriminability statistic can be invoked as follows:
 
 ```
-help(discr.discr)
+library(mgc)
+help(discr.stat)
 ```
 
 and shows:
 
 ```
+Discriminability Statistic
+
 Description
 
 A function for computing the discriminability from a distance matrix and a set of associated labels.
 
 Usage
 
-discr.discr(X, ids, thresh = 0, verbose = FALSE)
+discr.stat(X, ids, thresh = 0, verbose = FALSE)
 Arguments
 
 + X	is interpreted as:
@@ -330,4 +331,4 @@ Eric Bridgeford and Gregory Kiar
 
 # Pseudocode
 
-Pseudocode for the methods employed in the `MGC` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30). 
+Pseudocode for the methods employed in the `mgc` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30). 

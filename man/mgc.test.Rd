@@ -2,7 +2,7 @@
 % Please edit documentation in R/MGCPermutationTest.R
 \name{mgc.test}
 \alias{mgc.test}
-\title{The main function that tests independent between two data sets by MGC and permutation test.}
+\title{MGC Permutation Test}
 \usage{
 mgc.test(X, Y, rep = 1000, option = "mgc")
 }
