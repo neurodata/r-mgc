@@ -18,7 +18,7 @@ In this notebook, we will discuss the basics of the MGC statistic in a real data
 Here, we Define $X \sim Unif(-1, 1)$, where $x \in \mathbb{R}^n$ is $n$ samples from $X$. We also have some other vector $y$ where $y = x\beta + \nu$, where $\nu$ is $n$ samples from $N \sim \mathcal{N}(0, \epsilon)$ of random noise. Using MGC, we expect to uncover a linear dependence of $y$ on $x$.
 
 ```{r, fig.width=5, fig.height=5}
-require(MGC)
+library(MGC)
 require(ggplot2)
 require(latex2exp)
 
