@@ -35,7 +35,7 @@ In modern scientific discovery, it is becoming increasingly critical to uncover 
 
 The `MGC` package requires only a standard computer with enough RAM to support the operations defined by a user. For minimal performance, this will be a computer with about 2 GB of RAM. For optimal performance, we recommend a computer with the following specs:
 
-RAM: 16+ GB
+RAM: 16+ GB  
 CPU: 4+ cores, 3.3+ GHz/core
 
 ## Software Requirements
@@ -44,9 +44,9 @@ CPU: 4+ cores, 3.3+ GHz/core
 
 This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems. The package has been tested on the following systems:
 
-Linux: Ubuntu 16.04
-Mac OSX:
-Windows:
+Linux: Ubuntu 16.04  
+Mac OSX:  
+Windows:  
 
 Before setting up the `MGC` package, users should have `R` version 3.4.0 or higher, and several packages set up from CRAN.
 
