@@ -13,7 +13,7 @@ In this experiment, we will take a look at the 20 canonical simulations analyzed
 
 # Simulations
 
-In the below simulations, we let $X \sim Unif(-1, 1)$, and $x$ is $n$ samples from $X$.
+In the below simulations, we let each dimension $i$ be uniformly distributed $X_i \sim Unif(-1, 1)$, and $x_i$ is $n$ samples for the $i^{th}$ dimension,  then $x \in \mathbb{R}^{n \times D}$. $A$ is a decaying vector where $A_i = \frac{1}{i}$, $A \in \mathbb{R}^D$. $\nu_i$ is the error for each measurement and is sampled from the RV $E \sim \mathcal{N}(0, \epsilon I_n)$. Below, we let $\kappa = \mathbb{I}\left{D = 1\right}$. 
 
 ```{r}
 gen.coefs <- function(d) {
@@ -22,11 +22,41 @@ gen.coefs <- function(d) {
 }
 
 gen.x <- function(n, d) {
-  return(t(replicate(n, runif(d, -1, 1))))
+  x <- as.array(replicate(d, runif(n, -1, 1)))
+  return(t(t(x)))
 }
+
+plot.one_d <- function(x, y, title="", eqn="") {
+  dat = data.frame(x=x, y=y)
+  ggplot(dat, aes(x=x, y=y)) +
+    geom_point() +
+    xlab("x") +
+    ylab(eqn) +
+    ggtitle(sprintf("1-D Simulated %s", title))
+}
+
+plot.mgc_result <- function(res, title="") {
+  mgc.plot.plot_matrix(res$localCorr, title=TeX(sprintf("%s Corr Map, statMGC=%.3f", title, res$statMGC)), xlabel = "l, X neighbors", ylabel = "k, Y neighbors",
+                      legend.name="statMGC")
+}
+
+ld <- 1  # low dimensional simulations are in 1 dimension
+hd <- 50  # high dimensional simulations are in 50 dimensions
+
+ln <- 100  # low dimensional simulations have 100 samples
+hn <- 250  # high dimensional simulations have 250 samples
 ```
 
 ## Linear Relationship
+
+For our linear simulations, we allow a linear dependence of $y$ on $x$ with error of variance $\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = xA + \Kappa\nu \\
+s_{\nu} = \epsilon
+\end{align*}
+
+and we let $\epsilon = 0.2$.
 
 ### 1 Dimensional
 
@@ -37,20 +67,85 @@ gen.y.linear <- function(x, A, eps) {
   return(x%*%A + eps*er)  # y = xA + nu  
 }
 
-n <- 100
-d <- 1
-xld <- gen.x(n, d)
-Ald <- as.vector(1)
-ylinld <- gen.y.linear(xld, A, 0.2)
+eps <- 0.2
+xld <- gen.x(ln, ld)
+Ald <- gen.coefs(ld)
+yld <- gen.y.linear(xld, Ald, 0.2)
+
+simn <- "Linear Relationship"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = xA + \\epsilon$"))
+```
+
+We obtain a Linear Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
 ```
 
 ### High Dimensional
 
-```{r}
+We repeat the same experiment with $50$ dimensions:
 
+```{r}
+xhd <- gen.x(hn, hd)
+Ahd <- gen.coefs(hd)
+yhd <- gen.y.linear(xhd, Ahd, 0.2)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
 ```
 
 ## Exponential
+
+For our linear simulations, we allow a linear dependence of $y$ on $x$ with error of variance $\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = e^{xA + \kappa \nu} \\
+s_{\nu} = \epsilon \\
+\kappa = \begin{cases}
+1 & D = 1
+0 & otherwise
+\end{cases}
+\end{align*}
+
+and we let $\epsilon = 0.05$ and $\kappa = 0$.
+
+### 1 Dimensional
+
+```{r}
+
+gen.y.linear <- function(x, A, eps) {
+  er <- rnorm(n, mean=0, sd=1)
+  return(exp(x%*%A))  # y = exp(xA)
+}
+
+eps <- 0.2
+xld <- gen.x(ln, ld)
+Ald <- gen.coefs(ld)
+yld <- gen.y.linear(xld, Ald, 0.2)
+
+simn <- "Linear Relationship"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = xA + \\epsilon$"))
+```
+
+We obtain a Linear Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $50$ dimensions:
+
+```{r}
+xhd <- gen.x(hn, hd)
+Ahd <- gen.coefs(hd)
+yhd <- gen.y.linear(xhd, Ahd, 0.2)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
 
 ## Cubic
 

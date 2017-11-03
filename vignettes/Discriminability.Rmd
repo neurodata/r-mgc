@@ -48,7 +48,7 @@ discr.discr(Dx, sort(labs))
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
 ```{r, fig.width=6, fig.height=4}
-Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,]))
+Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
 mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name=TeX("$dist(x, y)$"))
 ```
