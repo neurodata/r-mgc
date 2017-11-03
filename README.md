@@ -6,9 +6,12 @@
 - [Repo Contents](#repo-contents)
 - [System Requirements](#system-requirements)
 - [Installation Guide](#installation-guide)
-- [Demo and Usage](#demo-usage)
-    + [MGC](#mgc-usage)
-    + [Discriminability](#discriminability-usage)
+- [Demo](#demo)
+    + [MGC](#mgc-demo)
+    + [Discriminability](#discriminability-demo)
+ - [Instructions for Use](#instructions-for-use)
+    + [MGC](#mgc-use)
+    + [Discriminability](#discriminability-use)
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
 - [Pseudocode](#pseudocode)
@@ -25,13 +28,31 @@ In modern scientific discovery, it is becoming increasingly critical to uncover 
 - [tests](./tests): `R` unit tests written using the `testthat` package.
 - [vignettes](./vignettes): `R` vignettes for R session html help pages.
 
-This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems.
 
 # System Requirements
 
-Before setting up the MGC package, users should have R version 3.4.0 or higher, and several packages set up from CRAN.
+## Hardware Requirements
 
-## Installing R version 3.4.2 on Ubuntu
+The `MGC` package requires only a standard computer with enough RAM to support the operations defined by a user. For minimal performance, this will be a computer with about 2 GB of RAM. For optimal performance, we recommend a computer with the following specs:
+
+RAM: 16+ GB  
+CPU: 4+ cores, 3.3+ GHz/core
+
+The runtimes below are generated using a computer with the recommended specs (16 GB RAM, 4 cores@3.3 GHz) and internet of speed 25 Mbps.
+
+## Software Requirements
+
+### OS Requirements
+
+This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems. The package has been tested on the following systems:
+
+Linux: Ubuntu 16.04  
+Mac OSX:  
+Windows:  
+
+Before setting up the `MGC` package, users should have `R` version 3.4.0 or higher, and several packages set up from CRAN.
+
+#### Installing R version 3.4.2 on Ubuntu 16.04
 
 the latest version of R can be installed by adding the latest repository to `apt`:
 
@@ -43,9 +64,13 @@ sudo apt-get update
 sudo apt-get install r-base r-base-dev
 ```
 
-## Package dependencies
+which should install in about 20 seconds.
 
-### Required
+#### Package dependencies
+
+Users should install the following packages prior to installing `MGC`:
+
+##### Required
 
 From inside an `R` session, we can install the `MGC` dependencies with the following command:
 
@@ -53,7 +78,9 @@ From inside an `R` session, we can install the `MGC` dependencies with the follo
 install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools'))  # set up package dependencies
 ```
 
-### Optional
+which will install in about 20 seconds.
+
+##### Optional
 
 If the user wishes to use the interactive demos (`R` vignettes) or run the tests, then the following packages must also be set up:
 
@@ -61,10 +88,11 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 install.packages(c('testthat', 'knitr', 'rmarkdown'))
 ```
 
-### Version Documentation
+which will install in about 20 seconds.
 
-While package versions should not be a problem, the remainder of this tutorial was tested with the following versions of required/optional software:
+#### Package Versions
 
+The MGC package functions with all packages in their latest versions as they appear on `CRAN` on October 15, 2017. Users can check [CRAN snapshot](https://mran.microsoft.com/timemachine/) for details. The versions of software are, specifically:
 ```
 ggplot2: 2.2.1
 reshape2: 1.4.2
@@ -89,7 +117,7 @@ install_github('neurodata/mgc')  # install MGC
 require(MGC)  # source the package now that it is set up
 ```
 
-The package should take approximately 4 seconds on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+The package should take approximately 4 seconds on a recommended computer. 
 
 ## Vignettes
 
@@ -101,13 +129,11 @@ require(MGC)  # source the package now that it is set up
 vignette("MGC Statistic", package="MGC")  # view one of the basic vignettes
 ```
 
-The package should take approximately 8 seconds with vignettes on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+The package should take approximately 8 seconds with vignettes on a recommended computer. 
 
-# Demo and Usage
+# Demo
 
-## MGC Usage
-
-### Simulated Dataset
+## MGC Demo
 
 The `MGC` demo can be run as follows:
 
@@ -125,9 +151,50 @@ and is expected  to produce the following result exactly approximately *instanta
 0.891153
 ```
 
-### Real Dataset
+a more interactive demo is provided in the package vignette (if installed):
 
-In the below demo, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
+```
+vignette("MGC Statistic", package="MGC")
+```
+
+
+## Discriminability Demo
+
+### Simulated Dataset
+
+Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
+
+```
+require(MGC)
+
+nsrc <- 5
+nobs <- 10
+d <- 20
+src_id <- array(1:nsrc)
+set.seed(12345)
+labs <- sample(rep(src_id, nobs))
+dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
+discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
+```
+
+which should show approximately *instantaneously*:
+
+```
+0.9983889
+```
+
+A more interactive demo can be found in the discriminability vignette (if installed):
+
+```
+vignette("Discriminability", package="MGC")
+```
+
+
+# Instructions for Use
+
+## MGC Use
+
+In the below tutorial, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
 ```
 require(MGC)
@@ -148,16 +215,9 @@ with the following statistic:
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
 
+### Help
 
-a more interactive demo is provided in the package vignette (if installed):
-
-```
-vignette("MGC Statistic", package="MGC")
-```
-
-### Usage
-
-Instructions for usage of the `MGC` statistic can be invoked from the `R` terminal window:
+Instructions for help using the `MGC` statistic can be invoked from the `R` terminal window:
 
 ```
 help(MGC)
@@ -200,33 +260,7 @@ Author(s)
 
 C. Shen
 ```
-
-## Discriminability Usage
-
-### Simulated Dataset
-
-Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
-
-```
-require(MGC)
-
-nsrc <- 5
-nobs <- 10
-d <- 20
-src_id <- array(1:nsrc)
-set.seed(12345)
-labs <- sample(rep(src_id, nobs))
-dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
-discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
-```
-
-which should show approximately *instantaneously*:
-
-```
-0.9983889
-```
-
-### Real Dataset
+## Discriminability Use
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
@@ -253,15 +287,9 @@ which should show:
 0.9320476
 ```
 
-A more interactive demo can be found in the discriminability vignette (if installed):
+### Help
 
-```
-vignette("Discriminability", package="MGC")
-```
-
-### Usage
-
-The discriminability statistic can be invoked as follows:
+The help page for the discriminability statistic can be invoked as follows:
 
 ```
 help(discr.discr)
@@ -299,4 +327,4 @@ Eric Bridgeford and Gregory Kiar
 
 # Pseudocode
 
-Pseudocode for the meethods employed in the `MGC` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30). 
+Pseudocode for the methods employed in the `MGC` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30). 
