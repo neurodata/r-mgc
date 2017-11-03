@@ -129,7 +129,7 @@ require(MGC)  # source the package now that it is set up
 vignette("MGC Statistic", package="MGC")  # view one of the basic vignettes
 ```
 
-The package should take approximately 8 seconds with vignettes on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
+The package should take approximately 8 seconds with vignettes on a recommended computer. 
 
 # Demo
 
