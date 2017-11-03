@@ -38,6 +38,8 @@ The `MGC` package requires only a standard computer with enough RAM to support t
 RAM: 16+ GB  
 CPU: 4+ cores, 3.3+ GHz/core
 
+The runtimes below are generated using a computer with the recommended specs (16 GB RAM, 4 cores@3.3 GHz).
+
 ## Software Requirements
 
 ### OS Requirements
