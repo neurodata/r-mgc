@@ -61,6 +61,22 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 install.packages(c('testthat', 'knitr', 'rmarkdown'))
 ```
 
+### Version Documentation
+
+While package versions should not be a problem, the remainder of this tutorial was tested with the following versions of required/optional software:
+
+```
+ggplot2: 2.2.1
+reshape2: 1.4.2
+Rmisc: 1.5
+devtools: 1.13.3
+testthat: 0.2.0
+knitr: 1.17
+rmarkdown: 1.6
+```
+
+If you are having an issue that you believe to be tied to software versioning issues, please drop us an [Issue](https://github.com/neurodata/mgc/issues). 
+
 # Installation Guide
 
 ## No Vignettes
