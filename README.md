@@ -184,7 +184,7 @@ vignette("Discriminability", package="MGC")
 ```
 
 
-# Usage
+# Instructions for Use
 
 ## MGC Usage
 
@@ -209,7 +209,7 @@ with the following statistic:
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
 
-### Instructions for Use
+### Usage
 
 Instructions for usage of the `MGC` statistic can be invoked from the `R` terminal window:
 
