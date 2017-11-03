@@ -68,7 +68,7 @@ discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
   return(discr)
 }
 
-#' Discriminability
+#' Discriminability Statistic
 #'
 #' A function for computing the discriminability from a distance matrix and a set of associated labels.
 #'

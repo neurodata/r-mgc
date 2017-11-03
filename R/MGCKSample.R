@@ -1,3 +1,5 @@
+#' MGC K Sample Testing
+#'
 #' This function tests the equivalence of K distributions using distance-based test including MGC.
 #' Input data from K populations are first transformed into pooled data Z and label vector Y.
 #' then implements test statistics upon distance matrices from each data X and Y.

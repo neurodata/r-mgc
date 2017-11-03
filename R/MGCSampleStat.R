@@ -1,3 +1,5 @@
+#' MGC Sample
+#'
 #' The main function that computes the MGC measure between two datasets:
 #' It first computes all local correlations,
 #' then use the maximal statistic among all local correlations based on thresholding.

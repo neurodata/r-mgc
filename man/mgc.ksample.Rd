@@ -2,9 +2,7 @@
 % Please edit documentation in R/MGCKSample.R
 \name{mgc.ksample}
 \alias{mgc.ksample}
-\title{This function tests the equivalence of K distributions using distance-based test including MGC.
-Input data from K populations are first transformed into pooled data Z and label vector Y.
-then implements test statistics upon distance matrices from each data X and Y.}
+\title{MGC K Sample Testing}
 \usage{
 mgc.ksample(dat, dist = "Euclidean")
 }

@@ -1,3 +1,5 @@
+#' MGC Permutation Test
+#'
 #' The main function that tests independent between two data sets by MGC and permutation test.
 #'
 #' @param X is interpreted as:

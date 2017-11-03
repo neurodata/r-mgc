@@ -2,9 +2,7 @@
 % Please edit documentation in R/MGCSampleStat.R
 \name{mgc.sample}
 \alias{mgc.sample}
-\title{The main function that computes the MGC measure between two datasets:
-It first computes all local correlations,
-then use the maximal statistic among all local correlations based on thresholding.}
+\title{MGC Sample}
 \usage{
 mgc.sample(A, B, option = "mgc")
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/MGCDistTransform.R
 \name{mgc.distTransform}
 \alias{mgc.distTransform}
-\title{Transform the distance matrices, with column-wise ranking if needed.}
+\title{MGC Distance Transform}
 \usage{
 mgc.distTransform(X, Y, option = "mgc", optionRk = TRUE)
 }

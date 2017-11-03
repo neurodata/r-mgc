@@ -2,7 +2,7 @@
 % Please edit documentation in R/MGCLocalCorr.R
 \name{mgc.localcorr}
 \alias{mgc.localcorr}
-\title{Compute all local correlation coefficients in O(n^2 log n)}
+\title{MGC Local Correlations}
 \usage{
 mgc.localcorr(X, Y, option = "mgc")
 }

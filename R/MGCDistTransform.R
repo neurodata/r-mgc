@@ -1,3 +1,5 @@
+#' MGC Distance Transform
+#'
 #' Transform the distance matrices, with column-wise ranking if needed.
 #'
 #' @param X [nxn] is a distance matrix;
