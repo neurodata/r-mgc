@@ -28,7 +28,7 @@ set.seed(12345)
 src_id <- array(1:nsrc)
 labs <- sample(rep(src_id, nobs))
 dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
-discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
+discr.stat(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
 ```
 
 we may find it useful to view the distance matrix, ordered by source label, to show that objects from the same source have a lower distance than objects from a different source:
