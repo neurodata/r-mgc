@@ -9,7 +9,7 @@
 - [Demo](#demo)
     + [MGC](#mgc-demo)
     + [Discriminability](#discriminability-demo)
- - [Usage](#usage)
+ - [Instructions for Use](#instructions-for-use)
     + [MGC](#mgc-usage)
     + [Discriminability](#discriminability-usage)
 - [License](./LICENSE)
@@ -209,7 +209,7 @@ with the following statistic:
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
 
-### Usage
+### Instructions for Use
 
 Instructions for usage of the `MGC` statistic can be invoked from the `R` terminal window:
 
