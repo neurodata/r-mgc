@@ -87,13 +87,12 @@ discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
 #' }
 #' @return discr the discriminability statistic.
 #' @author Eric Bridgeford and Gregory Kiar
-#' @seealso{discr.distance}
 #' @export
-discr.discr <- function(X, ids, thresh=0, verbose=FALSE) {
+discr.stat <- function(X, ids, thresh=0, verbose=FALSE) {
   X <- as.matrix(X)
   # Use the data size and diagonal element to determine if the given data is a distance matrix or not
   if (nrow(X) != ncol(X) | sum(diag(X)^2) > 0){
-    X <- as.matrix(dist(X))
+    X <- discr.distance(X)
   }
   return(discr.mnr(discr.rdf(X, ids), thresh=thresh, output=(verbose)))
 }

@@ -1,10 +1,10 @@
 ---
-title: "MGC Testing"
+title: "MGC Statistic"
 author: "Eric Bridgeford"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{MGC Statistic}
+  %\VignetteIndexEntry{MGC}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
