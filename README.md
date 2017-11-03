@@ -123,8 +123,6 @@ If the user wishes to use the interactive demos (`R` vignettes) or run the tests
 
 ```
 require(devtools)
-install_github('neurodata/mgc')  # install mgc
-require(mgc)  # source the package now that it is set up
 install_github('neurodata/mgc', build_vignettes=TRUE, force=TRUE)  # install mgc with the vignettes
 require(mgc)  # source the package now that it is set up
 vignette("MGC", package="mgc")  # view one of the basic vignettes
@@ -229,7 +227,7 @@ help(mgc.sample)
 which produces the `man` page:
 
 ```
-The main function that computes the MGC measure between two datasets: It first computes all local correlations, then use the maximal statistic among all local correlations based on thresholding.
+MGC Sample
 
 Description
 
@@ -302,13 +300,15 @@ help(discr.stat)
 and shows:
 
 ```
+Discriminability Statistic
+
 Description
 
 A function for computing the discriminability from a distance matrix and a set of associated labels.
 
 Usage
 
-discr.discr(X, ids, thresh = 0, verbose = FALSE)
+discr.stat(X, ids, thresh = 0, verbose = FALSE)
 Arguments
 
 + X	is interpreted as:
