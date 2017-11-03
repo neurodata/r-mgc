@@ -28,13 +28,13 @@ In modern scientific discovery, it is becoming increasingly critical to uncover 
 - [tests](./tests): `R` unit tests written using the `testthat` package.
 - [vignettes](./vignettes): `R` vignettes for R session html help pages.
 
-This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems.
 
 # System Requirements
 
 ## Hardware Requirements
 
-The following tutorial was tested on Ubuntu 16.04.
+
+This package is supported for *Linux*, *Mac OSX*, and *Windows* operating systems. The following tutorial was tested on Ubuntu 16.04.
 
 ## Software Requirements
 
