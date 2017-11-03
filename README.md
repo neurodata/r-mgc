@@ -130,6 +130,7 @@ and is expected  to produce the following result exactly approximately *instanta
 In the below demo, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset, which should run in about 2 seconds:
 
 ```
+require(MGC)
 set.seed(12345)
 res <- mgc.sample(iris[,1], iris[,3])
 mgc.plot.plot_matrix(res$localCorr, title="MGC Corr Map, Sepal Length and Petal Length",
@@ -208,7 +209,6 @@ Here, we assume that we have 5 independent sources of a measurement, and take 10
 
 ```
 require(MGC)
-require(latex2exp)
 
 nsrc <- 5
 nobs <- 10
@@ -231,6 +231,7 @@ which should show approximately *instantaneously*:
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
 ```{r, fig.width=6, fig.height=4}
+require(MGC)
 Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
 mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name="dist(x, y)")
