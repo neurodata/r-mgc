@@ -155,7 +155,7 @@ and is expected  to produce the following result exactly approximately *instanta
 a more interactive demo is provided in the package vignette (if installed):
 
 ```
-vignette("MGC Statistic", package="MGC")
+vignette("MGC", package="MGC")
 ```
 
 
