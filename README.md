@@ -115,7 +115,7 @@ install_github('neurodata/mgc')  # install mgc
 require(mgc)  # source the package now that it is set up
 ```
 
-The package should take approximately 10 seconds on a recommended computer. 
+The package should take approximately 15 seconds on a recommended computer. 
 
 ## Vignettes
 
@@ -128,7 +128,7 @@ require(mgc)  # source the package now that it is set up
 vignette("MGC", package="mgc")  # view one of the basic vignettes
 ```
 
-The package should take approximately 8 seconds with vignettes on a recommended computer. 
+The package should take approximately 20 seconds with vignettes on a recommended computer. 
 
 # Demo
 
