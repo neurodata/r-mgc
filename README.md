@@ -6,10 +6,11 @@
 - [Repo Contents](#repo-contents)
 - [System Requirements](#system-requirements)
 - [Installation Guide](#installation-guide)
-- [Demo](#demo)
+- [Demo and Usage](#demo-usage)
+    + [MGC](#mgc-usage)
+    + [Discriminability](#discriminability-usage)
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
-- [Usage](#usage)
 - [Pseudocode](#pseudocode)
 
 # Overview
@@ -86,9 +87,11 @@ vignette("MGC Statistic", package="MGC")  # view one of the basic vignettes
 
 The package should take approximately 8 seconds with vignettes on a standard computer (4 cores @ 3.3 GHz/core, 16 GB RAM with internet at least 25 Mbps). 
 
-# Demo
+# Demo and Usage
 
-## Simulated Dataset
+## MGC Usage
+
+### Simulated Dataset
 
 The `MGC` demo can be run as follows:
 
@@ -106,14 +109,7 @@ and is expected  to produce the following result exactly approximately *instanta
 0.891153
 ```
 
-a more interactive demo is provided in the package vignette (if installed):
-
-```
-vignette("MGC Statistic", package="MGC")
-```
-
-
-## Real Dataset
+### Real Dataset
 
 In the below demo, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset:
 
@@ -124,11 +120,18 @@ mgc.plot.plot_matrix(res$localCorr, title="MGC Corr Map, Sepal Length and Petal 
     xlab="Sepal Length Neighbors", ylab="Petal Length Neighbors", legend.name = "statMGC")
 ```
 
-![image](https://user-images.githubusercontent.com/8883547/32354581-bb214476-c000-11e7-995e-716e00fd8863.png)
+![image](https://user-images.githubusercontent.com/8883547/32355967-7de64590-c008-11e7-9c3b-e24470fdbdaa.png)
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
 
-# Usage
+
+a more interactive demo is provided in the package vignette (if installed):
+
+```
+vignette("MGC Statistic", package="MGC")
+```
+
+### Usage
 
 Instructions for usage of the `MGC` statistic can be invoked from the `R` terminal window:
 
@@ -173,6 +176,60 @@ Author(s)
 
 C. Shen
 ```
+
+## Discriminability Usage
+
+### Simulated Dataset
+
+Here, we assume that we have 5 independent sources of a measurement, and take 10 measurements from each source. Each measurement source *i = 1:n* is a random variable where measurements taken at the source for the *j*'th dimension is normally distributed with mean *i*.
+
+```
+require(MGC)
+require(latex2exp)
+
+nsrc <- 5
+nobs <- 10
+d <- 20
+src_id <- array(1:nsrc)
+set.seed(12345)
+labs <- sample(rep(src_id, nobs))
+dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=0.5)))
+discr.discr(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 0.5
+```
+
+which should show:
+
+```
+0.9983889
+```
+
+### Real Dataset
+
+Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
+
+```{r, fig.width=6, fig.height=4}
+Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,]))
+
+mgc.plot.plot_matrix(Dx, xlab="Sorted by Species", ylab="Sorted by Species", title="Distance Matrix for Iris Dataset", legend.name="dist(x, y)"))
+```
+
+which produces the following distance matrix. The block structure indicates that the flowers from a particular species have more similar properties (as defined by the euclidian distance) to the flowers in the same species than to flowers of different species:
+
+![image](https://user-images.githubusercontent.com/8883547/32355935-466bf308-c008-11e7-980a-64ac3a1b22da.png)
+
+this is confirmed by the high discriminability statistic:
+
+```
+discr.discr(iris[,c(1,2,3,4)], as.vector(iris$Species))
+```
+
+which should show:
+
+```
+0.9320476
+```
+
+### Usage
 
 The discriminability statistic can be invoked as follows:
 
