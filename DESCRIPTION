@@ -1,27 +1,31 @@
 Package: mgc
 Type: Package
-Title: The Multiscale Generalized Correlation (MGC) Package
-Version: 0.1.0
-Author: Cencheng Shen, Eric Bridgeford, and Shangsi Wang
-Maintainer: The package maintainer <ebridge2@jhu.edu>
-Description: Implements a number of data exploration tasks based on MGC: 
-    computing the correlation measure, test independence via MGC and permutation test,
-    k-sample test via MGC and permutation test (tba), feature screening via MGC (tba). 
-    Applicable to Euclidean data, distance matrices, graphs (tba). Contains extensions
-    to discriminability.
+Title: Multiscale Generalized Correlation (MGC)
+Version: 1.0
+Date: 2017-02-28
+Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
+	   	    email = "ebridge2@jhu.edu"),
+	   	 person("Censheng", "Shen", role="aut",
+	   	        email="cshen6@jhu.edu"),
+	     person("Shangsi", "Wang", role = "aut",
+	            email = "swang127@jhu.edu"),
+	     person("Joshua", "Vogelstein", role = "ths",
+	     	    email = "jovo@jhu.edu"))
+Maintainer: Eric Bridgeford <ebridge2@jhu.edu>
+Description: 
 Depends:
     R (>= 3.4.1),
     SDMTools
 Imports:
-  ggplot2,
-  reshape2,
-  Rmisc,
   stats
 Suggests: testthat,
+  Rmisc,
+  ggplot2,
+  reshape2,
   knitr,
   rmarkdown,
   latex2exp
-License: MIT + file LICENSE
+License: MIT
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
