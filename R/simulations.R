@@ -9,14 +9,12 @@
 #' @param a the lower limit for the range of the data matrix. Defaults to \code{-1}.
 #' @param b the upper limit for the range  of the data matrix. Defaults to \code{1}.
 #' @return a list containing the following:
-#' \itemize{
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
-#' }
 #'
 #' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathcal{R}^d \cross \mathcal{R}}{Linear(X, Y)}, where:
+#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 #' \deqn{Y = w^TX + \kappa \epsilon}{Y = w^T X + \kappa \epsilon}
 #' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
@@ -50,14 +48,12 @@ mgc.sims.linear <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #' @param a the lower limit for the range of the data matrix. Defaults to \code{0}.
 #' @param b the upper limit for the range  of the data matrix. Defaults to \code{3}.
 #' @return a list containing the following:
-#' \itemize{
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
-#' }
 #'
 #' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathcal{R}^d \cross \mathcal{R}}{Linear(X, Y)}, where:
+#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 #' \deqn{Y = e^{w^TX} + \kappa \epsilon}{Y = exp(w^T X) + \kappa \epsilon}
 #' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
@@ -93,14 +89,12 @@ mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
 #' @param c the coefficients for the cubic function, where the first value is the first order coefficient, the second value the quadratic coefficient, and the third the cubic coefficient. Defaults to \code{c(-12, 48, 128)}.
 #' @param s the scaling for the center of the cubic. Defaults to \code{1/3}.
 #' @return a list containing the following:
-#' \itemize{
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
-#' }
 #'
 #' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathcal{R}^d \cross \mathcal{R}}{Linear(X, Y)}, where:
+#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 #' \deqn{Y = c_3\left(w^TX - s\right)^3 + c_2\left(w^TX - s\right)^2 + c_1\left(w^TX - s\right) + \kappa \epsilon}{Y = c[3](w^TX - s)^3 + c[2](w^TX - s)^2 + c[1](w^TX - s) + \kappa \epsilon}
 #' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
@@ -128,12 +122,25 @@ mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=-1, c=c(-12, 48, 128
 #'
 #' A function for Generating a Joint Normal Simulation.
 #'
-#' @import MASS
+#' @importFrom MASS mvrnorm
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
-#' @param eps=0.5 the noise level for the simulation.
-#' @return X [n, d] the data matrix.
-#' @return Y [n] the response array.
+#' @param eps the noise level for the simulation. Defaults to \code{0.5}.
+#' @return a list containing the following:
+#' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+#' \item{\code{Y}}{\code{[n]} the response array.}
+#'
+#' @section Details:
+#' Given: \eqn{\rho = \frac{1}{2}d}{r = 1/2*d}, \eqn{I_d}{Id} is the identity matrix of size \eqn{d \times d}{dxd}, \eqn{J_d}{Jd} is the matrix of ones of size \eqn{d \times d}{dxd}.
+#' Simulates \eqn{n} points from \eqn{Joint-Normal(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}^d}{Joint-Normal(X, Y)}, where:
+#' \deqn{(X, Y) \sim \mathcal{N}(0, \Sigma)}{(X, Y) ~ N(0, E)},
+#' \deqn{\Sigma = \begin{bmatrix}I_d & \rho J_d \\ \rho J_d & (1 + .5\kappa)I_d\end{bmatrix}}{E = [Id, r*Jd; r*Jd, (1+.5K)*Id]}
+#' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+#'
+#' @examples
+#' library(mgc)
+#' result  <- mgc.sims.joint(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.joint <- function(n, d, eps=0.5) {
@@ -143,7 +150,7 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
   Sig <- diag(2*d)
   Sig[(d+1):(2*d), (1:d)] = rho
   Sig[(1:d), (d+1):(2*d)] = rho
-  samp = MASS::mvrnorm(n=n, mu=array(0, dim=c(2*d, 1)), Sigma=Sig)
+  samp = mvrnorm(n=n, mu=array(0, dim=c(2*d, 1)), Sigma=Sig)
   y = samp[, (d+1):(2*d)] + kappa*eps*nu
   x = samp[, 1:d]
   return(list(X=x, Y=y))
@@ -155,12 +162,24 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
-#' @param eps=1 the noise level for the simulation.
-#' @param ind=FALSE whether to sample x and y independently.
-#' @param a=-1 the lower limit for the data matrix.
-#' @param b=1 the upper limit for the data matrix.
-#' @return X [n, d] the data matrix.
-#' @return Y [n] the response array.
+#' @param eps the noise level for the simulation. Defaults to \code{1}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @param a the lower limit for the data matrix. Defaults to \code{-1}.
+#' @param b the upper limit for the data matrix. Defaults to \code{-1}.
+#' @return a list containing the following:
+#' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+#' \item{\code{Y}}{\code{[n]} the response array.}
+#'
+#' @section Details
+#' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+#' Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbb{R}^d\times \mathbb{R}}{Step-Function(X, Y)} where:
+#' \deqn{X \sim \mathcal{U}\left(-1, 1\right)^d}{X ~ U(-1, 1)^d},
+#' \deqn{Y = \mathbb{I}\left\{w^TX > 0\right\} + \epsilon}{Y = I{w^TX > 0} + eps}
+#'
+#' @examples
+#' library(mgc)
+#' result  <- mgc.sims.step(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
@@ -181,12 +200,24 @@ mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
-#' @param eps=0.5 the noise level for the simulation.
-#' @param ind=FALSE whether to sample x and y independently.
-#' @param a=-1 the lower limit for the data matrix.
-#' @param b=1 the upper limit for the data matrix.
-#' @return X [n, d] the data matrix.
-#' @return Y [n] the response array.
+#' @param eps the noise level for the simulation. Defaults to \code{0.5}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @param a the lower limit for the data matrix. Defaults to \code{-1}.
+#' @param b the upper limit for the data matrix. Defaults to \code{1}.
+#' @return a list containing the following:
+#' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+#' \item{\code{Y}}{\code{[n]} the response array.}
+#'
+#' @section Details
+#' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+#' Simulates \code{n} points from \eqn{Quadratic(X, Y) \in \mathbb{R}^d \times \mathbb{R}}{Quadratic(X, Y)} where:
+#' \deqn{X \sim \mathcal{U}(-1, 1)^d}{X ~ U(-1, 1)^d},
+#' \deqn{Y = (w^TX)^2 + 0.5\kappa\epsilon}{Y = (w^TX)^2 + 0.5*K*eps}
+#'
+#' @examples
+#' library(mgc)
+#' result  <- mgc.sims.quad(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
@@ -207,12 +238,25 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
-#' @param eps=0.5 the noise level for the simulation.
-#' @param ind=FALSE whether to sample x and y independently.
-#' @param a=-1 the lower limit for the data matrix.
-#' @param b=1 the upper limit for the data matrix.
-#' @return X [n, d] the data matrix.
-#' @return Y [n] the response array.
+#' @param eps the noise level for the simulation. Defaults to \code{0.5}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @param a the lower limit for the data matrix. Defaults \code{-1}.
+#' @param b the upper limit for the data matrix. Defaults to \code{1}.
+#' @return a list containing the following:
+#' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+#' \item{\code{Y}}{\code{[n]} the response array.}
+#'
+#' @section Details
+#' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+#' Simumlates \eqn{n} points from \eqn{W-shape(X, Y) \in \mathbb{R}^d \times \mathbb{R}}{W-shape(X, Y)} where:
+#' \deqn{U \sim \mathcal{U}(-1, 1)^d},
+#' \deqn{X \sim \mathcal{U}(-1, 1)^d},
+#' \deqn{Y = \left[\left((w^TX)^2 - \frac{1}{2}\right)^2 + \frac{w^TU}{500}\right] + 0.5\kappa \epsilon}{Y = [((w^TX)^2 - 1/2)^2 + w^TU/500] + 0.5*K*eps}
+#'
+#' @examples
+#' library(mgc)
+#' result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
@@ -221,6 +265,41 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
   kappa <- as.numeric(d == 1)
   nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
   y <- 4*(((x%*%w)^2 - 1/2)^2 + u%*%w/500)+ kappa*eps*nu
+  return(list(X=x, Y=y))
+}
+
+#' Spiral
+#'
+#' A function for Generating a Spiral Simulation.
+#'
+#' @param n the number of samples for the simulation.
+#' @param d the number of dimensions for the simulation setting.
+#' @param eps the noise level for the simulation. Defaults to \code{0.5}.
+#' @param a the lower limit for the data matrix. Defaults \code{-1}.
+#' @param b the upper limit for the data matrix. Defaults to \code{1}.
+#' @return a list containing the following:
+#' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+#' \item{\code{Y}}{\code{[n]} the response array.}
+#'
+#' @section Details
+#' Given: \eqn{U \sim \mathcal{U}(a, b)}{U ~ U(a, b)} a random variable.
+#'
+#' @examples
+#' library(mgc)
+#' result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' X <- result$X; Y <- result$Y
+#' @author Eric Bridgeford
+#' @export
+mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
+  u <- gen.x(n, 1, a=a, b=b)
+  x <- array(cos(pi*u), dim=c(n, d))
+  y <- u*sin(pi*u)
+  for (i in 1:(d-1)) {
+    x[, i] <- y*ru[, i]^i
+  }
+  kappa <- as.numeric(d == 1)
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  y <- y + kappa*eps*nu
   return(list(X=x, Y=y))
 }
 
