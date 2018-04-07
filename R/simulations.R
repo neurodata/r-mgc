@@ -311,29 +311,41 @@ mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
 #'
 #' A function for Generating an uncorrelated bernoulli simulation.
 #'
+#' @importFrom MASS mvrnorm
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
 #' @param eps the noise level for the simulation. Defaults to \code{0.5}.
-#' @param a the lower limit for the data matrix. Defaults \code{-1}.
-#' @param b the upper limit for the data matrix. Defaults to \code{1}.
+#' @param p the bernoulli probability.
 #' @return a list containing the following:
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
 #' @section Details
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
-#' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
-#' \deqn{Y = e^{w^TX} + \kappa \epsilon}{Y = exp(w^T X) + \kappa \epsilon}
-#' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
+#' Simulates \eqn{n} points from \eqn{UBern(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{UBern(X, Y)}, where:
+#' \deqn{U \sim \mathcal{B}(p)}{U ~ B(p)}
+#' \deqn{X \sim \mathcal{B}\left(p\right)^d + \epsilon\mathcal{(0, I_d)}}{X ~ B(p)^d + eps*N(0, I_d)}
+#' \deqn{Y = (2U - 1)w^TX + \epsilon}{Y = (2*U-1)w^T*X + 0.5*eps}
 #'
 #' @examples
 #' library(mgc)
-#' result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' result  <- mgc.sims.ubern(n=100, d=10)  # simulate 100 samples in 10 dimensions
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-
+mgc.sims.ubern <- function(n, d, eps=0.5, p=0.5) {
+  U = rbinom(n=n, size=1, prob=p)
+  nu_e1 <- mvrnorm(n=n, mu = array(0, dim=c(d, 1)), Sigma = diag(d))  # gaussian noise
+  X = array(rbinom(n=d*n, size=1, prob=p), dim=c(n, d)) + eps*nu_e1
+  #nu <- rnorm(dim(x)[1], mean=0, sd=1)  # gaussian noise
+  w <- gen.coefs(d)
+  Y <- array(NaN, dim=c(n, 1))
+  nu_e2 <- rnorm(n, mean=0, sd=1)
+  for (i in 1:n) {
+    Y[i] <- (2*U[i] - 1)*w^T %*% X[i,] + eps*nu_e2[i]
+  }
+  return(list(X=X, Y=Y))
+}
 
 #' A helper function to generate a d-dimensional linear transformation matrix.
 gen.coefs <- function(d) {
