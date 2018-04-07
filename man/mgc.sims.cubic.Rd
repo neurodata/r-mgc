@@ -4,28 +4,47 @@
 \alias{mgc.sims.cubic}
 \title{Cubic Simulation}
 \usage{
-mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = -1)
+mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = -1, c = c(-12,
+  48, 128), s = 1/3)
 }
 \arguments{
 \item{n}{the number of samples for the simulation.}
 
 \item{d}{the number of dimensions for the simulation setting.}
 
-\item{eps=80}{the noise level for the simulation.}
+\item{eps}{the noise level for the simulation. Defaults to \code{80}.}
 
-\item{ind=FALSE}{whether to sample x and y independently.}
+\item{ind}{whether to sample x and y independently. Defaults to \code{FALSE}.}
 
-\item{a=-1}{the lower limit for the data matrix.}
+\item{a}{the lower limit for the range of the data matrix. Defaults to \code{-1}.}
 
-\item{b=1}{the upper limit for the data matrix.}
+\item{b}{the upper limit for the range  of the data matrix. Defaults to \code{1}.}
+
+\item{c}{the coefficients for the cubic function, where the first value is the first order coefficient, the second value the quadratic coefficient, and the third the cubic coefficient. Defaults to \code{c(-12, 48, 128)}.}
+
+\item{s}{the scaling for the center of the cubic. Defaults to \code{1/3}.}
 }
 \value{
-X [n, d] the data matrix.
-
-Y [n] the response array.
+a list containing the following:
+\item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+\item{\code{Y}}{\code{[n]} the response array.}
 }
 \description{
 A function for Generating a Cubic Simulation.
+}
+\section{Details}{
+
+Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
+\deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
+\deqn{Y = c_3\left(w^TX - s\right)^3 + c_2\left(w^TX - s\right)^2 + c_1\left(w^TX - s\right) + \kappa \epsilon}{Y = c[3](w^TX - s)^3 + c[2](w^TX - s)^2 + c[1](w^TX - s) + \kappa \epsilon}
+and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+}
+
+\examples{
+library(mgc)
+result  <- mgc.sims.cubic(n=100, d=10)  # simulate 100 samples in 10 dimensions
+X <- result$X; Y <- result$Y
 }
 \author{
 Eric Bridgeford

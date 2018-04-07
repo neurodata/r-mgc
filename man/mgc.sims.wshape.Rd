@@ -20,9 +20,9 @@ mgc.sims.wshape(n, d, eps = 0.5, ind = FALSE, a = -1, b = -1)
 \item{b=1}{the upper limit for the data matrix.}
 }
 \value{
-X [n, d] the data matrix.
-
-Y [n] the response array.
+a list containing the following:
+\item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+\item{\code{Y}}{\code{[n]} the response array.}
 }
 \description{
 A function for Generating a W Simulation.

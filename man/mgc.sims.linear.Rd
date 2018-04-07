@@ -21,23 +21,26 @@ mgc.sims.linear(n, d, eps = 1, ind = FALSE, a = -1, b = -1)
 }
 \value{
 a list containing the following:
-\itemize{
 \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 \item{\code{Y}}{\code{[n]} the response array.}
-}
 }
 \description{
 A function for Generating a Linear Simulation.
 }
 \section{Details}{
 
-\eqn{Linear(X, Y) \in  \mathcal{R}^d \cross \mathcal{R}}{Linear(X, Y)}, where:
+Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 \deqn{Y = w^TX + \kappa \epsilon}{Y = w^T X + \kappa \epsilon}
-and
-\deqn{\kappa = \begin{cases}1 & d = 1 \\ 0 & d > 1\end{cases}}{\kappa = 1 if d = 1, and 0 otherwise}
+and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
 }
 
+\examples{
+library(mgc)
+result  <- mgc.sims.linear(n=100, d=10)  # simulate 100 samples in 10 dimensions
+X <- result$X; Y <- result$Y
+}
 \author{
 Eric Bridgeford
 }

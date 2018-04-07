@@ -1,6 +1,6 @@
 #' Linear Simulation
 #'
-#' A function for Generating a Linear Simulation.
+#' A function for Generating a linear simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -17,7 +17,7 @@
 #' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 #' \deqn{Y = w^TX + \kappa \epsilon}{Y = w^T X + \kappa \epsilon}
-#' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+#' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
 #' @examples
 #' library(mgc)
@@ -39,7 +39,7 @@ mgc.sims.linear <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 
 #' Exponential Simulation
 #'
-#' A function for Generating an Exponential Simulation.
+#' A function for Generating an exponential simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -56,7 +56,7 @@ mgc.sims.linear <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 #' \deqn{Y = e^{w^TX} + \kappa \epsilon}{Y = exp(w^T X) + \kappa \epsilon}
-#' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+#' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
 #' @examples
 #' library(mgc)
@@ -78,7 +78,7 @@ mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
 
 #' Cubic Simulation
 #'
-#' A function for Generating a Cubic Simulation.
+#' A function for Generating a cubic simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -97,7 +97,7 @@ mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
 #' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 #' \deqn{Y = c_3\left(w^TX - s\right)^3 + c_2\left(w^TX - s\right)^2 + c_1\left(w^TX - s\right) + \kappa \epsilon}{Y = c[3](w^TX - s)^3 + c[2](w^TX - s)^2 + c[1](w^TX - s) + \kappa \epsilon}
-#' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+#' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
 #' @examples
 #' library(mgc)
@@ -118,9 +118,9 @@ mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=-1, c=c(-12, 48, 128
   return(list(X=xs, Y=ys))
 }
 
-#' Joint Normal
+#' Joint Normal Simulation
 #'
-#' A function for Generating a Joint Normal Simulation.
+#' A function for Generating a joint-normal simulation.
 #'
 #' @importFrom MASS mvrnorm
 #' @param n the number of samples for the simulation.
@@ -134,8 +134,8 @@ mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=-1, c=c(-12, 48, 128
 #' Given: \eqn{\rho = \frac{1}{2}d}{r = 1/2*d}, \eqn{I_d}{Id} is the identity matrix of size \eqn{d \times d}{dxd}, \eqn{J_d}{Jd} is the matrix of ones of size \eqn{d \times d}{dxd}.
 #' Simulates \eqn{n} points from \eqn{Joint-Normal(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}^d}{Joint-Normal(X, Y)}, where:
 #' \deqn{(X, Y) \sim \mathcal{N}(0, \Sigma)}{(X, Y) ~ N(0, E)},
-#' \deqn{\Sigma = \begin{bmatrix}I_d & \rho J_d \\ \rho J_d & (1 + .5\kappa)I_d\end{bmatrix}}{E = [Id, r*Jd; r*Jd, (1+.5K)*Id]}
-#' and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+#' \deqn{\Sigma = \begin{bmatrix}I_d & \rho J_d \\ \rho J_d & (1 + \epsilon\kappa)I_d\end{bmatrix}}{E = [Id, r*Jd; r*Jd, (1+eps*K)*Id]}
+#' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
 #' @examples
 #' library(mgc)
@@ -156,9 +156,9 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
   return(list(X=x, Y=y))
 }
 
-#' Step Function
+#' Step Function Simulation
 #'
-#' A function for Generating a Step Simulation.
+#' A function for Generating a step function simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -173,7 +173,7 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
 #' @section Details
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbb{R}^d\times \mathbb{R}}{Step-Function(X, Y)} where:
-#' \deqn{X \sim \mathcal{U}\left(-1, 1\right)^d}{X ~ U(-1, 1)^d},
+#' \deqn{X \sim \mathcal{U}\left(a, b\right)^d}{X ~ U(a, b)^d},
 #' \deqn{Y = \mathbb{I}\left\{w^TX > 0\right\} + \epsilon}{Y = I{w^TX > 0} + eps}
 #'
 #' @examples
@@ -194,9 +194,9 @@ mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
   return(list(X=x, Y=y))
 }
 
-#' Quadratic Function
+#' Quadratic Simulation
 #'
-#' A function for Generating a Quadratic Simulation.
+#' A function for Generating a quadratic simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -211,8 +211,8 @@ mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #' @section Details
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simulates \code{n} points from \eqn{Quadratic(X, Y) \in \mathbb{R}^d \times \mathbb{R}}{Quadratic(X, Y)} where:
-#' \deqn{X \sim \mathcal{U}(-1, 1)^d}{X ~ U(-1, 1)^d},
-#' \deqn{Y = (w^TX)^2 + 0.5\kappa\epsilon}{Y = (w^TX)^2 + 0.5*K*eps}
+#' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d},
+#' \deqn{Y = (w^TX)^2 + \kappa\epsilon}{Y = (w^TX)^2 + K*eps}
 #'
 #' @examples
 #' library(mgc)
@@ -232,9 +232,9 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
   return(list(X=x, Y=y))
 }
 
-#' W Shaped Function
+#' W Shaped Simulation
 #'
-#' A function for Generating a W Simulation.
+#' A function for Generating a W-shaped simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -249,9 +249,9 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #' @section Details
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simumlates \eqn{n} points from \eqn{W-shape(X, Y) \in \mathbb{R}^d \times \mathbb{R}}{W-shape(X, Y)} where:
-#' \deqn{U \sim \mathcal{U}(-1, 1)^d},
-#' \deqn{X \sim \mathcal{U}(-1, 1)^d},
-#' \deqn{Y = \left[\left((w^TX)^2 - \frac{1}{2}\right)^2 + \frac{w^TU}{500}\right] + 0.5\kappa \epsilon}{Y = [((w^TX)^2 - 1/2)^2 + w^TU/500] + 0.5*K*eps}
+#' \deqn{U \sim \mathcal{U}(a, b)^d}{U ~ U(a, b)^d},
+#' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d},
+#' \deqn{Y = \left[\left((w^TX)^2 - \frac{1}{2}\right)^2 + \frac{w^TU}{500}\right] + \kappa \epsilon}{Y = [((w^TX)^2 - 1/2)^2 + w^TU/500] + K*eps}
 #'
 #' @examples
 #' library(mgc)
@@ -261,16 +261,17 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #' @export
 mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
   x <- gen.x(n, d, a=a, b=b)
+  w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
-  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  nu <- rnorm(dim(x)[1], mean=0, sd=1)  # gaussian noise
   y <- 4*(((x%*%w)^2 - 1/2)^2 + u%*%w/500)+ kappa*eps*nu
   return(list(X=x, Y=y))
 }
 
-#' Spiral
+#' Spiral Simulation
 #'
-#' A function for Generating a Spiral Simulation.
+#' A function for Generating a spiral simulation.
 #'
 #' @param n the number of samples for the simulation.
 #' @param d the number of dimensions for the simulation setting.
@@ -283,6 +284,8 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #'
 #' @section Details
 #' Given: \eqn{U \sim \mathcal{U}(a, b)}{U ~ U(a, b)} a random variable.
+#' \deqn{X_i = \begin{cases}U\textrm{sin}(\pi U)cos^d(\pi U) & i < d \\ \end{cases}}{Xi = U*cos(pi*U)^d if i = d, and Usin(pi*U)*cos(pi*U)^d otherwise}
+#' \deqn{Y = U\textrm{sin}(\pi U) + \epsilon p}{Y = U*sin(pi*U) + eps*p}
 #'
 #' @examples
 #' library(mgc)
@@ -297,11 +300,40 @@ mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
   for (i in 1:(d-1)) {
     x[, i] <- y*ru[, i]^i
   }
+  x[, d] <- u*ru[, d]
   kappa <- as.numeric(d == 1)
-  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
-  y <- y + kappa*eps*nu
+  nu <- rnorm(dim(x)[1], mean=0, sd=1)  # gaussian noise
+  y <- y + eps*d*nu
   return(list(X=x, Y=y))
 }
+
+#' Uncorrelated Bernoulli Simulation
+#'
+#' A function for Generating an uncorrelated bernoulli simulation.
+#'
+#' @param n the number of samples for the simulation.
+#' @param d the number of dimensions for the simulation setting.
+#' @param eps the noise level for the simulation. Defaults to \code{0.5}.
+#' @param a the lower limit for the data matrix. Defaults \code{-1}.
+#' @param b the upper limit for the data matrix. Defaults to \code{1}.
+#' @return a list containing the following:
+#' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+#' \item{\code{Y}}{\code{[n]} the response array.}
+#'
+#' @section Details
+#' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+#' Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
+#' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
+#' \deqn{Y = e^{w^TX} + \kappa \epsilon}{Y = exp(w^T X) + \kappa \epsilon}
+#' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
+#'
+#' @examples
+#' library(mgc)
+#' result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' X <- result$X; Y <- result$Y
+#' @author Eric Bridgeford
+#' @export
+
 
 #' A helper function to generate a d-dimensional linear transformation matrix.
 gen.coefs <- function(d) {

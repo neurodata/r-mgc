@@ -14,13 +14,22 @@ mgc.sims.joint(n, d, eps = 0.5)
 \item{eps=0.5}{the noise level for the simulation.}
 }
 \value{
-X [n, d] the data matrix.
-
-Y [n] the response array.
+a list containing the following:
+\item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
+\item{\code{Y}}{\code{[n]} the response array.}
 }
 \description{
 A function for Generating a Joint Normal Simulation.
 }
+\section{Details}{
+
+Given: \eqn{\rho = \frac{1}{2}d}{r = 1/2*d}, \eqn{I_d}{Id} is the identity matrix of size \eqn{d \times d}{dxd}, \eqn{J_d}{Jd} is the matrix of ones of size \eqn{d \times d}{dxd}.
+Simulates \eqn{n} points from \eqn{Joint-Normal(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}^d}{Joint-Normal(X, Y)}, where:
+\deqn{(X, Y) \sim \mathcal{N}(0, \Sigma)}{(X, Y) ~ N(0, E)},
+\deqn{\Sigma = \begin{bmatrix}I_d & \rho J_d \\ \rho J_d & (1 + .5\kappa)I_d\end{bmatrix}}{E = [Id, r*Jd; r*Jd, (1+.5K)*Id]}
+and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+}
+
 \author{
 Eric Bridgeford
 }
