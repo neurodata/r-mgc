@@ -15,7 +15,7 @@
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
 - [Pseudocode](#pseudocode)
-- [Matlab code](https://github.com/neurodata-papers/MGC/tree/master/Code/MGC)
+- [Matlab code](https://github.com/neurodata/mgc-paper/tree/master/Code/MGC)
 
 # Overview
 
