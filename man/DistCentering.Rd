@@ -7,18 +7,16 @@
 DistCentering(X, option, optionRk)
 }
 \arguments{
-\item{X}{is a symmetric distance matrix;}
+\item{X}{is a symmetric distance matrix}
 
-\item{option}{is a string that specifies which global correlation to build up-on, including 'mgc','dcor','mantel', and 'rank';}
+\item{option}{is a string that specifies which global correlation to build up-on, including 'mgc','dcor','mantel', and 'rank'}
 
 \item{optionRk}{is a string that specifies whether ranking within column is computed or not.}
 }
 \value{
-A list contains the following output:
-
-A is the centered distance matrices;
-
-RX is the column rank matrices of X.
+A list contains the following:
+\item{\code{A}}{is the centered distance matrices}
+\item{\code{RX}}{is the column rank matrices of X.}
 }
 \description{
 An auxiliary function that properly transforms the distance matrix X

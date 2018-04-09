@@ -30,7 +30,7 @@ a list containing the following:
 \item{\code{Y}}{\code{[n]} the response array.}
 }
 \description{
-A function for Generating a Cubic Simulation.
+A function for Generating a cubic simulation.
 }
 \section{Details}{
 
@@ -38,7 +38,7 @@ Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with t
 Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 \deqn{Y = c_3\left(w^TX - s\right)^3 + c_2\left(w^TX - s\right)^2 + c_1\left(w^TX - s\right) + \kappa \epsilon}{Y = c[3](w^TX - s)^3 + c[2](w^TX - s)^2 + c[1](w^TX - s) + \kappa \epsilon}
-and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 }
 
 \examples{

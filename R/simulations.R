@@ -25,14 +25,14 @@
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.linear <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
-  x <- gen.x(n, d, a=a, b=b)
+mgc.sims.linear <- function(n, d, eps=1, ind=FALSE, a=-1, b=1) {
+  xs <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
   ys <- xs%*%w + kappa*eps*nu  # y = xA + nu
   if (ind) {
-    xs <- gen.x(n, d)
+    xs <- gen.x(n, d, a=a, b=b)
   }
   return(list(X=xs, Y=ys))
 }
@@ -65,13 +65,13 @@ mgc.sims.linear <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
-  x <- gen.x(n, d, a=a, b=b)
+  xs <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
   ys <- exp(xs%*%w) + kappa*eps*nu  # y = exp(xA) + nu
   if (ind) {
-    xs <- gen.x(n, d)
+    xs <- gen.x(n, d, a=a, b=b)
   }
   return(list(X=xs, Y=ys))
 }
@@ -105,15 +105,15 @@ mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=-1, c=c(-12, 48, 128), s=1/3) {
-  x <- gen.x(n, d, a=a, b=b)
+mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=1, c=c(-12, 48, 128), s=1/3) {
+  xs <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
   xw = xs%*%w
   ys <- c[3]*(xw - s)^3 + c[2]*(xw - s)^2 + c[1]*(xw - s) + eps*kappa*nu
   if (ind) {
-    xs <- gen.x(n, d)
+    xs <- gen.x(n, d, a=a, b=b)
   }
   return(list(X=xs, Y=ys))
 }
@@ -170,7 +170,7 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
-#' @section Details
+#' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbb{R}^d\times \mathbb{R}}{Step-Function(X, Y)} where:
 #' \deqn{X \sim \mathcal{U}\left(a, b\right)^d}{X ~ U(a, b)^d},
@@ -182,16 +182,16 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
-  x <- gen.x(n, d, a=a, b=b)
+mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=1) {
+  xs <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
-  y <- as.numeric(x%*%w > 0) + eps*kappa*nu
+  y <- as.numeric(xs%*%w > 0) + eps*kappa*nu
   if (ind) {
-    xs <- gen.x(n, d)
+    xs <- gen.x(n, d, a=a, b=b)
   }
-  return(list(X=x, Y=y))
+  return(list(X=xs, Y=y))
 }
 
 #' Quadratic Simulation
@@ -208,7 +208,7 @@ mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
-#' @section Details
+#' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simulates \code{n} points from \eqn{Quadratic(X, Y) \in \mathbb{R}^d \times \mathbb{R}}{Quadratic(X, Y)} where:
 #' \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d},
@@ -220,16 +220,16 @@ mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=-1) {
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
-  x <- gen.x(n, d, a=a, b=b)
+mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
+  xs <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
-  y <- (x%*%w)^2 + eps*kappa*nu
+  y <- (xs%*%w)^2 + eps*kappa*nu
   if (ind) {
-    xs <- gen.x(n, d)
+    xs <- gen.x(n, d, a=a, b=b)
   }
-  return(list(X=x, Y=y))
+  return(list(X=xs, Y=y))
 }
 
 #' W Shaped Simulation
@@ -246,7 +246,7 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
-#' @section Details
+#' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simumlates \eqn{n} points from \eqn{W-shape(X, Y) \in \mathbb{R}^d \times \mathbb{R}}{W-shape(X, Y)} where:
 #' \deqn{U \sim \mathcal{U}(a, b)^d}{U ~ U(a, b)^d},
@@ -259,13 +259,16 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
+mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
   x <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
   nu <- rnorm(dim(x)[1], mean=0, sd=1)  # gaussian noise
-  y <- 4*(((x%*%w)^2 - 1/2)^2 + u%*%w/500)+ kappa*eps*nu
+  y <- 4*(((x%*%w)^2 - 1/2)^2 + u%*%w/500) + kappa*eps*nu
+  if (ind) {
+    x <- gen.x(n, d, a=a, b=b)
+  }
   return(list(X=x, Y=y))
 }
 
@@ -282,7 +285,7 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=-1) {
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
-#' @section Details
+#' @section Details:
 #' Given: \eqn{U \sim \mathcal{U}(a, b)}{U ~ U(a, b)} a random variable.
 #' \deqn{X_i = \begin{cases}U\textrm{sin}(\pi U)cos^d(\pi U) & i < d \\ \end{cases}}{Xi = U*cos(pi*U)^d if i = d, and Usin(pi*U)*cos(pi*U)^d otherwise}
 #' \deqn{Y = U\textrm{sin}(\pi U) + \epsilon p}{Y = U*sin(pi*U) + eps*p}
@@ -320,7 +323,7 @@ mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
-#' @section Details
+#' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
 #' Simulates \eqn{n} points from \eqn{UBern(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{UBern(X, Y)}, where:
 #' \deqn{U \sim \mathcal{B}(p)}{U ~ B(p)}
@@ -354,7 +357,7 @@ gen.coefs <- function(d) {
 }
 
 #' A helper function to generate n samples of a d-dimensional uniform vector.
-gen.x <- function(n, d, a=-1, b=-1) {
+gen.x <- function(n, d, a=-1, b=1) {
   x <- as.array(replicate(d, runif(n, a, b)))
   return(t(t(x)))
 }

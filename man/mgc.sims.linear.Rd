@@ -25,7 +25,7 @@ a list containing the following:
 \item{\code{Y}}{\code{[n]} the response array.}
 }
 \description{
-A function for Generating a Linear Simulation.
+A function for Generating a linear simulation.
 }
 \section{Details}{
 
@@ -33,7 +33,7 @@ Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with t
 Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
 \deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
 \deqn{Y = w^TX + \kappa \epsilon}{Y = w^T X + \kappa \epsilon}
-and \eqn{\kappa = 1 if d = 1, and 0 otherwise} controls the noise for higher dimensions.
+and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 }
 
 \examples{

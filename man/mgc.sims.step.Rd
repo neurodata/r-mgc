@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulations.R
 \name{mgc.sims.step}
 \alias{mgc.sims.step}
-\title{Step Function}
+\title{Step Function Simulation}
 \usage{
 mgc.sims.step(n, d, eps = 1, ind = FALSE, a = -1, b = -1)
 }
@@ -11,13 +11,13 @@ mgc.sims.step(n, d, eps = 1, ind = FALSE, a = -1, b = -1)
 
 \item{d}{the number of dimensions for the simulation setting.}
 
-\item{eps=1}{the noise level for the simulation.}
+\item{eps}{the noise level for the simulation. Defaults to \code{1}.}
 
-\item{ind=FALSE}{whether to sample x and y independently.}
+\item{ind}{whether to sample x and y independently. Defaults to \code{FALSE}.}
 
-\item{a=-1}{the lower limit for the data matrix.}
+\item{a}{the lower limit for the data matrix. Defaults to \code{-1}.}
 
-\item{b=1}{the upper limit for the data matrix.}
+\item{b}{the upper limit for the data matrix. Defaults to \code{-1}.}
 }
 \value{
 a list containing the following:
@@ -25,7 +25,20 @@ a list containing the following:
 \item{\code{Y}}{\code{[n]} the response array.}
 }
 \description{
-A function for Generating a Step Simulation.
+A function for Generating a step function simulation.
+}
+\section{Details}{
+
+Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
+Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbb{R}^d\times \mathbb{R}}{Step-Function(X, Y)} where:
+\deqn{X \sim \mathcal{U}\left(a, b\right)^d}{X ~ U(a, b)^d},
+\deqn{Y = \mathbb{I}\left\{w^TX > 0\right\} + \epsilon}{Y = I{w^TX > 0} + eps}
+}
+
+\examples{
+library(mgc)
+result  <- mgc.sims.step(n=100, d=10)  # simulate 100 samples in 10 dimensions
+X <- result$X; Y <- result$Y
 }
 \author{
 Eric Bridgeford

@@ -7,11 +7,11 @@
 Thresholding(localCorr, m, n, sz)
 }
 \arguments{
-\item{localCorr}{is all local correlations;}
+\item{localCorr}{is all local correlations}
 
-\item{m}{is the number of rows of localCorr;}
+\item{m}{is the number of rows of localCorr}
 
-\item{n}{is the number of columns of localCorr;}
+\item{n}{is the number of columns of localCorr}
 
 \item{sz}{is the sample size of original data (which may not equal m or n in case of repeating data).}
 }

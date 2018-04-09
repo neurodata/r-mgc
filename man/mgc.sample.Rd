@@ -9,30 +9,29 @@ mgc.sample(A, B, option = "mgc")
 \arguments{
 \item{A}{is interpreted as:
 \describe{
-   \item{a [nxn] distance matrix}{A is a square matrix with zeros on diagonal}
-   \item{a [nxd] data matrix}{Otherwise}
+   \item{a \code{[nxn]} distance matrix}{A is a square matrix with zeros on diagonal}
+   \item{a \code{[nxd]} data matrix}{Otherwise}
 }}
 
 \item{B}{is interpreted as:
 \describe{
-   \item{a [nxn] distance matrix}{B is a square matrix with zeros on diagonal}
-   \item{a [nxd] data matrix}{Otherwise}
+   \item{a \code{[nxn]} distance matrix}{A is a square matrix with zeros on diagonal}
+   \item{a \code{[nxd]} data matrix}{Otherwise}
 }}
 
-\item{option='mgc'}{is a string that specifies which global correlation to build up-on.
+\item{mgc}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
 \describe{
-   \item{'mgc'}{use the MGC global correlation.}
-   \item{'dcor'}{use the dcor global correlation.}
-   \item{'mantel'}{use the mantel global correlation.}
-   \item{'rank'}{use the rank global correlation.}
+   \item{\code{'mgc'}}{use the MGC global correlation.}
+   \item{\code{'dcor'}}{use the dcor global correlation.}
+   \item{\code{'mantel'}}{use the mantel global correlation.}
+   \item{\code{'rank'}}{use the rank global correlation.}
 }}
 }
 \value{
-statMGC is the sample MGC statistic within [-1,1];
-
-localCorr consists of all local correlations by double matrix index;
-
-optimalScale the estimated optimal scale in matrix single index.
+A list containing the following:
+\item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
+\item{\code{localCorr}}{consists of all local correlations by double matrix index}
+\item{\code{optimalScale}}{the estimated optimal scale in matrix single index.}
 }
 \description{
 The main function that computes the MGC measure between two datasets:

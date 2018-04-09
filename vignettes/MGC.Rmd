@@ -19,8 +19,6 @@ Here, we Define $X \sim Unif(-1, 1)$, where $x \in \mathbb{R}^n$ is $n$ samples 
 
 ```{r, fig.width=5, fig.height=5}
 library(mgc)
-require(ggplot2)
-require(latex2exp)
 
 n = 50  # 50 samples
 d = 1  # simple 1-d case
@@ -51,7 +49,7 @@ Xd = dist(x, diag=TRUE, upper=TRUE)
 Yd = dist(y, diag=TRUE, upper=TRUE)
 ```
 
-and finally, visualize the results of the `MGC` with 100 permutation replicates:
+and finally, visualize the `MGC` image with 100 permutation replicates:
 ```{r, fig.width=6, fig.height=4}
 res <- mgc.test(Xd, Yd, rep=100)  # 100 permutations test
 mgc.plot.plot_matrix(res$localCorr, xlabel=TeX("k"), ylabel=TeX("l"), title = TeX("Local $p$-values for Linear Dependence"), legend.name=TeX("p"))  # plot local p-values

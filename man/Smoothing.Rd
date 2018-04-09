@@ -3,29 +3,27 @@
 \name{Smoothing}
 \alias{Smoothing}
 \title{An auxiliary function that finds the smoothed maximal within the significant region R:
-If area of R is too small, return the last local corr; otherwise take the maximum within R.}
+If area of R is too small, return the last local corr otherwise take the maximum within R.}
 \usage{
 Smoothing(localCorr, m, n, R)
 }
 \arguments{
-\item{localCorr}{is all local correlations;}
+\item{localCorr}{is all local correlations}
 
-\item{m}{is the number of rows of localCorr;}
+\item{m}{is the number of rows of localCorr}
 
-\item{n}{is the number of columns of localCorr;}
+\item{n}{is the number of columns of localCorr}
 
 \item{R}{is a binary matrix of size m by n indicating the significant region.}
 }
 \value{
-A list contains the following output:
-
-statMGC is the sample MGC statistic within [-1,1];
-
-optimalScale the estimated optimal scale in matrix single index.
+A list contains the following:
+\item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
+\item{\code{optimalScale}}{the estimated optimal scale in matrix single index.}
 }
 \description{
 An auxiliary function that finds the smoothed maximal within the significant region R:
-If area of R is too small, return the last local corr; otherwise take the maximum within R.
+If area of R is too small, return the last local corr otherwise take the maximum within R.
 }
 \author{
 C. Shen

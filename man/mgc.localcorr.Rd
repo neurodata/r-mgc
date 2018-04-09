@@ -8,15 +8,15 @@ mgc.localcorr(X, Y, option = "mgc")
 }
 \arguments{
 \item{X}{is interpreted as:
-\describe{
-   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
-}}
+\itemize{
+   \item{\code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal}
+   \item{\code{[n x d]} data matrix}{Otherwise}
+ }}
 
 \item{Y}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{\code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal}
+   \item{\code{[n x d]} data matrix}{Otherwise}
 }}
 
 \item{option='mgc'}{is a string that specifies which global correlation to build up-on.
@@ -28,11 +28,10 @@ mgc.localcorr(X, Y, option = "mgc")
 }}
 }
 \value{
-A list contains the following output:
-
-corr consists of all local correlations within [-1,1] by double matrix index;
-
-varX contains all local variances for X; varY contains all local covariances for Y.
+A list contains the following:
+\item{\code{corr}}{consists of all local correlations within [-1,1] by double matrix index}
+\item{\code{varX}}{contains all local variances for X.}
+\item{\code{varY}}{contains all local variances for X.}
 }
 \description{
 Compute all local correlation coefficients in O(n^2 log n)
