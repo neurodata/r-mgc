@@ -6,10 +6,10 @@
 \usage{
 mgc.plot.plot_matrix(mtx, title = "", xlabel = "", ylabel = "",
   legend.name = "metric", legend.show = TRUE, font.size = 12,
-  limits = NaN)
+  limits = NaN, vfactor = FALSE, ffactor = FALSE)
 }
 \arguments{
-\item{mtx}{[nroi, nroi] or [nt, nroi]: the input. Can either be a square matrix of featuresxfeatures, or a data matrix of observationsxfeatures.}
+\item{mtx}{[n, n] or [n, d]: the input. Can either be a square matrix or a data matrix.}
 
 \item{title="":}{the title for the square plot.}
 
@@ -22,6 +22,12 @@ mgc.plot.plot_matrix(mtx, title = "", xlabel = "", ylabel = "",
 \item{legend.show=TRUE:}{whether to show the legend on the plot.}
 
 \item{font.size=12:}{the default font size for the plot text. Axis/legend text is font.size - 2.}
+
+\item{limits=NaN}{if the limits are not specified, limits are c(min(mtx), max(mtx)) for color fill.}
+
+\item{vfactor=FALSE}{if TRUE, interpret the vertex labels as a factor.}
+
+\item{ffactor=FALSE}{if TRUE, interpret the fill colors as a factor.}
 }
 \description{
 A function that plots a matrix.

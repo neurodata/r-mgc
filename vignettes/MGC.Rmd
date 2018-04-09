@@ -52,15 +52,16 @@ Yd = dist(y, diag=TRUE, upper=TRUE)
 ```
 
 and finally, visualize the results of the `MGC` with 100 permutation replicates:
+
 ```{r, fig.width=6, fig.height=4}
+set.seed(12345)
 res <- mgc.test(Xd, Yd, rep=100)  # 100 permutations test
-mgc.plot.plot_matrix(res$localCorr, xlabel=TeX("k"), ylabel=TeX("l"), title = TeX("Local $p$-values for Linear Dependence"), legend.name=TeX("p"))  # plot local p-values
+mgc.plot.plot_mgc(res$localCorr, title = TeX("Local $p$-values for Linear Dependence"), legend.name=TeX("$p$"))  # plot local p-values
 print(res$optimalScale)
 print(res$statMGC)
 ```
 
 As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between $x$ and $y$, and as we can see in the local $p$-values plot, $k=n=50$ and $l=n=50$ (scale 2500) shows the best $p$.
-
 
 ## Real Data
 
@@ -69,9 +70,9 @@ In the below demo, we show the result of `MGC` to determine the relationship bet
 
 ```{r, fig.width=6, fig.height=4}
 set.seed(12345)
-res <- mgc.sample(iris[,1], iris[,3])
-mgc.plot.plot_matrix(res$localCorr, title="MGC Corr Map, Sepal Length and Petal Length",
-    xlab="Sepal Length Neighbors", ylab="Petal Length Neighbors", legend.name = "statMGC")
+res <- mgc.test(iris[,1], iris[,3], rep=100)  # note that we can pass our data or a custom distance matrix
+mgc.plot.plot_mgc(res$localCorr, title="MGC Corr Map, Sepal Length and Petal Length",
+    xlab="Sepal Length Neighbors", ylab="Petal Length Neighbors")
 print(res$statMGC)
 ```
 

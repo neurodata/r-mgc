@@ -16,11 +16,12 @@ Imports:
   ggplot2,
   reshape2,
   Rmisc,
-  stats
-Suggests: testthat,
+  stats,
+  latex2exp,
   knitr,
   rmarkdown,
-  latex2exp
+  MASS
+Suggests: testthat
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

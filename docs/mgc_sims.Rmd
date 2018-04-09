@@ -13,47 +13,438 @@ In this experiment, we will take a look at the 20 canonical simulations analyzed
 
 # Simulations
 
-In the below simulations, we let each dimension $i$ be uniformly distributed $X_i \sim Unif(-1, 1)$, and $x_i$ is $n$ samples for the $i^{th}$ dimension,  then $x \in \mathbb{R}^{n \times D}$. $A$ is a decaying vector where $A_i = \frac{1}{i}$, $A \in \mathbb{R}^D$. $\nu_i$ is the error for each measurement and is sampled from the RV $E \sim \mathcal{N}(0, \epsilon I_n)$. Below, we let $\kappa = \mathbb{I}\left{D = 1\right}$. 
+In the below simulations, $x$ is a random matrix with $x \in \mathbb{R}^{n times D}$. $w$ is a decaying vector where $w_i = \frac{1}{i}$, $w \in \mathbb{R}^D$. $\nu$ is the error of each measurement, where $\nu \sim \mathcal{N}(0, I_n)$. Finally, we let $\kappa = \mathbb{I}\left{D = 1\right}$, or the indicator of whether we are in higher dimensions. 
 
 ```{r}
+library(mgc)
+require(ggplot2)
+require(latex2exp)
+
 gen.coefs <- function(d) {
-  A = as.array(1/1:d, dim=c(d, 1))
-  return(A)
+  w = as.array(1/1:d, dim=c(d, 1))
+  return(w)
 }
 
-gen.x <- function(n, d) {
-  x <- as.array(replicate(d, runif(n, -1, 1)))
+gen.x <- function(n, d, a=-1, b=1) {
+  x <- as.array(replicate(d, runif(n, a, b)))
   return(t(t(x)))
 }
 
-plot.one_d <- function(x, y, title="", eqn="") {
+plot.one_d <- function(x, y, title="", xlab="x", ylab="") {
   dat = data.frame(x=x, y=y)
   ggplot(dat, aes(x=x, y=y)) +
     geom_point() +
-    xlab("x") +
-    ylab(eqn) +
-    ggtitle(sprintf("1-D Simulated %s", title))
+    xlab(xlab) +
+    ylab(ylab) +
+    ggtitle(sprintf("Simulated %s", title))
 }
 
-plot.mgc_result <- function(res, title="") {
-  mgc.plot.plot_matrix(res$localCorr, title=TeX(sprintf("%s Corr Map, statMGC=%.3f", title, res$statMGC)), xlabel = "l, X neighbors", ylabel = "k, Y neighbors",
-                      legend.name="statMGC")
+plot.mgc_result <- function(res, title="", limits=NaN) {
+  mgc.plot.plot_matrix(res$localCorr, title=TeX(sprintf("%s Corr Map, statMGC=%.3f", title, res$statMGC)),
+                       xlabel = "k, X neighbors", ylabel = "l, Y neighbors",
+                       legend.name="statMGC", limits=limits)
 }
 
 ld <- 1  # low dimensional simulations are in 1 dimension
 hd <- 50  # high dimensional simulations are in 50 dimensions
 
-ln <- 100  # low dimensional simulations have 100 samples
-hn <- 250  # high dimensional simulations have 250 samples
+ln <- 200  # low dimensional simulations have 100 samples
+hn <- 500  # high dimensional simulations have 250 samples
 ```
 
 ## Linear Relationship
 
-For our linear simulations, we allow a linear dependence of $y$ on $x$ with error of variance $\epsilon$, and $\nu$ is the per-sample residual:
+For our linear simulations:
 
 \begin{align*}
-y = xA + \Kappa\nu \\
-s_{\nu} = \epsilon
+x \sim Unif(-1, 1)^D \\
+y = w^Tx + \kappa\epsilon\nu
+\end{align*}
+
+and we let $\epsilon = 1$.
+
+### 1 Dimensional
+
+```{r}
+
+gen.y.linear <- function(x, w, eps) {
+  dims <- dim(x)
+  n <- dims[1]
+  d <- dims[2]
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  return(x%*%w + kappa*eps*nu)  # y = xA + nu
+}
+
+eps <- 1
+xld <- gen.x(ln, ld)
+wld <- gen.coefs(ld)
+yld <- gen.y.linear(xld, wld, eps)
+
+simn <- "Linear Relationship 1-D"
+plot.one_d(xld, yld, title=simn, ylab=TeX("$y = xw + \\nu$"))
+```
+
+We obtain a Linear Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $50$ dimensions:
+
+```{r}
+hd <- 1000
+simn <- "Linear Relationship HD"
+xhd <- gen.x(hn, hd)
+whd <- gen.coefs(hd)
+yhd <- gen.y.linear(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
+## Exponential
+
+For our exponential simulations:
+
+\begin{align*}
+x &\sim Unif(0, 3)^D \\
+y &= e^{w^Tx} + 10\kappa\epsilon\nu
+\end{align*}
+
+and we let $\epsilon = 10$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  dims <- dim(x)
+  n <- dims[1]
+  d <- dims[2]
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  return(exp(x%*%w) + kappa*eps*nu)  # y = exp(xA) + nu
+}
+
+eps <- 10
+a <- 0
+b <- 3
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Exponential Relationship 1-D"
+plot.one_d(xld, yld, title=simn, ylab=TeX("$y = e^{xA} + \\nu$"))
+```
+
+We obtain a Linear Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Exponential Relationship HD"
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn, limits=limshd)
+```
+
+## Cubic
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+x &\sim Unif(-1, 1)^D
+y &= 128\left(w^Tx - \frac{1}{3}\right)^3 + 48\left(w^Tx - \frac{1}{3}\right)^2 - 12\left(w^Tx - \frac{1}{3}\right) + \kappa\epsilon\nu
+\end{align*}
+
+and we let $\epsilon = 80$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.cubic <- function(x, w, eps) {
+  dims <- dim(x)
+  n <- dims[1]
+  d <- dims[2]
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + eps*kappa*nu)
+}
+
+eps <- 80
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.cubic(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, ylab=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.cubic(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
+## Joint Normal
+
+For our joint normal simulations, we let $\rho = \frac{1}{2}D$, $J_D$ be the ones matrix where $J_D \in \mathbb{R}^{D \times D}$, then:
+
+\begin{align*}
+  (x, y) &\sim \mathcal{N}(0, \Sigma) \\
+  \Sigma &= \begin{bmatrix}
+  I_D & \rho J_D \\ \rho J_D & (1 + \eps \kappa) I_D
+  \end{bmatrix}
+\end{align*}
+
+and we let $\epsilon = 0.5$.
+
+### 1 Dimensional
+
+```{r}
+require(MASS)
+gen.xy.joint_norm <- function(n, d, eps) {
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  rho = 1/(2*d)
+  Sig <- diag(2*d)
+  Sig[(d+1):(2*d), (1:d)] = rho
+  Sig[(1:d), (d+1):(2*d)] = rho
+  samp = mvrnorm(n=n, mu=array(0, dim=c(2*d, 1)), Sigma=Sig)
+  y = samp[, (d+1):(2*d)] + kappa*eps*nu
+  x = samp[, 1:d]
+  return(list(x=x, y=y))
+}
+
+eps <- 0.5
+vals <- gen.xy.joint_norm(ln, ld, eps)
+xld <- vals$x
+yld <- vals$y
+
+simn <- "Joint-Normal 1-D"
+plot.one_d(xld, yld, title=simn, xlab="x", ylab="y")
+```
+We obtain a Joint Normal Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $10$ dimensions:
+
+```{r}
+hd <- 10
+simn <- "Joint-Normal Relationship HD"
+vals <- gen.xy.joint_norm(hn, hd, eps)
+xhd <- vals$x
+yhd <- vals$y
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn, limits=limshd)
+```
+
+## Step Function
+
+For our cubic simulations:
+
+\begin{align*}
+x &\sim Unif(-1, 1)^D \\
+y &= \mathbb{I}\left\{w^Tx > 0\right\} + \kappa\epsilon\nu
+\end{align*}
+
+and we let $\epsilon = 1$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.step <- function(x, w, eps) {
+  dims <- dim(x)
+  n <- dims[1]
+  d <- dims[2]
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  return(as.numeric(x%*%w > 0) + eps*kappa*nu)
+}
+
+eps <- 1
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.step(xld, wld, eps)
+
+simn <- "Step Relationship 1-D"
+plot.one_d(xld, yld, title=simn, ylab=TeX("$y=\\mathbb{I}\\left\\{w^Tx > 0\\right\\} + \\nu"))
+```
+We obtain a Stepwise Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $20$ dimensions:
+
+```{r}
+hd <- 20
+simn <- "Step Relationship HD"
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.step(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
+## Quadratic
+
+For our qudratic simulations:
+
+\begin{align*}
+x &\sim Unif(-1, 1)^D \\
+y &= (w^Tx)^2 + \kappa\epsilon\nu
+\end{align*}
+
+where $\epsilon = 0.5$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.quad <- function(x, w, eps) {
+  dims <- dim(x)
+  n <- dims[1]
+  d <- dims[2]
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  return((x%*%w)^2 + eps*kappa*nu)
+}
+
+eps <- 0.5
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.quad(xld, wld, eps)
+
+simn <- "Quad Relationship 1-D"
+plot.one_d(xld, yld, title=simn, ylab=TeX("$y = (w^Tx)^2 + 0.5 \\nu"))
+```
+We obtain a Quadratic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $20$ dimensions:
+
+```{r}
+hd <- 20
+simn <- "Quad Relationship HD"
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.quad(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
+## W shape
+
+For our w shape:
+
+\begin{align*}
+x, u &\sim Unif(-1, 1)^D \\
+y &= 4\left[\left((w^Tx)^2 - \frac{1}{2}\right)^2 + \frac{w^Tu}{500}\right] + \kappa \epsilon \nu
+\end{align*}
+
+and we let $\epsilon = 0.5$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.wshape <- function(x, w, u, eps) {
+  dims <- dim(x)
+  n <- dims[1]
+  d <- dims[2]
+  nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
+  kappa <- as.numeric(d == 1)
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  return(4*(((x%*%w)^2 - 1/2)^2 + u%*%w/500)+ kappa*eps*nu)
+}
+
+eps <- 0.5
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+uld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.wshape(xld, wld, uld, eps)
+
+simn <- "W Relationship 1-D"
+plot.one_d(xld, yld, title=simn, ylab=TeX("$y = 4\\left[\\left((w^Tx)^2 - \\frac{1}{2}\\right)^2 + \\frac{w^Tu}{500}\\right] + \\kappa \\epsilon \\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $20$ dimensions:
+
+```{r}
+hd <- 20
+simn <- "W Relationship HD"
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
+## Spiral
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
 \end{align*}
 
 and we let $\epsilon = 0.2$.
@@ -61,22 +452,23 @@ and we let $\epsilon = 0.2$.
 ### 1 Dimensional
 
 ```{r}
-
-gen.y.linear <- function(x, A, eps) {
-  er <- rnorm(n, mean=0, sd=1)
-  return(x%*%A + eps*er)  # y = xA + nu  
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
 }
 
 eps <- 0.2
-xld <- gen.x(ln, ld)
-Ald <- gen.coefs(ld)
-yld <- gen.y.linear(xld, Ald, 0.2)
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
 
-simn <- "Linear Relationship"
-plot.one_d(xld, yld, title=simn, eqn=TeX("$y = xA + \\epsilon$"))
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
 ```
-
-We obtain a Linear Relationship:
+We obtain a Cubic Relationship:
 
 ```{r}
 res <- mgc.sample(xld, yld)
@@ -85,50 +477,51 @@ plot.mgc_result(res, title=simn)
 
 ### High Dimensional
 
-We repeat the same experiment with $50$ dimensions:
+We repeat the same experiment with $500$ dimensions:
 
 ```{r}
-xhd <- gen.x(hn, hd)
-Ahd <- gen.coefs(hd)
-yhd <- gen.y.linear(xhd, Ahd, 0.2)
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
 res <- mgc.sample(xhd, yhd)
 plot.mgc_result(res, title=simn)
 ```
 
-## Exponential
+## Bernoulli
 
-For our linear simulations, we allow a linear dependence of $y$ on $x$ with error of variance $\epsilon$, and $\nu$ is the per-sample residual:
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
 
 \begin{align*}
-y = e^{xA + \kappa \nu} \\
-s_{\nu} = \epsilon \\
-\kappa = \begin{cases}
-1 & D = 1
-0 & otherwise
-\end{cases}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
 \end{align*}
 
-and we let $\epsilon = 0.05$ and $\kappa = 0$.
+and we let $\epsilon = 0.2$.
 
 ### 1 Dimensional
 
 ```{r}
-
-gen.y.linear <- function(x, A, eps) {
-  er <- rnorm(n, mean=0, sd=1)
-  return(exp(x%*%A))  # y = exp(xA)
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
 }
 
 eps <- 0.2
-xld <- gen.x(ln, ld)
-Ald <- gen.coefs(ld)
-yld <- gen.y.linear(xld, Ald, 0.2)
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
 
-simn <- "Linear Relationship"
-plot.one_d(xld, yld, title=simn, eqn=TeX("$y = xA + \\epsilon$"))
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
 ```
-
-We obtain a Linear Relationship:
+We obtain a Cubic Relationship:
 
 ```{r}
 res <- mgc.sample(xld, yld)
@@ -137,47 +530,493 @@ plot.mgc_result(res, title=simn)
 
 ### High Dimensional
 
-We repeat the same experiment with $50$ dimensions:
+We repeat the same experiment with $500$ dimensions:
 
 ```{r}
-xhd <- gen.x(hn, hd)
-Ahd <- gen.coefs(hd)
-yhd <- gen.y.linear(xhd, Ahd, 0.2)
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
 res <- mgc.sample(xhd, yhd)
 plot.mgc_result(res, title=simn)
 ```
 
-## Cubic
-
-## Joint Normal
-
-## Step Function
-
-## Quadratic
-
-## W shape
-
-## Spiral
-
-## Bernoulli
-
 ## Logarithmic
+
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
 
 ## Fourth Root
 
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
 ## Circle
+
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
 
 ## Ellipse
 
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
 ## Diamond
+
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
 
 ## Multiplicative
 
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
 ## Independence
+
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
 
 # Comparison
 
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Cubic Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
+
 ## 1 Dimensional
+
+
+
+For our cubic simulations, we allow a cubic dependence of $y$ on $x$ with error of variance $\kappa\epsilon$, and $\nu$ is the per-sample residual:
+
+\begin{align*}
+y = 128\left(xw - \frac{1}{3}\right)^3 + 48\left(xw - \frac{1}{3}\right)^2 - 12\left(xw - \frac{1}{3}\right) + 80 \kappa\nu
+\end{align*}
+
+and we let $\epsilon = 0.2$.
+
+### 1 Dimensional
+
+```{r}
+gen.y.exp <- function(x, w, eps) {
+  nu <- rnorm(dim(x)[1], mean=0, sd=eps)  # gaussian noise
+  xw = x%*%w
+  return(128*(xw - 1/3)^3 + 48*(xw - 1/3)^2 - 12*(xw - 1/3) + 80*nu)
+}
+
+eps <- 0.2
+a <- -1
+b <- 1
+xld <- gen.x(ln, ld, a, b)
+wld <- gen.coefs(ld)
+yld <- gen.y.exp(xld, wld, eps)
+
+simn <- "Cubic Relationship 1-D"
+plot.one_d(xld, yld, title=simn, eqn=TeX("$y = 128\\left(xw - \\frac{1}{3}\\right)^3 + 48\\left(xw - \\frac{1}{3}\\right)^2 - 12\\left(xw - \\frac{1}{3}\\right) + 80 \\kappa\\nu$"))
+```
+We obtain a Cubic Relationship:
+
+```{r}
+res <- mgc.sample(xld, yld)
+plot.mgc_result(res, title=simn)
+```
+
+### High Dimensional
+
+We repeat the same experiment with $500$ dimensions:
+
+```{r}
+hd <- 500
+simn <- "Step Relationship HD"
+eps <- 0.0
+xhd <- gen.x(hn, hd, a, b)
+whd <- gen.coefs(hd)
+yhd <- gen.y.exp(xhd, whd, eps)
+res <- mgc.sample(xhd, yhd)
+plot.mgc_result(res, title=simn)
+```
 
 ## High Dimensional
 
