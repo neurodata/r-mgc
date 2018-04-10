@@ -4,7 +4,7 @@
 \alias{gen.x}
 \title{A helper function to generate n samples of a d-dimensional uniform vector.}
 \usage{
-gen.x(n, d, a = -1, b = -1)
+gen.x(n, d, a = -1, b = 1)
 }
 \description{
 A helper function to generate n samples of a d-dimensional uniform vector.

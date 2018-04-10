@@ -4,7 +4,7 @@
 \alias{mgc.sims.cubic}
 \title{Cubic Simulation}
 \usage{
-mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = -1, c = c(-12,
+mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = 1, c = c(-12,
   48, 128), s = 1/3)
 }
 \arguments{

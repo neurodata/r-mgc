@@ -86,7 +86,7 @@ mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
 #' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
 #' @param a the lower limit for the range of the data matrix. Defaults to \code{-1}.
 #' @param b the upper limit for the range  of the data matrix. Defaults to \code{1}.
-#' @param c the coefficients for the cubic function, where the first value is the first order coefficient, the second value the quadratic coefficient, and the third the cubic coefficient. Defaults to \code{c(-12, 48, 128)}.
+#' @param c.coef the coefficients for the cubic function, where the first value is the first order coefficient, the second value the quadratic coefficient, and the third the cubic coefficient. Defaults to \code{c(-12, 48, 128)}.
 #' @param s the scaling for the center of the cubic. Defaults to \code{1/3}.
 #' @return a list containing the following:
 #' \item{\code{X}}{\code{[n, d]} the data matrix with \code{n} samples in \code{d} dimensions.}
@@ -105,13 +105,13 @@ mgc.sims.exp <- function(n, d, eps=10, ind=FALSE, a=0, b=3) {
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=1, c=c(-12, 48, 128), s=1/3) {
+mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=1, c.coef=c(-12, 48, 128), s=1/3) {
   xs <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
   xw = xs%*%w
-  ys <- c[3]*(xw - s)^3 + c[2]*(xw - s)^2 + c[1]*(xw - s) + eps*kappa*nu
+  ys <- c.coef[3]*(xw - s)^3 + c.coef[2]*(xw - s)^2 + c.coef[1]*(xw - s) + eps*kappa*nu
   if (ind) {
     xs <- gen.x(n, d, a=a, b=b)
   }
@@ -261,6 +261,7 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
 #' @export
 mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
   x <- gen.x(n, d, a=a, b=b)
+  u <- gen.x(n, d, a=a, b=b)
   w <- gen.coefs(d)
   nu <- rnorm(n, mean=0, sd=1)  # gaussian noise
   kappa <- as.numeric(d == 1)
@@ -297,8 +298,9 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
-  u <- gen.x(n, 1, a=a, b=b)
+  u <- array(gen.x(n, 1, a=a, b=b), dim=c(n, 1))
   x <- array(cos(pi*u), dim=c(n, d))
+  ru <- x
   y <- u*sin(pi*u)
   for (i in 1:(d-1)) {
     x[, i] <- y*ru[, i]^i

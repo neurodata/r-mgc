@@ -4,7 +4,7 @@
 \alias{mgc.sims.step}
 \title{Step Function Simulation}
 \usage{
-mgc.sims.step(n, d, eps = 1, ind = FALSE, a = -1, b = -1)
+mgc.sims.step(n, d, eps = 1, ind = FALSE, a = -1, b = 1)
 }
 \arguments{
 \item{n}{the number of samples for the simulation.}

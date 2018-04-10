@@ -4,7 +4,7 @@
 \alias{mgc.sims.wshape}
 \title{W Shaped Simulation}
 \usage{
-mgc.sims.wshape(n, d, eps = 0.5, ind = FALSE, a = -1, b = -1)
+mgc.sims.wshape(n, d, eps = 0.5, ind = FALSE, a = -1, b = 1)
 }
 \arguments{
 \item{n}{the number of samples for the simulation.}

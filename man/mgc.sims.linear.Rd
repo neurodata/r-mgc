@@ -4,7 +4,7 @@
 \alias{mgc.sims.linear}
 \title{Linear Simulation}
 \usage{
-mgc.sims.linear(n, d, eps = 1, ind = FALSE, a = -1, b = -1)
+mgc.sims.linear(n, d, eps = 1, ind = FALSE, a = -1, b = 1)
 }
 \arguments{
 \item{n}{the number of samples for the simulation.}
