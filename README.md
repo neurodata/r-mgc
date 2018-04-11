@@ -1,5 +1,7 @@
 # MGC
 
+[![arXiv shield](https://img.shields.io/badge/arXiv-1609.05148-red.svg?style=flat)](https://arxiv.org/abs/1609.05148)
+
 ## Contents
 
 - [Overview](#overview)
