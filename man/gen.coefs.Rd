@@ -6,6 +6,15 @@
 \usage{
 gen.coefs(d)
 }
+\arguments{
+\item{d}{the number of dimensions.}
+}
+\value{
+A \code{[d]} the coefficient vector.
+}
 \description{
 A helper function to generate a d-dimensional linear transformation matrix.
+}
+\author{
+Eric Bridgeford
 }

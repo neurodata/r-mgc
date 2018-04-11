@@ -23,15 +23,6 @@ a list containing the following:
 \description{
 A function for Generating an uncorrelated bernoulli simulation.
 }
-\section{Details}{
-
-Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-Simulates \eqn{n} points from \eqn{UBern(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{UBern(X, Y)}, where:
-\deqn{U \sim \mathcal{B}(p)}{U ~ B(p)}
-\deqn{X \sim \mathcal{B}\left(p\right)^d + \epsilon\mathcal{(0, I_d)}}{X ~ B(p)^d + eps*N(0, I_d)}
-\deqn{Y = (2U - 1)w^TX + \epsilon}{Y = (2*U-1)w^T*X + 0.5*eps}
-}
-
 \examples{
 library(mgc)
 result  <- mgc.sims.ubern(n=100, d=10)  # simulate 100 samples in 10 dimensions

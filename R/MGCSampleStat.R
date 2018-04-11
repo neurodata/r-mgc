@@ -6,15 +6,15 @@
 #'
 #' @param A is interpreted as:
 #' \describe{
-#'    \item{a \code{[nxn]} distance matrix}{A is a square matrix with zeros on diagonal}
-#'    \item{a \code{[nxd]} data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{A is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{A is a data matrix with \code{n} samples in \code{d} dimensions.}
 #' }
 #' @param B is interpreted as:
 #' \describe{
-#'    \item{a \code{[nxn]} distance matrix}{A is a square matrix with zeros on diagonal}
-#'    \item{a \code{[nxd]} data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{B is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{B is a data matrix with \code{n} samples in \code{d} dimensions.}
 #' }
-#' @param mgc is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
+#' @param option is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
 #' \describe{
 #'    \item{\code{'mgc'}}{use the MGC global correlation.}
 #'    \item{\code{'dcor'}}{use the dcor global correlation.}
@@ -26,6 +26,14 @@
 #' \item{\code{localCorr}}{consists of all local correlations by double matrix index}
 #' \item{\code{optimalScale}}{the estimated optimal scale in matrix single index.}
 #' @author C. Shen
+#'
+#' @examples
+#' library(mgc)
+#'
+#' n=200; d=2
+#' data <- mgc.sims.linear(n, d)
+#' lcor <- mgc.sample(data$X, data$Y)
+#'
 #' @export
 mgc.sample <- function(A, B, option='mgc'){
   localCorr=mgc.localcorr(A,B,option)$corr # compute all localCorr
@@ -45,6 +53,8 @@ mgc.sample <- function(A, B, option='mgc'){
 }
 
 #' An auxiliary function that finds a region of significance in the local correlation map by thresholding.
+#'
+#' @importFrom stats qbeta
 #'
 #' @param localCorr is all local correlations
 #' @param m is the number of rows of localCorr
@@ -98,12 +108,12 @@ Thresholding <- function(localCorr,m,n,sz){
 #'
 #' @return A list contains the following:
 #' \item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
-#' \item{\code{optimalScale}}{the estimated optimal scale in matrix single index.}
+#' \item{\code{optimalScale}}{the estimated optimal scale as a list.}
 #'
 #' @author C. Shen
 Smoothing <- function(localCorr,m,n,R){
   statMGC=localCorr[m,n] # default sample mgc to local corr at maximal scale
-  optimalScale=m*n # default the optimal scale to maximal scale
+  optimalScale=list(x=m, y=n) # default the optimal scale to maximal scale
   if (norm(R,"F")!=0){
     # tau=1 # number of adjacent scales to smooth with
     if (sum(R)>=2*(min(m,n))){ # proceed only when the region area is sufficiently large
@@ -129,7 +139,7 @@ Smoothing <- function(localCorr,m,n,R){
        # tmp=max(tmp1,tmp2) # take the min for sample mgc
         if (tmp>=statMGC){
           statMGC=tmp
-          optimalScale=(l-1)*m+k # take the scale of maximal stat and change to single index
+          optimalScale=list(x=k, y=l) # take the scale of maximal stat and change to single index
         }
       #}
     }

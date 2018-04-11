@@ -4,15 +4,15 @@
 #'
 #' @param X is interpreted as:
 #' \itemize{
-#'    \item{\code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal}
-#'    \item{\code{[n x d]} data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 #'  }
 #' @param Y is interpreted as:
 #' \describe{
-#'    \item{\code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal}
-#'    \item{\code{[n x d]} data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions.}
 #' }
-#' @param option='mgc' is a string that specifies which global correlation to build up-on.
+#' @param option is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
 #' \describe{
 #'    \item{'mgc'}{use the MGC global correlation.}
 #'    \item{'dcor'}{use the dcor global correlation.}
@@ -25,6 +25,14 @@
 #' \item{\code{varY}}{contains all local variances for X.}
 #'
 #' @author C. Shen
+#'
+#' @examples
+#' library(mgc)
+#'
+#' n=200; d=2
+#' data <- mgc.sims.linear(n, d)
+#' lcor <- mgc.localcorr(data$X, data$Y)
+#'
 #' @export
 #'
 mgc.localcorr <- function(X,Y,option='mgc'){

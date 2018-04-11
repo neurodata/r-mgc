@@ -7,11 +7,15 @@
 mgc.ksample(X, Y, mgc.opts = list(), ...)
 }
 \arguments{
-\item{X}{\code{[n, d]} the data with \code{n} samples in \code{d} dimensions.}
+\item{X}{is interpreted as:
+\itemize{
+   \item{\code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal}
+   \item{\code{[n x d]} data matrix}{Otherwise}
+ }}
 
 \item{Y}{\code{[n]} the labels of the samples with \code{K} unique labels.}
 
-\item{mgc.opts}{Arguments to pass to MGC. See \code{\link{MGC}} for details.}
+\item{mgc.opts}{Arguments to pass to MGC. See \code{\link{mgc.test}} for details.}
 
 \item{...}{trailing args.}
 }
@@ -27,6 +31,18 @@ A list containing the following:
 MGC K Sample Testing provides a wrapper for MGC Sample testing under the constraint that the Ys here are
 categorical labels with K possible sample ids. This function uses a 0-1 loss for the Ys. To use a custom distance
 function, use \code{mgc.test} with your custom distance function as \code{Y}.
+}
+\examples{
+
+library(mgc)
+
+n = 100; d = 2
+# simulate 200 samples which are jointly dependent in 10 dimensions
+data <- mgc.sims.joint(n, d)
+data_mtx <- rbind(data$X, data$Y)
+labels <- c(replicate(n, 0), replicate(n, 1))
+result <- mgc.ksample(data_mtx, labels, mgc.opts=list(rep=10))
+
 }
 \author{
 Eric Bridgeford

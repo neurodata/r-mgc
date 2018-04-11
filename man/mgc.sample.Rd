@@ -9,17 +9,17 @@ mgc.sample(A, B, option = "mgc")
 \arguments{
 \item{A}{is interpreted as:
 \describe{
-   \item{a \code{[nxn]} distance matrix}{A is a square matrix with zeros on diagonal}
-   \item{a \code{[nxd]} data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{A is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{A is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
 \item{B}{is interpreted as:
 \describe{
-   \item{a \code{[nxn]} distance matrix}{A is a square matrix with zeros on diagonal}
-   \item{a \code{[nxd]} data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{B is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{B is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
-\item{mgc}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
+\item{option}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
 \describe{
    \item{\code{'mgc'}}{use the MGC global correlation.}
    \item{\code{'dcor'}}{use the dcor global correlation.}
@@ -37,6 +37,14 @@ A list containing the following:
 The main function that computes the MGC measure between two datasets:
 It first computes all local correlations,
 then use the maximal statistic among all local correlations based on thresholding.
+}
+\examples{
+library(mgc)
+
+n=200; d=2
+data <- mgc.sims.linear(n, d)
+lcor <- mgc.sample(data$X, data$Y)
+
 }
 \author{
 C. Shen

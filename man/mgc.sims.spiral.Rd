@@ -25,13 +25,6 @@ a list containing the following:
 \description{
 A function for Generating a spiral simulation.
 }
-\section{Details}{
-
-Given: \eqn{U \sim \mathcal{U}(a, b)}{U ~ U(a, b)} a random variable.
-\deqn{X_i = \begin{cases}U\textrm{sin}(\pi U)cos^d(\pi U) & i < d \\ \end{cases}}{Xi = U*cos(pi*U)^d if i = d, and Usin(pi*U)*cos(pi*U)^d otherwise}
-\deqn{Y = U\textrm{sin}(\pi U) + \epsilon p}{Y = U*sin(pi*U) + eps*p}
-}
-
 \examples{
 library(mgc)
 result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions

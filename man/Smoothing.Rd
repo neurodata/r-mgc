@@ -19,7 +19,7 @@ Smoothing(localCorr, m, n, R)
 \value{
 A list contains the following:
 \item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
-\item{\code{optimalScale}}{the estimated optimal scale in matrix single index.}
+\item{\code{optimalScale}}{the estimated optimal scale as a list.}
 }
 \description{
 An auxiliary function that finds the smoothed maximal within the significant region R:

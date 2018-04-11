@@ -4,8 +4,8 @@
 \alias{mgc.sims.cubic}
 \title{Cubic Simulation}
 \usage{
-mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = 1, c = c(-12,
-  48, 128), s = 1/3)
+mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = 1,
+  c.coef = c(-12, 48, 128), s = 1/3)
 }
 \arguments{
 \item{n}{the number of samples for the simulation.}
@@ -20,7 +20,7 @@ mgc.sims.cubic(n, d, eps = 80, ind = FALSE, a = -1, b = 1, c = c(-12,
 
 \item{b}{the upper limit for the range  of the data matrix. Defaults to \code{1}.}
 
-\item{c}{the coefficients for the cubic function, where the first value is the first order coefficient, the second value the quadratic coefficient, and the third the cubic coefficient. Defaults to \code{c(-12, 48, 128)}.}
+\item{c.coef}{the coefficients for the cubic function, where the first value is the first order coefficient, the second value the quadratic coefficient, and the third the cubic coefficient. Defaults to \code{c(-12, 48, 128)}.}
 
 \item{s}{the scaling for the center of the cubic. Defaults to \code{1/3}.}
 }
@@ -35,8 +35,8 @@ A function for Generating a cubic simulation.
 \section{Details}{
 
 Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
-\deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
+Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbf{R}^d \times \mathbf{R}}{Linear(X, Y)}, where:
+\deqn{X \sim {U}(a, b)^d}{X ~ U(a, b)^d}
 \deqn{Y = c_3\left(w^TX - s\right)^3 + c_2\left(w^TX - s\right)^2 + c_1\left(w^TX - s\right) + \kappa \epsilon}{Y = c[3](w^TX - s)^3 + c[2](w^TX - s)^2 + c[1](w^TX - s) + \kappa \epsilon}
 and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 }

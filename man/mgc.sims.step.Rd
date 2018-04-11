@@ -30,9 +30,10 @@ A function for Generating a step function simulation.
 \section{Details}{
 
 Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbb{R}^d\times \mathbb{R}}{Step-Function(X, Y)} where:
-\deqn{X \sim \mathcal{U}\left(a, b\right)^d}{X ~ U(a, b)^d},
-\deqn{Y = \mathbb{I}\left\{w^TX > 0\right\} + \epsilon}{Y = I{w^TX > 0} + eps}
+Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbf{R}^d\times \mathbf{R}}{Step-Function(X, Y)} where:
+\deqn{X \sim {U}\left(a, b\right)^d}{X ~ U(a, b)^d},
+\deqn{Y = \mathbf{I}\left\{w^TX > 0\right\} + \kappa \epsilon N(0, 1)}{Y = I{w^TX > 0} + K*eps*N(0, 1)}
+and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 }
 
 \examples{

@@ -4,23 +4,23 @@
 \alias{discr.mnr}
 \title{Mean Normalized Rank}
 \usage{
-discr.mnr(rdf, remove_outliers = TRUE, thresh = 0, output = FALSE)
+discr.mnr(rdf, remove_outliers = FALSE, thresh = 0, output = FALSE)
 }
 \arguments{
-\item{rdf}{[n]: the reliability density function.}
+\item{rdf}{\code{[n]} the reliability density function for \code{n} samples.}
 
-\item{remove_outliers=TRUE}{boolean indicating whether to ignore subjects with rdf below a certain cutoff.}
+\item{remove_outliers}{boolean indicating whether to ignore samples with rdf below a certain cutoff. Defaults to \code{FALSE}.}
 
-\item{thresh=0}{[1]: the threshold below which to ignore subjects.}
+\item{thresh}{the threshold below for \code{rdf} which to ignore samples. Defaults to \code{0}.}
 
-\item{output=FALSE}{a boolean indicating whether to ignore output.}
+\item{output}{a boolean indicating whether to ignore output. Defaults to \code{False}.}
 }
 \value{
-discr [1]: the discriminability statistic.
+\code{discr} the discriminability statistic.
 }
 \description{
 A function for computing the mnr from an rdf.
 }
 \author{
-Eric Bridgeford and Gregory Kiar
+Eric Bridgeford
 }

@@ -30,8 +30,8 @@ A function for Generating a linear simulation.
 \section{Details}{
 
 Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}}{Linear(X, Y)}, where:
-\deqn{X \sim \mathcal{U}(a, b)^d}{X ~ U(a, b)^d}
+Simulates \eqn{n} points from \eqn{Linear(X, Y) \in  \mathbf{R}^d \times \mathbf{R}}{Linear(X, Y)}, where:
+\deqn{X \sim {U}(a, b)^d}{X ~ U(a, b)^d}
 \deqn{Y = w^TX + \kappa \epsilon}{Y = w^T X + \kappa \epsilon}
 and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 }

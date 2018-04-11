@@ -9,14 +9,14 @@ mgc.test(X, Y, rep = 1000, option = "mgc")
 \arguments{
 \item{X}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
 \item{Y}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
 \item{rep}{specifies the number of replicates to use for the permutation test. Defaults to \code{1000}.}
@@ -42,6 +42,15 @@ unless corrected for multiple testing problem.
 }
 \description{
 The main function that tests independent between two data sets by MGC and permutation test.
+}
+\examples{
+
+library(mgc)
+
+n = 100; d = 2
+data <- mgc.sims.linear(n, d)
+result <- mgc.test(data$X, data$Y, rep=10)
+
 }
 \author{
 C. Shen

@@ -2,10 +2,10 @@
 #'
 #' A function for computing the reliability density function of a dataset.
 #'
-#' @param D [n, n] a distance matrix for n subjects.
-#' @param ids [n]: a vector containing the subject ids for each subject.
-#' @return rdf [n]: the reliability per subject.
-#' @author Shangsi Wang, Eric Bridgeford and Gregory Kiar
+#' @param D \code{[n, n]} a distance matrix for n samples.
+#' @param ids \code{[n]} a vector containing the label ids for each sample.
+#' @return \code{[n]} vector of the reliability per sample.
+#' @author Eric Bridgeford
 discr.rdf <- function(D, ids) {
   N <- dim(D)[1]
   if (is.null((N))) {
@@ -42,13 +42,13 @@ discr.rdf <- function(D, ids) {
 #'
 #' A function for computing the mnr from an rdf.
 #'
-#' @param rdf [n]: the reliability density function.
-#' @param remove_outliers=TRUE boolean indicating whether to ignore subjects with rdf below a certain cutoff.
-#' @param thresh=0 [1]: the threshold below which to ignore subjects.
-#' @param output=FALSE a boolean indicating whether to ignore output.
-#' @return discr [1]: the discriminability statistic.
-#' @author Eric Bridgeford and Gregory Kiar
-discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
+#' @param rdf \code{[n]} the reliability density function for \code{n} samples.
+#' @param remove_outliers boolean indicating whether to ignore samples with rdf below a certain cutoff. Defaults to \code{FALSE}.
+#' @param thresh the threshold below for \code{rdf} which to ignore samples. Defaults to \code{0}.
+#' @param output a boolean indicating whether to ignore output. Defaults to \code{False}.
+#' @return \code{discr} the discriminability statistic.
+#' @author Eric Bridgeford
+discr.mnr <- function(rdf, remove_outliers=FALSE, thresh=0, output=FALSE) {
   if (remove_outliers) {
     discr <- mean(rdf[which(rdf[!is.nan(rdf)] > thresh)]) # mean of the rdf
     ol <- length(which(rdf<thresh))
@@ -74,25 +74,33 @@ discr.mnr <- function(rdf, remove_outliers=TRUE, thresh=0, output=FALSE) {
 #'
 #' @param X is interpreted as:
 #' \describe{
-#'    \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-#'    \item{a [n x d] data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 #' }
-#' @param ids [n]: a vector containing the labels for our n observations.
-#' @param remove_outliers=TRUE boolean indicating whether to ignore observations with rdf below a certain cutoff.
-#' @param thresh=0 [1]: the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation.
-#' @param verbose=FALSE a boolean indicating whether to:
-#' \describe{
-#'    \item{TRUE}{print output to console}
-#'    \item{FALSE}{Do not print output to console}
-#' }
+#' @param ids \code{[n]} a vector containing the labels for our \code{n} samples.
+#' @param remove_outliers boolean indicating whether to ignore observations with rdf below a certain cutoff. Defaults to \code{FALSE}.
+#' @param thresh the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation. Defaults to \code{0}.
+#' @param verbose a boolean indicating whether to print output. Defaults to \code{FALSE}.
 #' @return discr the discriminability statistic.
-#' @author Eric Bridgeford and Gregory Kiar
+#'
+#' @examples
+#'
+#' nsrc <- 5
+#' nobs <- 10
+#' d <- 20
+#' set.seed(12345)
+#' src_id <- array(1:nsrc)
+#' labs <- sample(rep(src_id, nobs))
+#' dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
+#' discr.stat(dat, labs)
+#'
+#' @author Eric Bridgeford
 #' @export
-discr.stat <- function(X, ids, thresh=0, verbose=FALSE) {
+discr.stat <- function(X, ids, remove_outliers=FALSE, thresh=0, verbose=FALSE) {
   X <- as.matrix(X)
   # Use the data size and diagonal element to determine if the given data is a distance matrix or not
   if (nrow(X) != ncol(X) | sum(diag(X)^2) > 0){
     X <- discr.distance(X)
   }
-  return(discr.mnr(discr.rdf(X, ids), thresh=thresh, output=(verbose)))
+  return(discr.mnr(discr.rdf(X, ids), remove_outliers=remove_outliers, thresh=thresh, output=(verbose)))
 }

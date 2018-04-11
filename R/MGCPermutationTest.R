@@ -4,13 +4,13 @@
 #'
 #' @param X is interpreted as:
 #' \describe{
-#'    \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-#'    \item{a [n x d] data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 #' }
 #' @param Y is interpreted as:
 #' \describe{
-#'    \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
-#'    \item{a [n x d] data matrix}{Otherwise}
+#'    \item{a \code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal for \code{n} samples.}
+#'    \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions.}
 #' }
 #' @param rep specifies the number of replicates to use for the permutation test. Defaults to \code{1000}.
 #' @param option is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
@@ -32,6 +32,15 @@
 #' unless corrected for multiple testing problem.
 #'
 #' @author C. Shen
+#'
+#' @examples
+#'
+#' library(mgc)
+#'
+#' n = 100; d = 2
+#' data <- mgc.sims.linear(n, d)
+#' result <- mgc.test(data$X, data$Y, rep=10)
+#'
 #' @export
 mgc.test <-function(X, Y, rep=1000, option='mgc'){
   # Use the data size and diagonal element to determine if the given data is a distance matrix or not
@@ -39,7 +48,7 @@ mgc.test <-function(X, Y, rep=1000, option='mgc'){
     X = as.matrix(dist(X, method='euclidean'))
     # print('The first data is not a Euclidean distance matrix; transformed to distance matrix instead.')
   }
-  if (nrow(as.matrix(Y))!=ncol(as.matrix(Y))|sum(diag(Y)^2)>0){
+  if (nrow(as.matrix(Y)) != ncol(as.matrix(Y)) | sum(diag(Y)^2)>0){
     Y=as.matrix(dist(Y, method='euclidean'))
     # print('The second data is not a Euclidean distance matrix; transformed to distance matrix instead.')
   }

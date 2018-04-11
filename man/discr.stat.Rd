@@ -4,26 +4,22 @@
 \alias{discr.stat}
 \title{Discriminability Statistic}
 \usage{
-discr.stat(X, ids, thresh = 0, verbose = FALSE)
+discr.stat(X, ids, remove_outliers = FALSE, thresh = 0, verbose = FALSE)
 }
 \arguments{
 \item{X}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
-\item{ids}{[n]: a vector containing the labels for our n observations.}
+\item{ids}{\code{[n]} a vector containing the labels for our \code{n} samples.}
 
-\item{remove_outliers=TRUE}{boolean indicating whether to ignore observations with rdf below a certain cutoff.}
+\item{remove_outliers}{boolean indicating whether to ignore observations with rdf below a certain cutoff. Defaults to \code{FALSE}.}
 
-\item{thresh=0}{[1]: the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation.}
+\item{thresh}{the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation. Defaults to \code{0}.}
 
-\item{verbose=FALSE}{a boolean indicating whether to:
-\describe{
-   \item{TRUE}{print output to console}
-   \item{FALSE}{Do not print output to console}
-}}
+\item{verbose}{a boolean indicating whether to print output. Defaults to \code{FALSE}.}
 }
 \value{
 discr the discriminability statistic.
@@ -31,6 +27,18 @@ discr the discriminability statistic.
 \description{
 A function for computing the discriminability from a distance matrix and a set of associated labels.
 }
+\examples{
+
+nsrc <- 5
+nobs <- 10
+d <- 20
+set.seed(12345)
+src_id <- array(1:nsrc)
+labs <- sample(rep(src_id, nobs))
+dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
+discr.stat(dat, labs)
+
+}
 \author{
-Eric Bridgeford and Gregory Kiar
+Eric Bridgeford
 }

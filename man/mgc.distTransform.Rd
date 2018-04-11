@@ -31,6 +31,15 @@ A list containing the following:
 \description{
 Transform the distance matrices, with column-wise ranking if needed.
 }
+\examples{
+library(mgc)
+
+n=200; d=2
+data <- mgc.sims.linear(n, d)
+Dx <- as.matrix(dist(data$X), nrow=n); Dy <- as.matrix(dist(data$Y), nrow=n)
+dt <- mgc.distTransform(Dx, Dy)
+
+}
 \author{
 C. Shen
 }

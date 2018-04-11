@@ -4,27 +4,26 @@
 \alias{discr.test.one_sample}
 \title{Discriminability One Sample Permutation Test}
 \usage{
-discr.test.one_sample(D, labels, nperm = 100, verbose = FALSE)
+discr.test.one_sample(D, ids, nperm = 100, verbose = FALSE)
 }
 \arguments{
-\item{D}{[nxn] the distance matrix to run a permutation test for. An [nxn] matrix.}
+\item{D}{\code{[n x n]} the distance matrix to run a permutation test for, for \code{n} samples.}
 
-\item{labels}{[n] the labels organized appropriately with the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.}
+\item{ids}{\code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.}
 
-\item{nrep=100}{the number of permutations to perform.}
+\item{nperm}{the number of permutations to perform. Defaults to \code{100}.}
 
-\item{verbose=FALSE}{whether to print the itereation numbers.}
+\item{verbose}{whether to print the itereation numbers. Defaults to \code{FALSE}.}
 }
 \value{
-srel the relative, unpermuted discriminability you want to see is significant.
-
-null the discriminability scores of the permuted data.
-
-pval the pvalue associated with the permutation test.
+A list containing the following:
+\item{\code{srel}}{the relative, unpermuted discriminability you want to see is significant.}
+\item{\code{null}}{the discriminability scores of the permuted data.}
+\item{\code{pval}}{the pvalue associated with the permutation test.}
 }
 \description{
 A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
 }
 \author{
-Shangsi Wang
+Shangsi Wang and Eric Bridgeford
 }

@@ -24,9 +24,9 @@ A function for Generating a joint-normal simulation.
 \section{Details}{
 
 Given: \eqn{\rho = \frac{1}{2}d}{r = 1/2*d}, \eqn{I_d}{Id} is the identity matrix of size \eqn{d \times d}{dxd}, \eqn{J_d}{Jd} is the matrix of ones of size \eqn{d \times d}{dxd}.
-Simulates \eqn{n} points from \eqn{Joint-Normal(X, Y) \in  \mathbb{R}^d \cross \mathbb{R}^d}{Joint-Normal(X, Y)}, where:
-\deqn{(X, Y) \sim \mathcal{N}(0, \Sigma)}{(X, Y) ~ N(0, E)},
-\deqn{\Sigma = \begin{bmatrix}I_d & \rho J_d \\ \rho J_d & (1 + \epsilon\kappa)I_d\end{bmatrix}}{E = [Id, r*Jd; r*Jd, (1+eps*K)*Id]}
+Simulates \eqn{n} points from \eqn{Joint-Normal(X, Y) \in  \mathbf{R}^d \times \mathbf{R}^d}{Joint-Normal(X, Y)}, where:
+\deqn{(X, Y) \sim {N}(0, \Sigma)}{(X, Y) ~ N(0, E)},
+\deqn{\Sigma = \left[I_d, \rho J_d; \rho J_d , (1 + \epsilon\kappa)I_d\right]}{E = [Id, r*Jd; r*Jd, (1+eps*K)*Id]}
 and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 }
 

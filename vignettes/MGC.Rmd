@@ -9,55 +9,83 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r, message=FALSE}
+library(mgc)
+library(reshape2)
+
+plot_sim_func <- function(X, Y, Xf, Yf, name, geom='line') {
+  if (!is.null(dim(Y))) {
+    Y <- Y[, 1]
+    Yf <- Yf[, 1]
+  }
+  if (geom == 'points') {
+    funcgeom <- geom_point
+  } else {
+    funcgeom <- geom_line
+  }
+  data <- data.frame(x1=X[,1], y=Y)
+  data_func <- data.frame(x1=Xf[,1], y=Yf)
+  ggplot(data, aes(x=x1, y=y)) +
+    funcgeom(data=data_func, aes(x=x1, y=y), color='red', size=3) +
+    geom_point() +
+    xlab("x") +
+    ylab("y") +
+    ggtitle(name) +
+    theme_bw()
+}
+
+plot_mtx <- function(Dx, main.title="Local Correlation Map", xlab.title="# X Neighbors", ylab.title="# Y Neighbors") {
+  data <- melt(Dx)
+  ggplot(data, aes(x=Var1, y=Var2, fill=value)) +
+    geom_tile() +
+    scale_fill_gradientn(name="l-corr",
+                         colours=c("#f2f0f7", "#cbc9e2", "#9e9ac8", "#6a51a3"),
+                         limits=c(min(Dx), max(Dx))) +
+    xlab(xlab.title) +
+    ylab(ylab.title) +
+    theme_bw() +
+    ggtitle(main.title)
+}
+```
+
 # MGC Statistic
 
-In this notebook, we will discuss the basics of the `MGC` statistic in a real data context, and demonstrate some of the useful plots that users may want to visualize the results with.
+In this notebook, we show how to use the `MGC` statistic in a real and simulated context.
 
 ## Simulated Data
 
-Here, we Define $X \sim Unif(-1, 1)$, where $x \in \mathbb{R}^n$ is $n$ samples from $X$. We also have some other vector $y$ where $y = x\beta + \nu$, where $\nu$ is $n$ samples from $N \sim \mathcal{N}(0, \epsilon)$ of random noise. Using MGC, we expect to uncover a linear dependence of $y$ on $x$.
+First, we use a simulated example, where `Y = XB + N`; that is, `Y` is linearly dependent on `X` with added gaussian noise.
 
-```{r, fig.width=5, fig.height=5}
-library(mgc)
+```{r}
+n=200 # 100 samples
+d=1 # simple 1-d case
 
-n = 50  # 50 samples
-d = 1  # simple 1-d case
-eps = 0.2  # magnitude of noise
-x = runif(n, min=-1, max=1)  # X ~ Unif(-1, 1)
-
-A=matrix(0,d,1)
-for (i in (1:d)){
-  A[i]=1/i
-}
-
-nu = eps*rnorm(n, mean=0, sd=1)  # nu \sim 
-y = x%*%A + nu
-
-dat = data.frame(x=x, y=y)
-
-ggplot(dat, aes(x=x, y=y)) +
-  geom_point() +
-  xlab(TeX("$x$")) +
-  ylab(TeX("$y = x + \\nu$")) +
-  ggtitle(TeX("Linear Relationship of $x$ on $y$; $var(\\nu) = 0.2$"))
+set.seed(12345)
+data <- mgc.sims.linear(n, d)  # data with noise
+func <- mgc.sims.linear(n, d, eps=0)  # source function
 ```
 
-We construct naive distance matrices for $x$ and $y$:
+We first visualize the data:
 
-```{r, fig.width=5, fig.height=5}
-Xd = dist(x, diag=TRUE, upper=TRUE)
-Yd = dist(y, diag=TRUE, upper=TRUE)
+```{r, fig.width=4, fig.height=3}
+plot_sim_func(data$X, data$Y, func$X, func$Y, name="Linear Simulation")
 ```
 
-and finally, visualize the `MGC` image with 100 permutation replicates:
-```{r, fig.width=6, fig.height=4}
-res <- mgc.test(Xd, Yd, rep=100)  # 100 permutations test
-mgc.plot.plot_matrix(res$localCorr, xlabel=TeX("k"), ylabel=TeX("l"), title = TeX("Local $p$-values for Linear Dependence"), legend.name=TeX("p"))  # plot local p-values
+which clearly shows a slightly linear relationship.
+
+visualizing the `MGC` image with 100 replicates:
+
+```{r}
+set.seed(12345)
+res <- mgc.test(data$X, data$Y, rep=20)  # 100 permutations test
+
+plot_mtx(res$localCorr, main.title="Local Correlation Map")
+
 print(res$optimalScale)
 print(res$statMGC)
 ```
 
-As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between $x$ and $y$, and as we can see in the local $p$-values plot, $k=n=50$ and $l=n=50$ (scale 2500) shows the best $p$.
+As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between `x` and `y`, and as we can see in the local correlation map, `k=n=200` and `l=n=200` shows the best smoothed `p`.
 
 
 ## Real Data
@@ -67,10 +95,12 @@ In the below demo, we show the result of `MGC` to determine the relationship bet
 
 ```{r, fig.width=6, fig.height=4}
 set.seed(12345)
-res <- mgc.sample(iris[,1], iris[,3])
-mgc.plot.plot_matrix(res$localCorr, title="MGC Corr Map, Sepal Length and Petal Length",
-    xlab="Sepal Length Neighbors", ylab="Petal Length Neighbors", legend.name = "statMGC")
+res <- mgc.test(iris[,1], iris[,3], rep=20)
+plot_mtx(res$localCorr, main.title="Local Correlation Map",
+         xlab.title="Sepal Length Neighbors", ylab.title="Petal Length Neighbors")
+
+print(res$optimalScale)
 print(res$statMGC)
 ```
 
-viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
+viewing the corr map above we see that the relationship betweel Sepal and Petal Length is strongly linear.

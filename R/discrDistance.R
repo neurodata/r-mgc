@@ -2,15 +2,14 @@
 #'
 #' A function that returns a distance matrix given a collection of observations.
 #'
-#' @import stats
-#' @param X [n, d] a data matrix for n observations of d variables.
-#' @param method='2' the method for computing distances.
+#' @importFrom stats dist
+#' @param X \code{[n, d]} a data matrix for n samples of d variables.
+#' @param method the method for computing distances. Defaults to \code{'2'}.
 #' \describe{
 #'    \item{'2'}{use the 2 norm between pairs of observations}
 #' }
-#' @return dist [n, n]: a matrix indicating the pairwise distances between all observations passed in.
+#' @return a \code{[n, n]} distance matrix indicating the pairwise distances between all samples passed in.
 #' @author Eric Bridgeford
-#' @export
 discr.distance <- function(X, method='2') {
   if (method == '2') {
     D <- as.matrix(dist(X, diag=TRUE))
