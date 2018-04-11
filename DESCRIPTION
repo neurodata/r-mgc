@@ -12,7 +12,7 @@ Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
 	     person("Joshua", "Vogelstein", role = "ths",
 	     	    email = "jovo@jhu.edu"))
 Maintainer: Eric Bridgeford <ericwb95@gmail.com>
-Description: "Multiscale Graph Correlation" MGC is a framework that extends global correlation procedures to be multiscale; consequently, MGC tests typically require far fewer samples than existing methods for a wide variety of dependence structures and dimensionalities, while maintaining computational efficiency. Moreover, MGC provides a simple and elegant multiscale characterization of the potentially complex latent geometry underlying the relationship. 
+Description: Multiscale Graph Correlation (MGC) is a framework developed by Shen et al. (2017) <arXiv:1609.05148> that extends global correlation procedures to be multiscale; consequently, MGC tests typically require far fewer samples than existing methods for a wide variety of dependence structures and dimensionalities, while maintaining computational efficiency. Moreover, MGC provides a simple and elegant multiscale characterization of the potentially complex latent geometry underlying the relationship. 
 Depends:
     R (>= 3.4.0)
 Imports:

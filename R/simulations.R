@@ -306,7 +306,7 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
 #' \item{\code{Y}}{\code{[n]} the response array.}
 #'
 #' @section Details:
-#' Given: \eqn{U \sim {U}(a, b)}{U ~ U(a, b)} a random variable.
+#' Given: \eqn{U \sim U(a, b)}{U ~ U(a, b)} a random variable.
 #' \eqn{X_i = {U\textrm{cos}(\pi U)^d}{Xi = U*cos(pi*U)^d} if \code{i = d}, and eqn{U\textrm{sin}(\pi U)cos^i(\pi U)}{sin(pi*U)*cos(pi*U)^i} otherwise
 #' \deqn{Y = U\textrm{sin}(\pi U) + \epsilon p N(0, 1)}{Y = U*sin(pi*U) + eps*p*N(0, 1)}
 #'
