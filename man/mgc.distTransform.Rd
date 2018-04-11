@@ -7,29 +7,39 @@
 mgc.distTransform(X, Y, option = "mgc", optionRk = TRUE)
 }
 \arguments{
-\item{X}{[nxn] is a distance matrix;}
+\item{X}{\code{[nxn]} is a distance matrix}
 
-\item{Y}{[nxn] is a second distance matrix;}
+\item{Y}{\code{[nxn]} is a second distance matrix}
 
-\item{option='mgc'}{is a string that specifies which global correlation to build up-on.
+\item{option}{is a string that specifies which global correlation to build up-on. Defaults to \code{mgc}.
 \describe{
-   \item{'mgc'}{use the MGC global correlation.}
-   \item{'dcor'}{use the dcor global correlation.}
-   \item{'mantel'}{use the mantel global correlation.}
-   \item{'rank'}{use the rank global correlation.}
+   \item{\code{'mgc'}}{use the MGC global correlation.}
+   \item{\code{'dcor'}}{use the dcor global correlation.}
+   \item{\code{'mantel'}}{use the mantel global correlation.}
+   \item{\code{'rank'}}{use the rank global correlation.}
 }}
 
-\item{optionRk=TRUE}{is a string that specifies whether ranking within column is computed or not. If option='rank', ranking will be performed regardless of the value specified by optionRk.}
+\item{optionRk}{is a string that specifies whether ranking within column is computed or not. If \code{option='rank'}, ranking will be performed regardless of the value specified by \code{optionRk}. Defaults to \code{TRUE}.}
 }
 \value{
-A [nxn] the centered distance matrix for X.
-
-B [nxn] the centered distance matrix for Y.
-
-RX [nxn] the column-rank matrices of X.
-
-RY [nxn] the column-rank matrices of Y.
+A list containing the following:
+\item{\code{A}}{\code{[nxn]} the centered distance matrix for X.}
+\item{\code{B}}{\code{[nxn]} the centered distance matrix for Y.}
+\item{\code{RX}}{\code{[nxn]} the column-rank matrices of X.}
+\item{\code{RY}}{\code{[nxn]} the column-rank matrices of Y.}
 }
 \description{
 Transform the distance matrices, with column-wise ranking if needed.
+}
+\examples{
+library(mgc)
+
+n=200; d=2
+data <- mgc.sims.linear(n, d)
+Dx <- as.matrix(dist(data$X), nrow=n); Dy <- as.matrix(dist(data$Y), nrow=n)
+dt <- mgc.distTransform(Dx, Dy)
+
+}
+\author{
+C. Shen
 }

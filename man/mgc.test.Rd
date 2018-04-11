@@ -9,36 +9,48 @@ mgc.test(X, Y, rep = 1000, option = "mgc")
 \arguments{
 \item{X}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
 \item{Y}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
-\item{rep=1000}{specifies the number of replicates to use for the permutation test;}
+\item{rep}{specifies the number of replicates to use for the permutation test. Defaults to \code{1000}.}
 
-\item{option='mgc'}{is a string that specifies which global correlation to build up-on.
+\item{option}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
 \describe{
-   \item{'mgc'}{use the MGC global correlation.}
-   \item{'dcor'}{use the dcor global correlation.}
-   \item{'mantel'}{use the mantel global correlation.}
-   \item{'rank'}{use the rank global correlation.}
+   \item{\code{'mgc'}}{use the MGC global correlation.}
+   \item{\code{'dcor'}}{use the dcor global correlation.}
+   \item{\code{'mantel'}}{use the mantel global correlation.}
+   \item{\code{'rank'}}{use the rank global correlation.}
 }}
 }
 \value{
-P-value and test statistic of MGC;
-
-All local p-values by double matrix index, all local correlations by double matrix index, and the estimated optimal scales as matrix single indices.
+A list containing the following:
+\item{\code{pMGC}}{P-value of MGC}
+\item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
+\item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
+\item{\code{localCorr}}{the local correlations}
+\item{\code{optimalScale}}{the optimal scale identified by MGC}
 
 Note that one should avoid report positive discovery via minimizing individual p-values of local correlations,
 unless corrected for multiple testing problem.
 }
 \description{
 The main function that tests independent between two data sets by MGC and permutation test.
+}
+\examples{
+
+library(mgc)
+
+n = 100; d = 2
+data <- mgc.sims.linear(n, d)
+result <- mgc.test(data$X, data$Y, rep=10)
+
 }
 \author{
 C. Shen

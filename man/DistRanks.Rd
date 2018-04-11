@@ -12,7 +12,7 @@ DistRanks(dis)
 \item{dis}{is a symmetric distance matrix.}
 }
 \value{
-disRank is the column rank matrices of X.
+\code{disRank} is the column rank matrices of \code{X}.
 }
 \description{
 An auxiliary function that sorts the entries within each column by ascending order:

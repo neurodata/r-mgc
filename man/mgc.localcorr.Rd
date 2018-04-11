@@ -8,18 +8,18 @@ mgc.localcorr(X, Y, option = "mgc")
 }
 \arguments{
 \item{X}{is interpreted as:
-\describe{
-   \item{a [n x n] distance matrix}{X is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
-}}
+\itemize{
+   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+ }}
 
 \item{Y}{is interpreted as:
 \describe{
-   \item{a [n x n] distance matrix}{Y is a square matrix with zeros on diagonal}
-   \item{a [n x d] data matrix}{Otherwise}
+   \item{a \code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
-\item{option='mgc'}{is a string that specifies which global correlation to build up-on.
+\item{option}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
 \describe{
    \item{'mgc'}{use the MGC global correlation.}
    \item{'dcor'}{use the dcor global correlation.}
@@ -28,14 +28,21 @@ mgc.localcorr(X, Y, option = "mgc")
 }}
 }
 \value{
-A list contains the following output:
-
-corr consists of all local correlations within [-1,1] by double matrix index;
-
-varX contains all local variances for X; varY contains all local covariances for Y.
+A list contains the following:
+\item{\code{corr}}{consists of all local correlations within [-1,1] by double matrix index}
+\item{\code{varX}}{contains all local variances for X.}
+\item{\code{varY}}{contains all local variances for X.}
 }
 \description{
 Compute all local correlation coefficients in O(n^2 log n)
+}
+\examples{
+library(mgc)
+
+n=200; d=2
+data <- mgc.sims.linear(n, d)
+lcor <- mgc.localcorr(data$X, data$Y)
+
 }
 \author{
 C. Shen

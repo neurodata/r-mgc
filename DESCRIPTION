@@ -1,27 +1,31 @@
 Package: mgc
 Type: Package
-Title: The Multiscale Generalized Correlation (MGC) Package
-Version: 0.1.0
-Author: Cencheng Shen, Eric Bridgeford, and Shangsi Wang
-Maintainer: The package maintainer <ebridge2@jhu.edu>
-Description: Implements a number of data exploration tasks based on MGC: 
-    computing the correlation measure, test independence via MGC and permutation test,
-    k-sample test via MGC and permutation test (tba), feature screening via MGC (tba). 
-    Applicable to Euclidean data, distance matrices, graphs (tba). Contains extensions
-    to discriminability.
+Title: Multiscale Graph Correlation (MGC)
+Version: 1.0
+Date: 2018-04-10
+Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
+	   	    email = "ericwb95@gmail.com"),
+	   	 person("Censheng", "Shen", role="aut",
+	   	        email="cshen6@jhu.edu"),
+	     person("Shangsi", "Wang", role = "aut",
+	            email = "swang127@jhu.edu"),
+	     person("Joshua", "Vogelstein", role = "ths",
+	     	    email = "jovo@jhu.edu"))
+Maintainer: Eric Bridgeford <ericwb95@gmail.com>
+Description: "Multiscale Graph Correlation" MGC is a framework that extends global correlation procedures to be multiscale; consequently, MGC tests typically require far fewer samples than existing methods for a wide variety of dependence structures and dimensionalities, while maintaining computational efficiency. Moreover, MGC provides a simple and elegant multiscale characterization of the potentially complex latent geometry underlying the relationship. 
 Depends:
-    R (>= 3.4.1),
-    SDMTools
+    R (>= 3.4.0)
 Imports:
+  stats,
+  SDMTools,
+  MASS
+URL: https://github.com/neurodata/mgc
+Suggests: testthat,
   ggplot2,
   reshape2,
-  Rmisc,
-  stats
-Suggests: testthat,
   knitr,
-  rmarkdown,
-  latex2exp
-License: MIT + file LICENSE
+  rmarkdown
+License: GPL-2
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1

@@ -7,15 +7,15 @@
 discr.distance(X, method = "2")
 }
 \arguments{
-\item{X}{[n, d] a data matrix for n observations of d variables.}
+\item{X}{\code{[n, d]} a data matrix for n samples of d variables.}
 
-\item{method='2'}{the method for computing distances.
+\item{method}{the method for computing distances. Defaults to \code{'2'}.
 \describe{
    \item{'2'}{use the 2 norm between pairs of observations}
 }}
 }
 \value{
-dist [n, n]: a matrix indicating the pairwise distances between all observations passed in.
+a \code{[n, n]} distance matrix indicating the pairwise distances between all samples passed in.
 }
 \description{
 A function that returns a distance matrix given a collection of observations.
