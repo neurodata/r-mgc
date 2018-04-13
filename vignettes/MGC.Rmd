@@ -4,7 +4,7 @@ author: "Eric Bridgeford"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{MGC}
+  %\VignetteIndexEntry{MGC Statistic}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,6 +12,7 @@ vignette: >
 ```{r, message=FALSE}
 library(mgc)
 library(reshape2)
+library(ggplot2)
 
 plot_sim_func <- function(X, Y, Xf, Yf, name, geom='line') {
   if (!is.null(dim(Y))) {
@@ -67,7 +68,7 @@ func <- mgc.sims.linear(n, d, eps=0)  # source function
 
 We first visualize the data:
 
-```{r, fig.width=4, fig.height=3}
+```{r, fig.width=5, fig.height=3}
 plot_sim_func(data$X, data$Y, func$X, func$Y, name="Linear Simulation")
 ```
 
@@ -75,7 +76,7 @@ which clearly shows a slightly linear relationship.
 
 visualizing the `MGC` image with 100 replicates:
 
-```{r}
+```{r, fig.width=5, fig.height=4}
 set.seed(12345)
 res <- mgc.test(data$X, data$Y, rep=20)  # 100 permutations test
 
@@ -93,7 +94,7 @@ As we can see, the local correlation plot suggests a strongly linear relationshi
 
 In the below demo, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset:
 
-```{r, fig.width=6, fig.height=4}
+```{r, fig.width=5, fig.height=4}
 set.seed(12345)
 res <- mgc.test(iris[,1], iris[,3], rep=20)
 plot_mtx(res$localCorr, main.title="Local Correlation Map",

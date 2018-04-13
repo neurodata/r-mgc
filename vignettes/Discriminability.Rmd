@@ -49,7 +49,7 @@ discr.stat(dat, labs)  # expect high discriminability since measurements taken a
 
 we may find it useful to view the distance matrix, ordered by source label, to show that objects from the same source have a lower distance than objects from a different source:
 
-```{R, fig.width=6, fig.height=4}
+```{R, fig.width=5, fig.height=4}
 Dx <- as.matrix(dist(dat[sort(labs, index=TRUE)$ix,]), method='euclidian')
 plot_mtx(Dx)
 ```
@@ -63,7 +63,7 @@ discr.stat(Dx, sort(labs))
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
-```{r, fig.width=6, fig.height=4}
+```{r, fig.width=5, fig.height=4}
 Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
 plot_mtx(Dx)

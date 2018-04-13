@@ -182,7 +182,7 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
 #'
 #' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-#' Simulates \eqn{n} points from \eqn{Step-Function(X, Y) \in \mathbf{R}^d\times \mathbf{R}}{Step-Function(X, Y)} where:
+#' Simulates \eqn{n} points from \eqn{Step(X, Y) \in \mathbf{R}^d\times \mathbf{R}}{Step-Function(X, Y)} where:
 #' \deqn{X \sim {U}\left(a, b\right)^d}{X ~ U(a, b)^d},
 #' \deqn{Y = \mathbf{I}\left\{w^TX > 0\right\} + \kappa \epsilon N(0, 1)}{Y = I{w^TX > 0} + K*eps*N(0, 1)}
 #' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
@@ -307,12 +307,13 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
 #'
 #' @section Details:
 #' Given: \eqn{U \sim U(a, b)}{U ~ U(a, b)} a random variable.
-#' \eqn{X_i = {U\textrm{cos}(\pi U)^d}{Xi = U*cos(pi*U)^d} if \code{i = d}, and eqn{U\textrm{sin}(\pi U)cos^i(\pi U)}{sin(pi*U)*cos(pi*U)^i} otherwise
-#' \deqn{Y = U\textrm{sin}(\pi U) + \epsilon p N(0, 1)}{Y = U*sin(pi*U) + eps*p*N(0, 1)}
+#' Simumlates \eqn{n} points from \eqn{Spiral(X, Y) \in \mathbf{R}^d \times \mathbf{R}}{Spiral(X, Y)} where:
+#' \eqn{X_i = U\, \textrm{cos}(\pi\, U)^d}{Xi = U*cos(pi*U)^d} if \code{i = d}, and \eqn{U\, \textrm{sin}(\pi U)\textrm{cos}^i(\pi U)}{sin(pi*U)*cos(pi*U)^i} otherwise
+#' \deqn{Y = U\, \textrm{sin}(\pi\, U) + \epsilon p N(0, 1)}{Y = U*sin(pi*U) + eps*p*N(0, 1)}
 #'
 #' @examples
 #' library(mgc)
-#' result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions
+#' result  <- mgc.sims.spiral(n=100, d=10)  # simulate 100 samples in 10 dimensions
 #' X <- result$X; Y <- result$Y
 #' @author Eric Bridgeford
 #' @export
@@ -349,7 +350,7 @@ mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
 #'
 #' @section Details:
 #' Given: \eqn{w_i = \frac{1}{i}}{w[i] = 1/i} is a weight-vector that scales with the dimensionality.
-#' Simulates \eqn{n} points from \eqn{UBern(X, Y) \in  \mathbf{R}^d \times \mathbf{R}{UBern(X, Y)}, where:
+#' Simumlates \eqn{n} points from \eqn{Wshape(X, Y) \in \mathbf{R}^d \times \mathbf{R}}{Wshape(X, Y)} where:
 #' \deqn{U \sim Bern(p)}{U ~ B(p)}
 #' \deqn{X \sim Bern\left(p\right)^d + \epsilon N(0, I_d)}{X ~ B(p)^d + eps*N(0, I_d)}
 #' \deqn{Y = (2U - 1)w^TX + \epsilon N(0, 1)}{Y = (2*U-1)w^T*X + 0.5*eps*N(0, 1)}
