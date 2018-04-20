@@ -1,0 +1,128 @@
+---
+title: "Multi-Modal Connectome Investigation"
+author: "Eric Bridgeford"
+date: "April 19, 2018"
+output: html_document
+---
+
+```{r setup, message=FALSE}
+require(fmriutils)
+require(graphstats)
+require(mgc)
+require(ggplot2)
+require(latex2exp)
+require(igraph)
+require(stringr)
+require(gridExtra)
+require(scales)
+require(data.table)
+require(grid)
+require(graphstats)
+```
+
+
+The data below can be downloaded and moved to appropriate folders as follows (note that the below section requires sudo access) from [m2g.io](m2g.io).
+
+# Diffusion
+
+```{r}
+nroi <- 70
+dwi.dsets = c('BNU1', 'BNU3', 'HNU1', 'KKI2009', 'NKI1', 'NKIENH', 'MRN1313', 'Templeton114', 'Templeton255', 'SWU4')
+dwi.atlas = 'desikan'
+dwi.basepath = '/data/all_mr/dwi/edgelists'
+
+graphobj = fmriu.io.collection.open_graphs(basepath = dwi.basepath, atlases = dwi.atlas, datasets = dwi.dsets,
+                                           gname = 'graphs', fmt='edgelist', rtype = 'array', flatten = TRUE)
+dwi.graphs = graphobj$graphs
+dwi.datasets = graphobj$dataset
+dwi.subjects = graphobj$subjects
+dwi.sessions = graphobj$sessions
+```
+
+## Discriminability
+
+```{r}
+print("dMRI Discriminability")
+dwi.results <- lapply(unique(dwi.datasets), function(dset) {
+  ss <- dwi.datasets == dset
+  graph.ss <- dwi.graphs[ss,]
+  subs.ss <- dwi.subjects[ss]
+  stat <- discr.stat(graph.ss, subs.ss)
+  print(sprintf("%s dMRI: %.4f", dset, stat))
+  return(data.frame(dataset=dset, modality='dMRI', discr=stat))
+})
+dwi.results <- do.call(rbind, dwi.results)
+```
+
+
+# Functional MRI
+
+```{r}
+nroi <- 70
+fmri.dsets = c('BNU1', 'BNU2', 'BNU3', 'HNU1', 'IBATRT', 'IPCAS1', 'IPCAS2', 'IPCAS5', 'IPCAS6', 'IPCAS8', 'MRN1', 'NYU1', 'SWU1', 'SWU2', 'SWU3', 'SWU4', 'UWM', 'XHCUMS')
+fmri.atlas = 'desikan-2mm'
+fmri.basepath = '/data/all_mr/fmri/ranked/edgelists'
+
+graphobj = fmriu.io.collection.open_graphs(basepath = fmri.basepath, atlases = fmri.atlas, datasets=fmri.dsets,
+                                           fmt='edgelist', rtype = 'array', flatten=TRUE)
+fmri.graphs = graphobj$graphs
+fmri.datasets = graphobj$dataset
+fmri.subjects = graphobj$subjects
+fmri.sessions <- graphobj$sessions
+```
+
+## Discriminability
+
+```{r}
+print("fMRI Discriminability")
+fmri.results <- lapply(unique(fmri.datasets), function(dset) {
+  ss <- fmri.datasets == dset
+  graph.ss <- fmri.graphs[ss,]
+  subs.ss <- fmri.subjects[ss]
+  stat <- discr.stat(graph.ss, subs.ss)
+  print(sprintf("%s fMRI: %.4f", dset, stat))
+  return(data.frame(dataset=dset, modality='fMRI', discr=stat))
+})
+fmri.results <- do.call(rbind, fmri.results)
+```
+
+## Multimodal
+
+```{r}
+ss.dsets <- fmri.dsets[which(fmri.dsets %in% dwi.dsets)]
+fmri.graphs.ss <- fmri.graphs[fmri.datasets %in% ss.dsets,]
+dwi.graphs.ss <- dwi.graphs[dwi.datasets %in% ss.dsets,]
+dwi.graphs.ss <- t(apply(dwi.graphs.ss, c(1), rank))
+fmri.datasets.ss <- fmri.datasets[fmri.datasets %in% ss.dsets]
+dwi.datasets.ss <- dwi.datasets[dwi.datasets %in% ss.dsets]
+fmri.subjects.ss <- fmri.subjects[fmri.datasets %in% ss.dsets]
+dwi.subjects.ss <- dwi.subjects[dwi.datasets %in% ss.dsets]
+fmri.sessions.ss <- fmri.sessions[fmri.datasets %in% ss.dsets]
+dwi.sessions.ss <- dwi.sessions[dwi.datasets %in% ss.dsets]
+fmri.data <- data.frame(subject=fmri.subjects.ss, session=fmri.sessions.ss, datasets=fmri.datasets.ss, data=fmri.graphs.ss)
+dwi.data <- data.frame(subject=dwi.subjects.ss, session=dwi.sessions.ss, datasets=dwi.datasets.ss, data=dwi.graphs.ss)
+mm.data <- merge(fmri.data, dwi.data, by=c("datasets", "subject", "session"), all=FALSE)
+```
+
+```{r}
+mm.results <- lapply(ss.dsets, function(dset) {
+  dset.dat <- mm.data[mm.data$datasets == dset,]
+  dset.dat.array <- as.matrix(dset.dat[, sapply(names(mm.data), function (x) grepl('data\\.', x))])
+  stat <- discr.stat(dset.dat.array, dset.dat$subject)
+  print(sprintf("%s MM: %.4f", dset, stat))
+  return(data.frame(dataset=dset, modality='MM', discr=stat))
+})
+mm.results <- do.call(rbind, mm.results)
+```
+
+```{r}
+fmri.results.ss <- fmri.results[fmri.results$dataset %in% ss.dsets,]
+dwi.results.ss <- dwi.results[dwi.results$dataset %in% ss.dsets,]
+merged.results <- rbind(mm.results, fmri.results.ss, dwi.results.ss)
+ggplot(merged.results, aes(x=dataset, y=discr, color=modality)) +
+  geom_point(size=2) +
+  xlab("Dataset") +
+  ylab("Discriminability") +
+  ggtitle("Investigating Impact of Multi-Modal Connectomics on Discriminability") +
+  theme_bw()
+```
