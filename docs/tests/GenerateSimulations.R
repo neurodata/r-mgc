@@ -10,7 +10,7 @@
 #'
 
 library(MASS)
-
+#source('GenerateSimulations.R')
 GenerateSimulations = function(type,n,d,dependent, noise){
 
   eps= rnorm(n, 0, 1);
@@ -59,14 +59,14 @@ GenerateSimulations = function(type,n,d,dependent, noise){
            Sigma[1:d,(d+1):(2*d)]=rho;
            Sigma[(d+1):(2*d),1:d]=rho;
            x=mvrnorm(n, matrix(0,1,2*d), Sigma);
-           y=x[,(d+1):(2*d)]+0.5*noise*eps;
+           y=x[,(d+1):(2*d)]+0.5*noise*matrix(eps,n,d);
            if (dependent==0){
              x=mvrnorm(n, matrix(0,1,2*d), Sigma);
            }
-           x=x[,1:d];
+           x=as.matrix(x[,1:d]);
          },
          { #Step Function
-           if (dim>1){
+           if (d>1){
              noise=1;
            }
            y=(xA>0)+1*noise*eps;
@@ -81,52 +81,34 @@ GenerateSimulations = function(type,n,d,dependent, noise){
            }
            y=4*( ( xA^2 - 1/2 )^2 + z%*%A/500 )+0.5*noise*eps;
          },
-         { #Circle
+         { #Spiral
            if (d>1){
              noise=1;
            }
            cc=0.4;
-           if (type==16){
-             rx=matrix(1,n,d);
-           }
-           if (type==17){
-             rx=matrix(5,n,d);
-           }
-
-           if (type==8){
              rx=runif(n, 0, 5);
              ry=rx;
              rx=matrix(rx,n,d);
              z=rx;
-           }else{
-             z=runif(n, -1, 1);
-             ry=matrix(1,n,1);
-           }
            x[,1]=cos(z[,1]*pi);
+           if (d>1){
            for (i in (1:(d-1))){
              x[,i+1]=x[,i]*cos(z[,i+1]*pi);
              x[,i]=x[,i]*sin(z[,i+1]*pi);
-           }
+           }}
            x=rx*x;
            y=ry*sin(z[,1]*pi);
-           if (type==8){
              y=y+cc*(d)*noise*mvrnorm(n, 0, 1);
-           }else{
-             x=x+cc*noise*rx*mvrnorm(n, matrix(0,1,d), diag(d));
-           }
            if (dependent==0){
-             if (type==8){
                rx=runif(n, 0, 5);
                rx=matrix(rx,n,d);
                z=rx;
-             } else {
-               z=runif(n, -1, 1);
-             }
              x[,1]=cos(z[,1]*pi);
+             if (d>1){
              for (i in (1:(d-1))){
                x[,i+1]=x[,i]*cos(z[,i+1]*pi);
                x[,i]=x[,i]*sin(z[,i+1]*pi);
-             }
+             }}
              x=rx*x;
            }
          },
@@ -134,17 +116,17 @@ GenerateSimulations = function(type,n,d,dependent, noise){
            if (d>1){
              noise=1;
            }
-           z=matrix(0,n,d);
+           x=matrix(0,n,d);
            for (i in (1:d)){
-             z[,i]=rbinom(n, 1, 0.5);
+             x[,i]=rbinom(n, 1, 0.5);
            }
            x=x+0.5*noise*mvrnorm(n, matrix(0,1,d), diag(d));
            y=(rbinom(n, 1, 0.5)*2-1);
            y=x%*%A*y+0.5*noise*eps;
            if (dependent==0){
-             z=matrix(0,n,d);
+             x=matrix(0,n,d);
              for (i in (1:d)){
-               z[,i]=rbinom(n, 1, 0.5);
+               x[,i]=rbinom(n, 1, 0.5);
              }
              x=x+0.5*noise*mvrnorm(n, matrix(0,1,d), diag(d));
            }
@@ -204,65 +186,75 @@ GenerateSimulations = function(type,n,d,dependent, noise){
          { #Two Parabolas
            y=( xA^2  + 2*noise*runif(n, 0, 1))*(rbinom(n,1,0.5)-0.5);
          },
+         { #Circle
+           if (d>1){
+             noise=1;
+           }
+           cc=0.4;
+           rx=matrix(1,n,d);
+           z=matrix(0,n,d);
+           for (i in (1:d)){
+             z[,i]=runif(n, -1, 1);
+           }
+           ry=matrix(1,n,1);
+           x[,1]=cos(z[,1]*pi);
+           if (d>1){
+           for (i in (1:(d-1))){
+             x[,i+1]=x[,i]*cos(z[,i+1]*pi);
+             x[,i]=x[,i]*sin(z[,i+1]*pi);
+           }}
+           x=rx*x;
+           y=ry*sin(z[,1]*pi);
+           x=x+cc*noise*rx*mvrnorm(n, matrix(0,1,d), diag(d));
+           if (dependent==0){
+             z=matrix(0,n,d);
+             for (i in (1:d)){
+               z[,i]=runif(n, -1, 1);
+             }
+             x[,1]=cos(z[,1]*pi);
+             if (d>1){
+             for (i in (1:(d-1))){
+               x[,i+1]=x[,i]*cos(z[,i+1]*pi);
+               x[,i]=x[,i]*sin(z[,i+1]*pi);
+             }}
+             x=rx*x;
+             x=x+cc*noise*rx*mvrnorm(n, matrix(0,1,d), diag(d));
+           }
+         },
          { #Ecllipse
            if (d>1){
              noise=1;
            }
            cc=0.4;
-           rx=runif(n, 0, 5);
-           ry=rx;
-           rx=matrix(rx,n,d);
-           z=rx;
-           x[,1]=cos(z[,1]*pi);
-           for (i in (1:(d-1))){
-             x[,i+1]=x[,i]*cos(z[,i+1]*pi);
-             x[,i]=x[,i]*sin(z[,i+1]*pi);
+           rx=matrix(5,n,d);
+           z=matrix(0,n,d);
+           for (i in (1:d)){
+             z[,i]=runif(n, -1, 1);
            }
-           x=rx*x;
-           y=ry*sin(z[,1]*pi);
-           y=y+cc*(d)*noise*mvrnorm(n, 0, 1);
-           if (dependent==0){
-
-             rx=runif(n, 0, 5);
-             rx=matrix(rx,n,d);
-             z=rx;
-
-             x[,1]=cos(z[,1]*pi);
+           ry=matrix(1,n,1);
+           x[,1]=cos(z[,1]*pi);
+           if (d>1){
              for (i in (1:(d-1))){
                x[,i+1]=x[,i]*cos(z[,i+1]*pi);
                x[,i]=x[,i]*sin(z[,i+1]*pi);
-             }
-             x=rx*x;
-           }
-         },
-         { #Spiral
-           if (d>1){
-             noise=1;
-           }
-           cc=0.4;
-
-           rx=matrix(1,n,d);
-           z=runif(n, -1, 1);
-           ry=matrix(1,n,1);
-           x[,1]=cos(z[,1]*pi);
-           for (i in (1:(d-1))){
-             x[,i+1]=x[,i]*cos(z[,i+1]*pi);
-             x[,i]=x[,i]*sin(z[,i+1]*pi);
-           }
+             }}
            x=rx*x;
            y=ry*sin(z[,1]*pi);
            x=x+cc*noise*rx*mvrnorm(n, matrix(0,1,d), diag(d));
            if (dependent==0){
-             z=runif(n, -1, 1);
-             x[,1]=cos(z[,1]*pi);
-             for (i in (1:(d-1))){
-               x[,i+1]=x[,i]*cos(z[,i+1]*pi);
-               x[,i]=x[,i]*sin(z[,i+1]*pi);
+             z=matrix(0,n,d);
+             for (i in (1:d)){
+               z[,i]=runif(n, -1, 1);
              }
+             x[,1]=cos(z[,1]*pi);
+             if (d>1){
+               for (i in (1:(d-1))){
+                 x[,i+1]=x[,i]*cos(z[,i+1]*pi);
+                 x[,i]=x[,i]*sin(z[,i+1]*pi);
+               }}
              x=rx*x;
              x=x+cc*noise*rx*mvrnorm(n, matrix(0,1,d), diag(d));
            }
-
          },
          { #Diamond
            u=matrix(runif(n, -1, 1),n,d);

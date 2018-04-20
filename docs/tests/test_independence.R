@@ -12,6 +12,8 @@
 
 library(HHG)
 library(energy)
+library(MGC)
+library(copula)
 library(dHSIC)
 source('GenerateSimulations.R')
 test.independence = function(type,n,d,noise,rep){
@@ -40,6 +42,8 @@ test.independence = function(type,n,d,noise,rep){
     hhgN=matrix(0,1,rep);
     hsicA=matrix(0,1,rep);
     hsicN=matrix(0,1,rep);
+    copulaA=matrix(0,1,rep);
+    copulaN=matrix(0,1,rep);
 
     for (i in (1:rep)){
       result=GenerateSimulations(type,n,d,1, noise);
@@ -49,8 +53,9 @@ test.independence = function(type,n,d,noise,rep){
       hsicA[i] = dhsic(x,y)$dHSIC;
       Dx = as.matrix(dist(x, diag = TRUE, upper = TRUE))
       Dy = as.matrix(dist(y, diag = TRUE, upper = TRUE))
-      mgcA[i] =  mgc.sample(Dx, Dy)$statMGC;
-      hhgA[i]=hhg.test(Dx,Dy)$sum.chisq;
+      #mgcA[i] =  mgc.sample(Dx, Dy)$statMGC;
+      #hhgA[i]=hhg.test(Dx,Dy)$sum.chisq;'
+      copulaA[i]=multIndepTest(cbind(x,y),c(ncol(x),ncol(y)),N=11)$global.statistic;
     }
 
     for (i in (1:rep)){
@@ -61,16 +66,19 @@ test.independence = function(type,n,d,noise,rep){
       hsicN[i] = dhsic(x,y)$dHSIC;
       Dx = as.matrix(dist(x, diag = TRUE, upper = TRUE))
       Dy = as.matrix(dist(y, diag = TRUE, upper = TRUE))
-      mgcN[i] =  mgc.sample(Dx, Dy)$statMGC;
-      hhgN[i]=hhg.test(Dx,Dy,nr.perm=0)$sum.chisq;
+      #mgcN[i] =  mgc.sample(Dx, Dy)$statMGC;
+      #hhgN[i]=hhg.test(Dx,Dy,nr.perm=0)$sum.chisq;
+      copulaN[i]=multIndepTest(cbind(x,y),c(ncol(x),ncol(y)),N=11)$global.statistic;
     }
 
-    testPower.mgc=CalculatePower(mgcA,mgcN);
+    #testPower.mgc=CalculatePower(mgcA,mgcN);
     testPower.hsic=CalculatePower(hsicA,hsicN);
     testPower.dcor=CalculatePower(dcorA,dcorN);
-    testPower.hhg=CalculatePower(hhgA,hhgN);
-    return(list(testPower.mgc=testPower.mgc,testPower.hsic=testPower.hsic,testPower.dcor=testPower.dcor,testPower.hhg=testPower.hhg))
-}
+    #testPower.hhg=CalculatePower(hhgA,hhgN);
+    testPower.copula=CalculatePower(copulaA,copulaN);
+    #return(list(testPower.mgc=testPower.mgc,testPower.hsic=testPower.hsic,testPower.dcor=testPower.dcor,testPower.hhg=testPower.hhg,testPower.copula=testPower.copula))
+    return(list(testPower.dcor=testPower.dcor,testPower.copula=testPower.copula,testPower.hsic=testPower.hsic))
+    }
 
 #' This function is an auxliary one that computes testing power
 #'
