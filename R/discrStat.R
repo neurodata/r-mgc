@@ -83,6 +83,10 @@ discr.mnr <- function(rdf, remove_outliers=FALSE, thresh=0, output=FALSE) {
 #' @param verbose a boolean indicating whether to print output. Defaults to \code{FALSE}.
 #' @return discr the discriminability statistic.
 #'
+#' @section Details:
+#' For more details see the help vignette:
+#' \code{vignette("discriminability", package = "mgc")}
+#'
 #' @examples
 #'
 #' nsrc <- 5

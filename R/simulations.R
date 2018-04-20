@@ -145,6 +145,9 @@ mgc.sims.cubic <- function(n, d, eps=80, ind=FALSE, a=-1, b=1, c.coef=c(-12, 48,
 #' \deqn{\Sigma = \left[I_d, \rho J_d; \rho J_d , (1 + \epsilon\kappa)I_d\right]}{E = [Id, r*Jd; r*Jd, (1+eps*K)*Id]}
 #' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
+#' For more details see the help vignette:
+#' \code{vignette("sims", package = "mgc")}
+#'
 #' @examples
 #' library(mgc)
 #' result  <- mgc.sims.joint(n=100, d=10)  # simulate 100 samples in 10 dimensions
@@ -187,6 +190,9 @@ mgc.sims.joint <- function(n, d, eps=0.5) {
 #' \deqn{Y = \mathbf{I}\left\{w^TX > 0\right\} + \kappa \epsilon N(0, 1)}{Y = I{w^TX > 0} + K*eps*N(0, 1)}
 #' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
+#' For more details see the help vignette:
+#' \code{vignette("sims", package = "mgc")}
+#'
 #' @examples
 #' library(mgc)
 #' result  <- mgc.sims.step(n=100, d=10)  # simulate 100 samples in 10 dimensions
@@ -227,6 +233,9 @@ mgc.sims.step <- function(n, d, eps=1, ind=FALSE, a=-1, b=1) {
 #' \deqn{X \sim {U}(a, b)^d}{X ~ U(a, b)^d},
 #' \deqn{Y = (w^TX)^2 + \kappa\epsilon N(0, 1)}{Y = (w^TX)^2 + K*eps*N(0, 1)}
 #' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
+#'
+#' For more details see the help vignette:
+#' \code{vignette("sims", package = "mgc")}
 #'
 #' @examples
 #' library(mgc)
@@ -270,6 +279,9 @@ mgc.sims.quad <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
 #' \deqn{Y = \left[\left((w^TX)^2 - \frac{1}{2}\right)^2 + \frac{w^TU}{500}\right] + \kappa \epsilon N(0, 1)}{Y = [((w^TX)^2 - 1/2)^2 + w^TU/500] + K*eps*N(0, 1)}
 #' and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
 #'
+#' For more details see the help vignette:
+#' \code{vignette("sims", package = "mgc")}
+#'
 #' @examples
 #' library(mgc)
 #' result  <- mgc.sims.wshape(n=100, d=10)  # simulate 100 samples in 10 dimensions
@@ -310,6 +322,9 @@ mgc.sims.wshape <- function(n, d, eps=0.5, ind=FALSE, a=-1, b=1) {
 #' Simumlates \eqn{n} points from \eqn{Spiral(X, Y) \in \mathbf{R}^d \times \mathbf{R}}{Spiral(X, Y)} where:
 #' \eqn{X_i = U\, \textrm{cos}(\pi\, U)^d}{Xi = U*cos(pi*U)^d} if \code{i = d}, and \eqn{U\, \textrm{sin}(\pi U)\textrm{cos}^i(\pi U)}{sin(pi*U)*cos(pi*U)^i} otherwise
 #' \deqn{Y = U\, \textrm{sin}(\pi\, U) + \epsilon p N(0, 1)}{Y = U*sin(pi*U) + eps*p*N(0, 1)}
+#'
+#' For more details see the help vignette:
+#' \code{vignette("sims", package = "mgc")}
 #'
 #' @examples
 #' library(mgc)
@@ -354,6 +369,9 @@ mgc.sims.spiral <- function(n, d, eps=0.4, a=0, b=5) {
 #' \deqn{U \sim Bern(p)}{U ~ B(p)}
 #' \deqn{X \sim Bern\left(p\right)^d + \epsilon N(0, I_d)}{X ~ B(p)^d + eps*N(0, I_d)}
 #' \deqn{Y = (2U - 1)w^TX + \epsilon N(0, 1)}{Y = (2*U-1)w^T*X + 0.5*eps*N(0, 1)}
+#'
+#' For more details see the help vignette:
+#' \code{vignette("sims", package = "mgc")}
 #'
 #' @examples
 #' library(mgc)

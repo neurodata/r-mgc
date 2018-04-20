@@ -30,6 +30,9 @@ Simumlates \eqn{n} points from \eqn{Wshape(X, Y) \in \mathbf{R}^d \times \mathbf
 \deqn{U \sim Bern(p)}{U ~ B(p)}
 \deqn{X \sim Bern\left(p\right)^d + \epsilon N(0, I_d)}{X ~ B(p)^d + eps*N(0, I_d)}
 \deqn{Y = (2U - 1)w^TX + \epsilon N(0, 1)}{Y = (2*U-1)w^T*X + 0.5*eps*N(0, 1)}
+
+For more details see the help vignette:
+\code{vignette("sims", package = "mgc")}
 }
 
 \examples{

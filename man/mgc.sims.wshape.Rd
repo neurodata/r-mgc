@@ -35,6 +35,9 @@ Simumlates \eqn{n} points from \eqn{W-shape(X, Y) \in \mathbf{R}^d \times \mathb
 \deqn{X \sim {U}(a, b)^d}{X ~ U(a, b)^d},
 \deqn{Y = \left[\left((w^TX)^2 - \frac{1}{2}\right)^2 + \frac{w^TU}{500}\right] + \kappa \epsilon N(0, 1)}{Y = [((w^TX)^2 - 1/2)^2 + w^TU/500] + K*eps*N(0, 1)}
 and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
+
+For more details see the help vignette:
+\code{vignette("sims", package = "mgc")}
 }
 
 \examples{

@@ -33,6 +33,10 @@
 #'
 #' @author C. Shen
 #'
+#' @section Details:
+#' For more details see the help vignette:
+#' \code{vignette("mgc", package = "mgc")}
+#'
 #' @examples
 #'
 #' library(mgc)

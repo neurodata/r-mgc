@@ -31,6 +31,9 @@ Given: \eqn{U \sim U(a, b)}{U ~ U(a, b)} a random variable.
 Simumlates \eqn{n} points from \eqn{Spiral(X, Y) \in \mathbf{R}^d \times \mathbf{R}}{Spiral(X, Y)} where:
 \eqn{X_i = U\, \textrm{cos}(\pi\, U)^d}{Xi = U*cos(pi*U)^d} if \code{i = d}, and \eqn{U\, \textrm{sin}(\pi U)\textrm{cos}^i(\pi U)}{sin(pi*U)*cos(pi*U)^i} otherwise
 \deqn{Y = U\, \textrm{sin}(\pi\, U) + \epsilon p N(0, 1)}{Y = U*sin(pi*U) + eps*p*N(0, 1)}
+
+For more details see the help vignette:
+\code{vignette("sims", package = "mgc")}
 }
 
 \examples{

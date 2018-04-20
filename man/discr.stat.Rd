@@ -27,6 +27,12 @@ discr the discriminability statistic.
 \description{
 A function for computing the discriminability from a distance matrix and a set of associated labels.
 }
+\section{Details}{
+
+For more details see the help vignette:
+\code{vignette("discriminability", package = "mgc")}
+}
+
 \examples{
 
 nsrc <- 5

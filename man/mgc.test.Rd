@@ -43,6 +43,12 @@ unless corrected for multiple testing problem.
 \description{
 The main function that tests independent between two data sets by MGC and permutation test.
 }
+\section{Details}{
+
+For more details see the help vignette:
+\code{vignette("mgc", package = "mgc")}
+}
+
 \examples{
 
 library(mgc)

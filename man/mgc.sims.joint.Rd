@@ -28,6 +28,9 @@ Simulates \eqn{n} points from \eqn{Joint-Normal(X, Y) \in  \mathbf{R}^d \times \
 \deqn{(X, Y) \sim {N}(0, \Sigma)}{(X, Y) ~ N(0, E)},
 \deqn{\Sigma = \left[I_d, \rho J_d; \rho J_d , (1 + \epsilon\kappa)I_d\right]}{E = [Id, r*Jd; r*Jd, (1+eps*K)*Id]}
 and \eqn{\kappa = 1\textrm{ if }d = 1, \textrm{ and 0 otherwise}}{K = 1 if d=1, and 0 otherwise} controls the noise for higher dimensions.
+
+For more details see the help vignette:
+\code{vignette("sims", package = "mgc")}
 }
 
 \examples{

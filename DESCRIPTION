@@ -1,8 +1,8 @@
 Package: mgc
 Type: Package
 Title: Multiscale Graph Correlation
-Version: 1.0
-Date: 2018-04-10
+Version: 1.0.1
+Date: 2018-04-12
 Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
 	   	    email = "ericwb95@gmail.com"),
 	   	 person("Censheng", "Shen", role="aut",
