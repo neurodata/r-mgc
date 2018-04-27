@@ -2,6 +2,7 @@
 
 [![CRAN Status Badge](http://www.r-pkg.org/badges/version/mgc)](http://cran.r-project.org/web/packages/mgc)
 [![arXiv shield](https://img.shields.io/badge/arXiv-1609.05148-red.svg?style=flat)](https://arxiv.org/abs/1609.05148)
+[![Downloads badge](https://cranlogs.r-pkg.org/badges/mgc)](https://cranlogs.r-pkg.org/badges/mgc)
 
 ## Contents
 
