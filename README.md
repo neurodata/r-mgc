@@ -3,6 +3,8 @@
 [![CRAN Status Badge](http://www.r-pkg.org/badges/version/mgc)](http://cran.r-project.org/web/packages/mgc)
 [![arXiv shield](https://img.shields.io/badge/arXiv-1609.05148-red.svg?style=flat)](https://arxiv.org/abs/1609.05148)
 [![Downloads badge](https://cranlogs.r-pkg.org/badges/mgc)](https://cranlogs.r-pkg.org/badges/mgc)
+[![DOI](https://zenodo.org/badge/103285533.svg)](https://zenodo.org/badge/latestdoi/103285533)
+
 
 ## Contents
 
@@ -20,7 +22,7 @@
 - [Issues](https://github.com/neurodata/mgc/issues)
 - [Pseudocode](#pseudocode)
 - [Matlab code](https://github.com/neurodata/mgc-paper/tree/master/Code/MGC)
-
+- [Citation](#citation)
 # Overview
 
 In modern scientific discovery, it is becoming increasingly critical to uncover whether one property of a dataset is related to another. The `MGC` (pronounced *magic*), or Multiscale Graph Correlation, provides a framework for investigation into the relationships between properties of a dataset and the underlying geometries of the relationships, all while requiring sample sizes feasible in real data scenarios.
@@ -311,4 +313,8 @@ Eric Bridgeford and Gregory Kiar
 
 # Pseudocode
 
-Pseudocode for the methods employed in the `mgc` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30). 
+Pseudocode for the methods employed in the `mgc` package can be found on the [arXiv - MGC](https://arxiv.org/abs/1609.05148) in Appendix C (starting on page 30).
+
+# Citation
+
+For citing code or the paper, please use the citations found in [citation.bib](./citations.bib) for the code or the paper.
