@@ -317,4 +317,4 @@ Pseudocode for the methods employed in the `mgc` package can be found on the [ar
 
 # Citation
 
-For citing code or the paper, please use the citations found in [citation.bib](./citations.bib) for the code or the paper.
+For citing code or the paper, please use the citations found in [citation.bib](./citation.bib).
