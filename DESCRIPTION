@@ -9,6 +9,8 @@ Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
 	   	        email="cshen6@jhu.edu"),
 	     person("Shangsi", "Wang", role = "aut",
 	            email = "swang127@jhu.edu"),
+	     person("Youjin", "Lee", role = "aut",
+	            email = "ylee160@jhu.edu"),
 	     person("Joshua", "Vogelstein", role = "ths",
 	     	    email = "jovo@jhu.edu"))
 Maintainer: Eric Bridgeford <ericwb95@gmail.com>
@@ -18,13 +20,19 @@ Depends:
 Imports:
   stats,
   SDMTools,
-  MASS
+  MASS,
+  HHG,
+  energy,
+  Matrix,
+  DTMCPack
 URL: https://github.com/neurodata/mgc
 Suggests: testthat,
   ggplot2,
   reshape2,
   knitr,
   rmarkdown
+Remotes:
+  github::neurodata/meda
 License: GPL-2
 Encoding: UTF-8
 LazyData: true

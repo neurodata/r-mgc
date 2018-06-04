@@ -1,0 +1,100 @@
+---
+title: "Multiscale Network Test using Diffusion Maps"
+author: "Youjin Lee"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Multiscale Network Test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Multiscale Statistics
+
+```{r, message = FALSE, warning = FALSE}
+library(mgc)
+library(igraph)
+library(igraphdata)
+library(meda)
+library(netdep)
+library(DTMCPack)
+library(Matrix)
+library(reshape2)
+library(ggplot2)
+```
+
+```{r, message = FALSE}
+plot_mtx <- function(Dx, main.title="Local Correlation Map", xlab.title="# X Neighbors", ylab.title="# Y Neighbors", limit.min, limit.max) {
+  data <- melt(Dx)
+  ggplot(data, aes(x=Var1, y=Var2, fill=value)) +
+    geom_tile() +
+    scale_fill_continuous(name="l-corr", high = "#132B43", low = "#56B1F7", 
+                          limits=c(limit.min, limit.max)) + 
+    xlab(xlab.title) +
+    ylab(ylab.title) +
+    theme_bw()  + 
+    ggtitle(main.title) + 
+    theme(plot.title = element_text(hjust = 0.5, size = 9)) 
+}
+```
+
+## Simulated Data
+
+In testing network dependence on nodal attributes, we first derive multiscale diffusion map embeddings and calculate the statistics at each diffusion time. 
+
+As an input we need 'igraph' object G and nodal attributes X. Here we generate a random graph from Stochastic Block Model of two blocks with size 100, and block sizes are 30 and 70 respectively. Distribution of the first nodal attributes $X1$ is totally dependent on block membership while that of the second nodal attributes $X2$ is partially dependent on block membership.
+
+```{r}
+pm <- cbind( c(.3, .02), c(.02, .3) )
+set.seed(1234)
+g <- sample_sbm(100, pref.matrix=pm, block.sizes=c(30,70))
+x1 <- c(rbinom(30, 1, 0.5), rbinom(70, 1, 0.1))
+sim.result1 = NetworkTest(g, x1, option = 'mgc', t.max = 10, n.perm = 100, default.q = 10, default.t = 3)
+print(sim.result1$pval)
+print(sim.result1$optimal.t)
+```
+
+```{r}
+x2 <- c(rbinom(70, 1, 0.5), rbinom(30, 1, 0.1))
+sim.result2 = NetworkTest(g, x2, option = 'mgc', t.max = 10, n.perm = 100, default.q = 10, default.t = 3)
+print(sim.result2$pval)
+print(sim.result2$optimal.t)
+```
+
+A function `NetworkTest` provides optimal diffusion time as well as testing p-value, which is significant with the first nodal attributes but not with the second attributes at $\alpha = 0.05$.
+
+## Real Data
+
+```{r, out.width="50%"}
+data(karate)
+G = karate
+X = V(karate)$Faction
+result = NetworkTest(G, X, option = 'mgc', t.max = 10, n.perm = 100, 
+                     default.q = 10, default.t = 3)
+print(result$pval)
+print(result$optimal.t)
+
+plot_mtx(result$localmap[[result$optimal.t + 1]], main.title= paste("Local Correlation Map at optimal (t=", result$optimal.t, ")", sep="") ,
+xlab.title="Diffusion map Neighbors", ylab.title="Faction Neighbors",
+limit.min = min(result$localmap[[result$optimal.t + 1]]), limit.max = max(result$localmap[[result$optimal.t + 1]]))
+
+## Diffusion time = 1
+plot_mtx(result$localmap[[1+1]], main.title= "Local Correlation Map (t=1)",
+xlab.title="Diffusion map Neighbors", ylab.title="Faction Neighbors",limit.min = min(result$localmap[[result$optimal.t + 1]]), limit.max = max(result$localmap[[result$optimal.t + 1]]))
+print(result$localscale[[1+1]]) # optimal neighborhood choice at t=1.
+
+## Diffusion time = 3
+plot_mtx(result$localmap[[3+1]], main.title= "Local Correlation Map (t=3)",
+xlab.title="Diffusion map Neighbors", ylab.title="Faction Neighbors", limit.min = min(result$localmap[[result$optimal.t + 1]]), limit.max = max(result$localmap[[result$optimal.t + 1]]))
+print(result$localscale[[3+1]]) # optimal neighborhood choice at t=3.
+
+## Diffusion time = 10
+plot_mtx(result$localmap[[10+1]], main.title= "Local Correlation Map (t=10)",
+xlab.title="Diffusion map Neighbors", ylab.title="Faction Neighbors", limit.min = min(result$localmap[[result$optimal.t + 1]]), limit.max = max(result$localmap[[result$optimal.t + 1]]))
+print(result$localscale[[10+1]]) # optimal neighborhood choice at t=10.
+```
+
+Note that local correlations are changing over diffusion time and so does optimal local scale. At the smoothed optimal diffusion time $(t^{*} = 5)$, optimal local neighborhood scale is (34, 2), which denote global scale.
+
+
+More details on testing procedures including diffusion map embeddings and applications can be found in [Lee at al. (2017)](https://arxiv.org/abs/1703.10136).
