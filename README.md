@@ -1,3 +1,8 @@
+---
+output:
+  html_document:
+    self_contained: no
+---
 # Multiscale Graph Correlation (MGC)
 
 [![CRAN Status Badge](http://www.r-pkg.org/badges/version/mgc)](http://cran.r-project.org/web/packages/mgc)
@@ -15,14 +20,17 @@
 - [Demo](#demo)
     + [MGC](#mgc-demo)
     + [Discriminability](#discriminability-demo)
+    + [Multiscale Network Test](#network-test-demo)
  - [Instructions for Use](#instructions-for-use)
     + [MGC](#mgc-use)
     + [Discriminability](#discriminability-use)
+    + [Multiscale Network Test](#network-test-use)
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
 - [Pseudocode](#pseudocode)
 - [Matlab code](https://github.com/neurodata/mgc-paper/tree/master/Code/MGC)
 - [Citation](#citation)
+
 # Overview
 
 In modern scientific discovery, it is becoming increasingly critical to uncover whether one property of a dataset is related to another. The `MGC` (pronounced *magic*), or Multiscale Graph Correlation, provides a framework for investigation into the relationships between properties of a dataset and the underlying geometries of the relationships, all while requiring sample sizes feasible in real data scenarios.
@@ -78,7 +86,8 @@ which should install in about 20 seconds.
 Users should install the following packages prior to installing `mgc`, from an `R` terminal:
 
 ```
-install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools', 'testthat', 'knitr', 'rmarkdown', 'latex2exp', 'MASS'))
+install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools', 'testthat', 'knitr', 'rmarkdown', 'latex2exp', 'MASS', 'HHG', 'energy', 'Matrix', 'DTMCPack'))
+devtools::install_github("neurodata/meda")
 ```
 
 which will install in about 80 seconds on a recommended machine.
@@ -173,6 +182,37 @@ library(mgc)
 vignette("Discriminability", package="mgc")
 ```
 
+## Network Test Demo
+
+In testing network dependence on nodal attributes, we first derive multiscale diffusion map embeddings and calculate the statistics at each diffusion time. 
+
+As an input we need 'igraph' object `G` and nodal attributes `X`. Here we generate a random graph from Stochastic Block Model of two blocks with size 100, and block sizes are 30 and 70 respectively. Distribution of the first nodal attributes `X1` is totally dependent on block membership while that of the second nodal attributes `X2` is partially dependent on block membership.
+
+```
+library(mgc)
+library(igraph)
+
+pm <- cbind( c(.3, .2), c(.2, .3) )
+set.seed(1234)
+g <- sample_sbm(100, pref.matrix=pm, block.sizes=c(30,70))
+x <- c(rbinom(70, 1, 0.3), rbinom(30, 1, 0.1))
+sim.result = NetworkTest(g, x, option = 'mgc', t.max = 10, n.perm = 500, default.q = 10, default.t = 3)
+print(sim.result$pval)
+print(sim.result$optimal.t)
+```
+then you have:
+
+```
+0.112
+2
+```
+as p-value and optimal diffusion time respectively.
+
+A more interactive demo can be found in the network test vignette:
+```
+library(mgc)
+vignette("NetworkTest", package="mgc")
+```
 
 # Instructions for Use
 
@@ -198,6 +238,7 @@ with the following statistic:
 ```
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is somewhat linear.
+
 
 ### Help
 
@@ -248,7 +289,7 @@ C. Shen
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
 
-```{r, fig.width=6, fig.height=4}
+```
 library(mgc)
 Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
@@ -309,6 +350,72 @@ Returns
 Author(s)
 
 Eric Bridgeford and Gregory Kiar
+```
+
+### Network Test Use
+
+We demonstrate how to apply multiscale network testing using diffusion map and `MGC` in testing independence between social network between members of a university karate club and their faction membership. 
+
+```
+data(karate)
+G = karate
+X = V(karate)$Faction
+result = NetworkTest(G, X, option = 'mgc', t.max = 10, n.perm = 100, 
+                     default.q = 10, default.t = 3)
+names(result)                     
+```
+
+Then you have the following results:
+
+```
+"pval"  "optimal.t"  "dimension"  "localmap"  "localscale"
+```
+
+### Help
+
+Detailed instructions for using the `MGC` statistic in testing network dependence can be invoked from the `R` terminal window:
+
+```
+help("NetworkTest")
+```
+
+and shows:
+
+```
+Multiscale Network Test
+
+Description
+
+This function provides multiscale test statistics and p-values, and those under optimal signal in testing independence between edge connectivity in graph G and nodal attributes X using diffusion map embeddings. Default test method is mgc.
+
+Usage
+
+NetworkTest(G, X, option = "mgc", t.max = 5, n.perm = 100,
+  default.q = 10, default.t = 3)
+Arguments
+
++ G	the input igraph object.
++ X	the input nodal attributes.
++ option	is a string that specifies which global correlation to build up-on. Defaults to 'mgc'.
+  + 'mgc' uses the MGC global correlation.
+  + 'dcor' uses the dcor global correlation.
+  + 'hhg' uses Heller-Heller-Gorfine (HHG) tests.
+  + t.max	the maximum diffusion time. Diffusion time starts from 0,1,.. t.max. Defaults to t.max = 5.
+  + n.perm the number of permutation samples. Defaults to n.perm = 100.
+  + default.q	dimension of graph embeddings. Defaults to default.q = 10.
+  + default.t	default diffusion time at optimal when no significant signal was found. Defaults to default.t = 3.
+
+Returns
++ A list containing the following:
++ pval	is p-value under diffusion map at optimal.t.
++ optimal.t	diffusion time at smoothed maximum among multiscale statistics.
++ dimension	a dimension of diffusion map embedding.
++ localmap a list of local correlation map (in case of option = 'mgc').
++ localscale a list of optimal local scale (row, column) in each local correlation map (in case of option = 'mgc').
+
+Author(s)
+
+Youjin Lee
 ```
 
 # Pseudocode
