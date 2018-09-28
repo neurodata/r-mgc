@@ -116,7 +116,7 @@ Please see the vignettes for help using the package:
 ```
 vignette("MGC", package="mgc")
 vignette("Discriminability", package="mgc")
-vignette("sims", package="mgc")
+vignette("simulations", package="mgc")
 ```
 
 
