@@ -128,6 +128,6 @@ Pseudocode for the methods employed in the `mgc` package can be found on the [ar
 
 For citing code or the paper, please use the citations found in [citation.bib](./citation.bib).
 
-# Reproducability
+# Reproducibility
 
 All the code to reproduce any figures from https://arxiv.org/abs/1609.05148 is available here https://github.com/neurodata/mgc-paper
