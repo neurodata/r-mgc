@@ -400,21 +400,23 @@ mgc.sims.ubern <- function(n, d, eps=0.5, p=0.5) {
 #' @param n the number of samples.
 #' @param d the number of dimensions.
 #' @param K the number of classes in the dataset.
-#' @param sig the scaling for the class-variance. Defaults to \code{1}.
-#' @param mean the scaling for the class-means. Defaults to \code{1}.
+#' @param sig.scale the scaling for the class-variance. Defaults to \code{1}.
+#' @param mean.scale the scaling for the class-means. Defaults to \code{1}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
 #' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
 #' @author Eric Bridgeford
 #' @export
-discr.sims.linear <- function(n, d, K, sig=1, mean=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+discr.sims.linear <- function(n, d, K, sig.scale=1, mean.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
   priors <- gen.sample.labels(K, class.equal=class.equal)
-  S <- sig*diag(d)
-  S <- replicate(K, S)
-  mu <- 1/sqrt(0:(d-1)*2 + 1)
+  S <- sig.scale*diag(d)
+  S <- abind(lapply(1:K, function(i) {
+    S
+  }), along=3)
+  mu <- array(1/sqrt(0:(d-1)*2 + 1), dim=c(d))
   mus <- abind(lapply(1:K, function(i) {
-    mu*i*mean
+    mu*i*mean.scale
   }), along=2)
 
   if (rotate) {
@@ -438,8 +440,8 @@ discr.sims.linear <- function(n, d, K, sig=1, mean=1, rotate=FALSE, class.equal=
 #' @param n the number of samples.
 #' @param d the number of dimensions.
 #' @param K the number of classes in the dataset.
-#' @param sig the scaling for the class-variance. Defaults to \code{1}.
-#' @param mean the scaling for the class-means. Defaults to \code{1}.
+#' @param sig.scale the scaling for the class-variance. Defaults to \code{1}.
+#' @param mean.scale the scaling for the class-means. Defaults to \code{1}.
 #' @param base the base to use for the logarithm. Defaults to \code{2}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
@@ -450,13 +452,15 @@ discr.sims.linear <- function(n, d, K, sig=1, mean=1, rotate=FALSE, class.equal=
 #' sim <- discr.sims.log(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-discr.sims.log <- function(n, d, K, sig=1, mean=1, base=2, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+discr.sims.log <- function(n, d, K, sig.scale=1, mean.scale=1, base=2, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
   priors <- gen.sample.labels(K, class.equal=class.equal)
-  S <- sig*diag(d)
-  S <- replicate(K, S)
-  mu <- 1/sqrt(0:(d-1)*2 + 1)
+  S <- sig.scale*diag(d)
+  S <- abind(lapply(1:K, function(i) {
+    S
+  }), along=3)
+  mu <- array(1/sqrt(0:(d-1)*2 + 1), dim=c(d))
   mus <- abind(lapply(1:K, function(i) {
-    mu*log(i+1, base=base)*mean
+    mu*log(i+1, base=base)*mean.scale
   }), along=2)
 
   if (rotate) {
@@ -484,7 +488,7 @@ discr.sims.log <- function(n, d, K, sig=1, mean=1, base=2, rotate=FALSE, class.e
 #' @param n the number of samples.
 #' @param d the number of dimensions.
 #' @param K the number of classes in the dataset.
-#' @param sig the scaling for the class-variance. Defaults to \code{1}.
+#' @param sig.scale the scaling for the class-variance. Defaults to \code{1}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
@@ -494,10 +498,12 @@ discr.sims.log <- function(n, d, K, sig=1, mean=1, base=2, rotate=FALSE, class.e
 #' sim <- discr.sims.spread(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-discr.sims.spread <- function(n, d, K, sig=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+discr.sims.spread <- function(n, d, K, sig.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
   priors <- gen.sample.labels(K, class.equal=class.equal)
-  S <- sig*diag(d)
-  S <- abind(lapply(1:K, function(i) {i^2*S}), along=3)
+  S <- sig.scale*diag(d)
+  S <- abind(lapply(1:K, function(i) {
+    i^2*S
+  }), along=3)
   mus <- array(0, dim=c(d, K))
 
   if (rotate) {
@@ -713,7 +719,5 @@ mgc.sims.2sphere <- function(n, r, d, sig=0) {
   u <- mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=diag(d))
   unorm <- diag(sqrt(apply(u^2, 1, sum)))
   pts <- r*(ginv(unorm) %*% u)
-  if (!is.nan(sig)) {
-    pts <- pts + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=sig*diag(d))
-  }
+  pts <- pts + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=sig*diag(d))
 }

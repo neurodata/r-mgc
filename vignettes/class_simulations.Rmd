@@ -55,7 +55,6 @@ sim <- discr.sims.spread(n, d, K)
 plot_sim(sim$X, sim$Y, "Spread")
 ```
 
-
 # Radial
 
 ```{r}

@@ -1,0 +1,134 @@
+---
+title: "Discriminability 1d"
+author: "Eric Bridgeford"
+date: "September 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(grid)
+require(gridExtra)
+require(ggplot2)
+require(reshape2)
+require(mgc)
+require(latex2exp)
+require(I2C2)
+require(ICC)
+```
+
+```{r}
+plot_sim <- function(X, Y, name="") {
+  data <- data.frame(x1=X[,1], x2=X[,2], ID=Y)
+  ggplot(data, aes(x=x1, y=x2, color=ID)) +
+    geom_point() +
+    xlab(TeX("$x_1$")) +
+    ylab(TeX("$x_2$")) +
+    ggtitle(name) +
+    theme_bw()
+}
+
+plot_dist <- function(D, name="") {
+  # rescale on 0-1
+  D <- (D - min(D))/(max(D) - min(D))
+  Ddf <- melt(D)
+  colnames(Ddf) <- c("S1", "S2", "Distance")
+  ggplot(Ddf, aes(x=S1, y=S2, fill=Distance)) +
+    geom_tile() +
+    xlab(TeX("$S_1$")) +
+    ylab(TeX("$S_2$")) +
+    ggtitle(name) +
+    scale_fill_continuous(name=TeX("$||S_1 - S_2||^2$"), low="#3f007d",
+                          high="#fcfbfd") +
+    theme_bw()
+}
+
+plot_rdf <- function(rdfs, name="") {
+  rdf.df <- data.frame(R=rdfs)
+  ggplot(rdf.df, aes(x=R, y=..ncount..)) +
+    geom_histogram(color='black', fill='blue') +
+    xlab(TeX("Reliability")) +
+    ylab("Relative Frequency") +
+    ggtitle(name) +
+    theme_bw()
+}
+```
+
+# Figure 1
+
+```{r}
+sim_simp <- discr.sims.linear(1000, 2, 6, mean=2)
+srt <- sort(as.numeric(sim_simp$Y), index.return=TRUE)$ix
+sim_simp$X <- sim_simp$X[srt,]; sim_simp$Y <- sim_simp$Y[srt]
+plot_sim_fig1 <- plot_sim(sim_simp$X, sim_simp$Y, name="Data")
+
+Dmtx <- mgc:::discr.distance(sim_simp$X)
+plot_dist_fig1 <- plot_dist(Dmtx, name="Distance Matrix")
+
+rdfs <- mgc:::discr.rdf(Dmtx, sim_simp$Y)
+discr <- mean(rdfs)
+plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("Discriminability = %.3f", discr))
+```
+
+# Figure 2
+
+```{r}
+# Parallelize Stuff
+#==================
+require(parallel)
+require(mgc)
+require(plyr)
+
+no_cores = detectCores()
+
+
+# Execute Simulations
+#====================
+
+# Setup Algorithms
+#=================
+sim_types <- list(discr.sims.linear, discr.sims.log, discr.sims.spread, discr.sims.radial)
+sim_names <- c("Linear", "Logarithmic", "Spread", "Radial")
+names(sim_types) <- sim_names
+
+Ks <- c(2, 10, 10)
+class.equals <- c(TRUE, TRUE, FALSE)
+nrep <- 20
+nperm <- 100
+ds <- c(1, 100)
+nmin <- 30
+nmax <- 1000
+length.out=15
+
+log.seq <- function(a=20, b=1000, base=2, length.out=20) {
+  return(round(base^seq(log(a, base=base), log(b, base=base), length.out=length.out)))
+}
+algs <- list(discr.stat, i2c2)
+names(algs) <- c("Discriminability", "I2C2")
+
+fold_rep <- data.frame(n=c(), p=c(), simname=c(), iteration=c(), K=c(), class.equal=c(), alg_name=c())
+counter <- 1
+
+for (i in 1:length(sim_types)) {
+  n <- rep(log.seq(a=nmin, b=nmax, base=2, length.out=length.out), nrep*length(ds))
+  iteration <- rep(rep(seq(1, length.out), each=nrep), length(ds))
+  d <- rep(ds, each=nrep*length.out)
+  for (k in 1:length(Ks)) {
+      fold_rep <- rbind(fold_rep, data.frame(n=n, p=d, simname=sim_names[[i]], iteration=iteration, K=Ks[k],
+                                             class.equal=class.equals[k]))
+  }
+}
+
+results <- mclapply(fold_rep, function(sim) {
+  tryCatch({
+      simdat <- do.call(sim_types[[sim$simname]], list(n=sim$n, d=sim$p, K=sim$K, class.equal=sim$class.equal))
+      d <- discr.stat(simdat$X, simdat$Y)
+      perm.test <- discr.test.one_sample(simdat$X, simdat$Y, nperm=nperm)
+      res <- data.frame(n=n, p=p, simname=fold_rep$simname, iteration=fold_rep$iteration, K=fold_rep$K,
+                        class.equal=fold_rep$class.equal, pval=pval)
+    }, error=function(e) lhat <- NaN)
+}, mc.cores=no_cores)
+```
