@@ -1,0 +1,64 @@
+---
+title: "Class Dependence Simulations"
+author: "Eric Bridgeford"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{class_sims}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=4, fig.height=3)
+```
+
+```{r, message=FALSE}
+require(mgc)
+require(ggplot2)
+n=400
+d=2
+K=5
+```
+
+```{r}
+plot_sim <- function(X, Y, name) {
+
+  data <- data.frame(x1=X[,1], x2=X[,2], class=Y)
+  ggplot(data, aes(x=x1, y=x2, color=class)) +
+    geom_point() +
+    xlab("x1") +
+    ylab("x2") +
+    ggtitle(name) +
+    theme_bw()
+}
+```
+
+# Linear
+
+```{r}
+sim <- discr.sims.linear(n, d, K, mean=3)
+plot_sim(sim$X, sim$Y, "Linear")
+```
+
+# Logarithmic
+
+```{r}
+sim <- discr.sims.log(n, d, K, mean=8)
+plot_sim(sim$X, sim$Y, "Logarithmic")
+```
+
+# Spread
+
+```{r}
+sim <- discr.sims.spread(n, d, K)
+plot_sim(sim$X, sim$Y, "Spread")
+```
+
+
+# Radial
+
+```{r}
+sim <- discr.sims.radial(n, d, K)
+plot_sim(sim$X, sim$Y, "Radial")
+```
