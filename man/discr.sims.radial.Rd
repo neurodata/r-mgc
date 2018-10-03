@@ -4,7 +4,7 @@
 \alias{discr.sims.radial}
 \title{Discriminability Radial Simulation}
 \usage{
-discr.sims.radial(n, d, K, sig = 0.1, r = 1, class.equal = TRUE,
+discr.sims.radial(n, d, K, sig.scale = 0.1, r = 1, class.equal = TRUE,
   ind = FALSE)
 }
 \arguments{
@@ -14,8 +14,6 @@ discr.sims.radial(n, d, K, sig = 0.1, r = 1, class.equal = TRUE,
 
 \item{K}{the number of classes in the dataset.}
 
-\item{sig}{the scaling for the class-variance. Defaults to \code{0.1}.}
-
 \item{r}{the radial spacing between each class. Defaults to \code{1}.}
 
 \item{class.equal}{whether the number of samples/class should be equal, with each
@@ -23,6 +21,8 @@ class having a prior of 1/K, or inequal, in which each class obtains a prior
 of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
 
 \item{ind}{whether to sample x and y independently. Defaults to \code{FALSE}.}
+
+\item{sig}{the scaling for the class-variance. Defaults to \code{0.1}.}
 }
 \description{
 A function to simulate data with the same mean with radial symmetry as class id increases.

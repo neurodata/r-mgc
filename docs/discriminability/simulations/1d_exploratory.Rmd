@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, message=FALSE}
 require(grid)
 require(gridExtra)
 require(ggplot2)
@@ -71,6 +71,10 @@ plot_dist_fig1 <- plot_dist(Dmtx, name="Distance Matrix")
 rdfs <- mgc:::discr.rdf(Dmtx, sim_simp$Y)
 discr <- mean(rdfs)
 plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("Discriminability = %.3f", discr))
+```
+
+```{r, fig.width=10, fig.height=3}
+grid.arrange(arrangeGrob(grobs=list(plot_sim_fig1, plot_dist_fig1, plot_discr_fig1), widths=c(0.3, 0.4, 0.24), nrow=1))
 ```
 
 # Figure 2

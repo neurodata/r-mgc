@@ -4,8 +4,8 @@
 \alias{discr.sims.log}
 \title{Discriminability Logarithmic Simulation}
 \usage{
-discr.sims.log(n, d, K, sig = 1, mean = 1, base = 2, rotate = FALSE,
-  class.equal = TRUE, ind = FALSE)
+discr.sims.log(n, d, K, sig.scale = 1, mean.scale = 1, base = 2,
+  rotate = FALSE, class.equal = TRUE, ind = FALSE)
 }
 \arguments{
 \item{n}{the number of samples.}
@@ -14,9 +14,9 @@ discr.sims.log(n, d, K, sig = 1, mean = 1, base = 2, rotate = FALSE,
 
 \item{K}{the number of classes in the dataset.}
 
-\item{sig}{the scaling for the class-variance. Defaults to \code{1}.}
+\item{sig.scale}{the scaling for the class-variance. Defaults to \code{1}.}
 
-\item{mean}{the scaling for the class-means. Defaults to \code{1}.}
+\item{mean.scale}{the scaling for the class-means. Defaults to \code{1}.}
 
 \item{base}{the base to use for the logarithm. Defaults to \code{2}.}
 

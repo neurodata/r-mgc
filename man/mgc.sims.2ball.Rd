@@ -4,7 +4,7 @@
 \alias{mgc.sims.2ball}
 \title{Sample from Unit 2-Ball}
 \usage{
-mgc.sims.2ball(n, d, r = 1, sig = NaN)
+mgc.sims.2ball(n, d, r = 1, sig.scale = 0)
 }
 \arguments{
 \item{n}{the number of samples.}
@@ -13,7 +13,7 @@ mgc.sims.2ball(n, d, r = 1, sig = NaN)
 
 \item{r}{the radius of the 2-ball. Defaults to \code{1}.}
 
-\item{sig}{if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
+\item{sig.scale}{if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
 which has no noise.}
 }
 \description{

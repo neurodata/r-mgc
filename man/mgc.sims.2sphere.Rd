@@ -4,7 +4,7 @@
 \alias{mgc.sims.2sphere}
 \title{Sample from Unit 2-Sphere}
 \usage{
-mgc.sims.2sphere(n, r, d, sig = NaN)
+mgc.sims.2sphere(n, r, d, sig.scale = 0)
 }
 \arguments{
 \item{n}{the number of samples.}
@@ -13,7 +13,7 @@ mgc.sims.2sphere(n, r, d, sig = NaN)
 
 \item{d}{the number of dimensions.}
 
-\item{sig}{if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
+\item{sig.scale}{if desired, sample from 2-ball with error sigma. Defaults to \code{0},
 which has no noise.}
 }
 \description{

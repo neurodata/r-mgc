@@ -7,9 +7,17 @@
 discr.test.two_sample(D1, D2, ids, nperm = 100, verbose = FALSE)
 }
 \arguments{
-\item{D1}{\code{[n x n]} the first distance matrix to run a permutation test for, for \code{n} samples.}
+\item{D1}{is interpreted as:
+\describe{
+   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+}}
 
-\item{D2}{\code{[n x n]} the second distance matrix to run a permutation test for, for \code{n} samples.}
+\item{D2}{is interpreted as:
+\describe{
+   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+}}
 
 \item{ids}{\code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.}
 

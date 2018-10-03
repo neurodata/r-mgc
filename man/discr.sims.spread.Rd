@@ -4,8 +4,8 @@
 \alias{discr.sims.spread}
 \title{Discriminability Spread Simulation}
 \usage{
-discr.sims.spread(n, d, K, sig = 1, rotate = FALSE, class.equal = TRUE,
-  ind = FALSE)
+discr.sims.spread(n, d, K, sig.scale = 1, rotate = FALSE,
+  class.equal = TRUE, ind = FALSE)
 }
 \arguments{
 \item{n}{the number of samples.}
@@ -14,7 +14,7 @@ discr.sims.spread(n, d, K, sig = 1, rotate = FALSE, class.equal = TRUE,
 
 \item{K}{the number of classes in the dataset.}
 
-\item{sig}{the scaling for the class-variance. Defaults to \code{1}.}
+\item{sig.scale}{the scaling for the class-variance. Defaults to \code{1}.}
 
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior

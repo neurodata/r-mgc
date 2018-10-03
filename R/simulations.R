@@ -428,7 +428,7 @@ discr.sims.linear <- function(n, d, K, sig.scale=1, mean.scale=1, rotate=FALSE, 
   sim <- mgc.sims.sim_gmm(mus, S, n, priors=priors)
   X <- sim$X; Y <- factor(sim$Y)
   return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Linear",
-              params=list(sig=sig, mean=mean, rotate=rotate, class.equal=class.equal,
+              params=list(sig.scale=sig.scale, mean.scale=mean.scale, rotate=rotate, class.equal=class.equal,
                           ind=ind)))
 }
 
@@ -476,7 +476,7 @@ discr.sims.log <- function(n, d, K, sig.scale=1, mean.scale=1, base=2, rotate=FA
     X <- mgc.sims.sim_gmm(mus, S, n, priors=priors)$X
   }
   return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Logarithmic",
-              params=list(sig=sig, mean=mean, rotate=rotate, class.equal=class.equal,
+              params=list(sig.scale=sig.scale, mean.scale=mean.scale, rotate=rotate, class.equal=class.equal,
                           ind=ind)))
 }
 
@@ -520,7 +520,7 @@ discr.sims.spread <- function(n, d, K, sig.scale=1, rotate=FALSE, class.equal=TR
   }
 
   return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Logarithmic",
-              params=list(sig=sig, mean=mean, rotate=rotate, class.equal=class.equal,
+              params=list(sig.scale=sig.scale, rotate=rotate, class.equal=class.equal,
                           ind=ind)))
 }
 
@@ -543,7 +543,7 @@ discr.sims.spread <- function(n, d, K, sig.scale=1, rotate=FALSE, class.equal=TR
 #' sim <- discr.sims.radial(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-discr.sims.radial <- function(n, d, K, sig=0.1, r=1, class.equal=TRUE, ind=FALSE) {
+discr.sims.radial <- function(n, d, K, sig.scale=0.1, r=1, class.equal=TRUE, ind=FALSE) {
   priors <- gen.sample.labels(K, class.equal=class.equal)
 
   class <- 1:K
@@ -560,7 +560,7 @@ discr.sims.radial <- function(n, d, K, sig=0.1, r=1, class.equal=TRUE, ind=FALSE
       f <- mgc.sims.2sphere
     }
     repvec <- Y == i
-    pts <- do.call(f, list(sum(repvec), d, r=r*i, sig=sig))
+    pts <- do.call(f, list(sum(repvec), d, r=r*i, sig.scale=sig.scale))
     X[repvec,] <- pts
   }
 
@@ -568,7 +568,7 @@ discr.sims.radial <- function(n, d, K, sig=0.1, r=1, class.equal=TRUE, ind=FALSE
     Y <- sample(class, size=n, replace=TRUE, prob=priors)
   }
   return(list(X=X, Y=factor(Y), priors=priors, simtype="Radial",
-              params=list(sig=sig, r=r, class.equal=class.equal,
+              params=list(sig.scale=sig.scale, r=r, class.equal=class.equal,
                           ind=ind)))
 }
 
@@ -684,7 +684,7 @@ mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
 #' @param n the number of samples.
 #' @param d the number of dimensions.
 #' @param r the radius of the 2-ball. Defaults to \code{1}.
-#' @param sig if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
+#' @param sig.scale if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
 #' which has no noise.
 #' @examples
 #' library(mgc)
@@ -692,22 +692,22 @@ mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
 #' X <- mgc.sims.rball(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.2ball <- function(n, d, r=1, sig=0) {
+mgc.sims.2ball <- function(n, d, r=1, sig.scale=0) {
   Y <- mvrnorm(n=n, mu=array(0, dim=c(d, 1)), Sigma=diag(d))
   u <- runif(n)
   r <- r * u^(1/d)
-  X <- r * Y/sqrt(apply(Y^2, 1, sum)) + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=sig*diag(d))
+  X <- r * Y/sqrt(apply(Y^2, 1, sum)) + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=sig.scale*diag(d))
 }
 
 #' Sample from Unit 2-Sphere
 #'
 #' Sample from the 2-sphere in d-dimensions.
 #'
-#' @importFrom MASS mvrnorm
+#' @importFrom MASS mvrnorm ginv
 #' @param n the number of samples.
 #' @param d the number of dimensions.
 #' @param r the radius of the 2-ball. Defaults to \code{1}.
-#' @param sig if desired, sample from 2-ball with error sigma. Defaults to \code{0},
+#' @param sig.scale if desired, sample from 2-ball with error sigma. Defaults to \code{0},
 #' which has no noise.
 #' @examples
 #' library(mgc)
@@ -715,9 +715,9 @@ mgc.sims.2ball <- function(n, d, r=1, sig=0) {
 #' X <- mgc.sims.rball(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.2sphere <- function(n, r, d, sig=0) {
+mgc.sims.2sphere <- function(n, r, d, sig.scale=0) {
   u <- mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=diag(d))
   unorm <- diag(sqrt(apply(u^2, 1, sum)))
   pts <- r*(ginv(unorm) %*% u)
-  pts <- pts + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=sig*diag(d))
+  pts <- pts + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=sig.scale*diag(d))
 }

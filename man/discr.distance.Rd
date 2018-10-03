@@ -4,12 +4,12 @@
 \alias{discr.distance}
 \title{Distance}
 \usage{
-discr.distance(X, method = "2")
+discr.distance(X, method = "euclidian")
 }
 \arguments{
 \item{X}{\code{[n, d]} a data matrix for n samples of d variables.}
 
-\item{method}{the method for computing distances. Defaults to \code{'2'}.
+\item{method}{the method for computing distances. Defaults to \code{'euclidian'}.
 \describe{
    \item{'2'}{use the 2 norm between pairs of observations}
 }}
