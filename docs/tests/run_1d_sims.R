@@ -14,23 +14,29 @@
 source('test_independence.R')
 run1DSims = function(type,rep){
   if (missing(rep)){
-    rep=1000;
+    rep=100;
   }
-  n=seq(5,100,5);
+  sz=10; # reduce sz for faster running
+  n=seq(100/sz,100,100/sz);
 
-  sz=20;
-  dcor=matrix(0,1,20);
-  copula=matrix(0,1,20);
-  hsic=matrix(0,1,20);
+  dcor=matrix(0,1,sz);
+  uRf=matrix(0,1,sz);
+  sRf=matrix(0,1,sz);
+  #sRerf=matrix(0,1,sz);
+  hsic=matrix(0,1,sz);
 
   #for (i in (1:20)){
     for (j in (1:sz)){
     power=test.independence(type,n[j],1,1,rep);
     dcor[j]=power$testPower.dcor;
     hsic[j]=power$testPower.hsic;
-    copula[j]=power$testPower.copula;
+    uRf[j]=power$testPower.uRf;
+    sRf[j]=power$testPower.sRf;
+    #sRerf[j]=power$testPower.sRerf;
   #}
-  }
+    }
+  
+  avePower=cbind(mean(sRf),mean(uRf),mean(dcor),mean(hsic));
   #return(list(testPower.mgc=testPower.mgc,testPower.hsic=testPower.hsic,testPower.dcor=testPower.dcor,testPower.hhg=testPower.hhg,testPower.copula=testPower.copula))
-  return(list(testPower.dcor=dcor,testPower.copula=copula,testPower.hsic=hsic,n=n))
+  return(list(average=avePower,testPower.dcor=dcor,testPower.sRf=sRf,testPower.uRf=uRf,testPower.hsic=hsic,n=n))
 }
