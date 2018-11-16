@@ -4,10 +4,10 @@
 \alias{discr.rdf}
 \title{Reliability Density Function}
 \usage{
-discr.rdf(D, ids)
+discr.rdf(X, ids)
 }
 \arguments{
-\item{D}{\code{[n, n]} a distance matrix for n samples.}
+\item{X}{\code{[n, n]} a distance matrix for n samples.}
 
 \item{ids}{\code{[n]} a vector containing the label ids for each sample.}
 }

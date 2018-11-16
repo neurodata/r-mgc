@@ -21,34 +21,24 @@ discr.rdf <- function(X, ids) {
 
   # loop over scans
   rdf <- sapply(1:N, function(i) {
-    ind <- which(ids[i] == ids) # all the indices that are the same subject
-    di <- X[i,]
-    Dii <- di[ind[ind != i]]  # indices of D corresponding to between scan i subject of scan i, excluding scan i
-    d <- min(Dii, na.rm=TRUE)
-
-    Dij <- di[-ind]  # all the distances excluding those associated with subject i
-    # # loop over the unique subjects
-    # inn <- sapply(K, function(j) {
-    #   indj <- which(j == ids)  # get index of subject j's scans
-    #   Dij <- di[indj[indj != i]]  # indices of D corresponding to between scan i and subject j, excluding scan i
-    #   return(min(Dij, na.rm=TRUE))  # nearest neighbor from scan i to collection of scans for subject j
-    # })
-    # # d between current scan and nearest neighbord of current subject
-    # d <- inn[K == ids[i]]
-    # # ds between current scan and nearest neighbor of other subject
-    # inn <- inn[K != ids[i]]
-    # return(1 - (sum(inn[!is.nan(inn)] < d) + 0.5*sum(inn[!is.nan(inn)] == d)) / (length(K) - 1))
-    return(as.numeric(1 - (as.numeric(Dij < d) + 0.5*(Dij == d))))
+    ind <- which(ids[i] == ids) # all the indices that are the same subject, but different scan
+    di <- X[i,] # get the entire ra for the particular scan
+    # loop over the unique subjects
+    inn <- sapply(K, function(j) {
+      indj <- which(j == ids)  # get index of subject j's scans
+      Dij <- di[indj[indj != i]]  # indices of D corresponding to between scan i and subject j, excluding scan i
+      return(min(Dij, na.rm=TRUE))  # nearest neighbor from scan i to collection of scans for subject j
+    })
+    # d between current scan and nearest neighbord of current subject
+    d <- inn[K == ids[i]]
+    # ds between current scan and nearest neighbor of other subject
+    inn <- inn[K != ids[i]]
+    return(1 - (sum(inn[!is.nan(inn)] < d) + 0.5*sum(inn[!is.nan(inn)] == d)) / (length(K) - 1))
   })
 
-  return(unlist(rdf))
+  return(rdf)
 }
-#' Discriminability Mean Normalized Rank
-#' @param rdf the reliability densities.
-#' @return the mnr.
-discr.mnr <- function(rdf) {
-  mean(rdf, is.nan=FALSE)
-}
+
 #' Discriminability Statistic
 #'
 #' A function for computing the discriminability from a distance matrix and a set of associated labels.
@@ -90,5 +80,5 @@ discr.stat <- function(X, Y) {
     X <- discr.distance(X)
   }
   rdf <- discr.rdf(X, Y)
-  return(list(discr=discr.mnr(rdf), rdf=rdf))
+  return(list(discr=mean(rdf, is.nan=FALSE), rdf=rdf))
 }

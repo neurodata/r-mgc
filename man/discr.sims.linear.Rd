@@ -4,19 +4,19 @@
 \alias{discr.sims.linear}
 \title{Discriminability Linear Simulation}
 \usage{
-discr.sims.linear(n, d, K, sig.scale = 1, mean.scale = 1, rotate = FALSE,
+discr.sims.linear(n, d, K, cov.scale = 1, mean.scale = 1, rotate = FALSE,
   class.equal = TRUE, ind = FALSE)
 }
 \arguments{
 \item{n}{the number of samples.}
 
-\item{d}{the number of dimensions.}
+\item{d}{the number of dimensions. The first dimension will be the signal dimension; the remainders noise.}
 
 \item{K}{the number of classes in the dataset.}
 
-\item{sig.scale}{the scaling for the class-variance. Defaults to \code{1}.}
+\item{cov.scale}{the scaling for the class-variance. Defaults to \code{1}.}
 
-\item{mean.scale}{the scaling for the class-means. Defaults to \code{1}.}
+\item{mean.scale}{the scaling for the dimension's class-means. Defaults to \code{1}.}
 
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior

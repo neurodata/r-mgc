@@ -4,7 +4,7 @@
 \alias{discr.stat}
 \title{Discriminability Statistic}
 \usage{
-discr.stat(X, ids, remove_outliers = FALSE, thresh = 0, verbose = FALSE)
+discr.stat(X, Y)
 }
 \arguments{
 \item{X}{is interpreted as:
@@ -13,7 +13,7 @@ discr.stat(X, ids, remove_outliers = FALSE, thresh = 0, verbose = FALSE)
    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
 }}
 
-\item{ids}{\code{[n]} a vector containing the labels for our \code{n} samples.}
+\item{Y}{\code{[n]} a vector containing the sample ids for our \code{n} samples.}
 
 \item{remove_outliers}{boolean indicating whether to ignore observations with rdf below a certain cutoff. Defaults to \code{FALSE}.}
 
@@ -22,7 +22,9 @@ discr.stat(X, ids, remove_outliers = FALSE, thresh = 0, verbose = FALSE)
 \item{verbose}{a boolean indicating whether to print output. Defaults to \code{FALSE}.}
 }
 \value{
-discr the discriminability statistic.
+A list containing the following:
+\item{`discr` the discriminability statistic.}
+\item{`rdf` the rdfs for each sample.}
 }
 \description{
 A function for computing the discriminability from a distance matrix and a set of associated labels.
