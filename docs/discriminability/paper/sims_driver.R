@@ -3,6 +3,7 @@
 require(lolR)
 require(MASS)
 library(parallel)
+require(mgc)
 no_cores = detectCores() - 1
 
 # redefine sothat the IO is the same for ICC/I2C2
