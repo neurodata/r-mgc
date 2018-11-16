@@ -7,12 +7,9 @@
 discr.distance(X, method = "euclidian")
 }
 \arguments{
-\item{X}{\code{[n, d]} a data matrix for n samples of d variables.}
+\item{X}{\code{[n, d]} a data matrix for `n` samples of `d` variables.}
 
-\item{method}{the method for computing distances. Defaults to \code{'euclidian'}.
-\describe{
-   \item{'2'}{use the 2 norm between pairs of observations}
-}}
+\item{method}{the method for computing distances. Defaults to \code{'euclidian'}. See `\link[stats]{dist}` for details.}
 }
 \value{
 a \code{[n, n]} distance matrix indicating the pairwise distances between all samples passed in.

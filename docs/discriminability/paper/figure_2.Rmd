@@ -1,0 +1,134 @@
+---
+title: "figure_2"
+author: "Eric Bridgeford"
+date: "November 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(lolR)
+```
+
+```{r}
+w=.8
+h=.2
+mcols <- c("#FF8C00", "#0e3ec1","#469990", "#FF0000", "#8A2BE2") #"#8B4513")
+names(mcols) <- c("1", "2", "3", "4", "5")
+sim_twod_scatter <- function(X, Y, title="", xlab="", ylab="", nbreaks=4, outlier=NULL, d=c(1, 2)) {
+  reorder <- c()
+  for (y in unique(Y)) {
+    reorder <- c(reorder, sample(1:dim(X[Y == y,])[1], size=dim(X[Y==y,])[1], replace=FALSE))
+  }
+  # for (i in 1:length(d)) {
+  #   dd <- d[i]
+  #   X[, dd] <- (X[, dd] - min(X[, dd]))/(max(X[, dd]) - min(X[, dd]))
+  # }
+  #X <- (X - min(abs(X)))/(max(abs(X)) - min(abs(X)))
+  #xlims <- c(0, 1); ylims <- c(0, 1)
+  df.dat <- data.frame(d1=X[, d[1]], d2=X[, d[2]], class=as.factor(Y))
+  plot_sims <- ggplot(df.dat, aes(x=d1, y=d2, color=class)) +
+    geom_point(alpha=0.7) +
+    #xlab(paste("Dimension", d[1])) +
+    #ylab(paste("Dimension", d[2])) +
+    xlab(xlab) +
+    ylab(ylab) +
+    ggtitle(title) +
+    theme_bw() +
+    #xlim(xlims) +
+    #ylim(ylims) +
+    theme() +
+    theme(plot.margin = unit(c(h,w,h,h), "cm")) +
+    scale_color_manual(values=mcols)#, guide=guide_legend(title.position="top", title.hjust = .5))
+  return(plot_sims)
+}
+
+# redefine sothat the IO is the same for ICC/I2C2
+iccadj <- function(X, Y) {
+  return(ICCbare(Y, lol.project.pca(X, r=1)$Xr))
+}
+
+i2c2adj <- function(X, Y) {
+  return(i2c2(X, Y, visit=rep(1, length(Y)))$lambda)
+}
+
+plot_dat <- function(X, Y, title="", xlab="", ylab="") {
+  icc <- iccadj(X, Y)
+  i2c <- i2c2adj(X, Y)
+  discr <- discr.stat(X, Y)
+  
+  datplot <- sim_twod_scatter(X, Y, title=title, xlab=xlab, ylab=ylab) + theme(legend.position='none')
+  bar.df <- data.frame(Statistic=c("Discr", "ICC", "I2C2"), Value=c(discr$discr, icc, i2c))
+  acols <- c("#FF0000", "#BBBBBB", "#888888")
+  names(acols) <- c("Discr", "ICC", "I2C2")
+  bplot <- ggplot(bar.df, aes(x=Statistic, y=Value, fill=Statistic)) +
+    geom_col() +
+    scale_fill_manual(values=acols, guide='none') +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    theme_bw() +
+    theme_minimal() +
+    theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+    xlab("") +
+    ylab("") +
+    ggtitle("")
+  rplot <- ggdraw() +
+    draw_plot(datplot + theme(legend.position='none')) +
+    draw_plot(bplot, x=.75, y=.73, width=.15, height=.25)
+  return(rplot)
+}
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+```
+
+```{r}
+n = 100; d = 2
+sims <- list(discr.sims.linear, discr.sims.linear, discr.sims.linear,# discr.sims.exp,
+             discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
+sims.opts <- list(list(n=n, d=d, K=2, mean.scale=0, cov.scale=20), list(n=n, d=d, K=2, mean.scale=1, cov.scale=20), list(n=n, d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
+                  list(n=n, d=d, K=2, cov.scale=5), list(n=n, d=d, K=2))#,
+                  #list(n=n, d=d))
+sims.titles = c("(A) No Signal", "(A) 2 Class, Linear", "(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
+                "(D) 2 Class, Cross", "(E) 2 Class, Spherical")#, "(F) 5 Class, Beta")
+plots <- list()
+for (i in 1:length(sims)) {
+  sim <- do.call(sims[[i]], sims.opts[[i]])
+  X <- sim$X; Y <- sim$Y
+  plots[[i]] <- plot_dat(X, Y, title=sims.titles[i], xlab="", ylab="")
+}
+```
+
+# Multiplot
+
+```{r}
+i=2
+sim <- do.call(sims[[i]], sims.opts[[i]])
+X <- sim$X; Y <- sim$Y
+sim_leg <- g_legend(
+  sim_twod_scatter(X, Y, title="", xlab="", ylab="") +
+    scale_color_discrete(name="Class") + theme(legend.position='bottom')
+)
+
+grid.arrange(arrangeGrob(grobs=plots, ncol=3), sim_leg, heights=c(0.9, 0.05))
+```
