@@ -4,6 +4,8 @@ require(lolR)
 require(MASS)
 library(parallel)
 require(mgc)
+require(ICC)
+require(I2C2)
 no_cores = detectCores() - 1
 
 # redefine sothat the IO is the same for ICC/I2C2
@@ -72,9 +74,9 @@ stat.names <- c("Discr", "ICC", "I2C2")
 ## One Sample Results
 # mcapply over the number of repetitions
 results <- mclapply(1:nrep, function(i) {
-  results <- data.frame(sim=c(), iteration=c(), stat=c(), n=c(), pval=c())
-  for (j in length(sims)) {
-   sim <- sims[[j]]; sim.opt <- sims.opts[[j]]; sim.name <- sims.names[[j]]
+  results <- data.frame(sim=c(), iteration=c(), stat=c(), n=c(), tstat=c(), pval=c())
+  for (j in 1:length(sims)) {
+    sim <- sims[[j]]; sim.opt <- sims.opts[[j]]; sim.name <- sims.names[[j]]
     for (k in 1:length(ns)) {
       n <- ns[k]
       sim.opt$n <- n
@@ -82,10 +84,53 @@ results <- mclapply(1:nrep, function(i) {
       for (l in 1:length(one.sample.tests)) {
         ost <- one.sample.tests[[l]]; stat.name <- stat.names[[l]]
         t.res <- do.call(ost, list(X, Y)); tstat <- t.res$srel; pval <- t.res$pval
-        results <- rbind(results,  data.frame(sim=sim.name, iteration=i, stat=stat.name, n=n, pval=pval))
+        results <- rbind(results,  data.frame(sim=sim.name, iteration=i, stat=stat.name, n=n, tstat=tstat, pval=pval))
       }
     }
   }
-})
+  return(results)
+}, mc.cores=no_cores)
 
-saveRDS(results, file.path(opath, paste('discr_sims', '.rds', sep="")))
+results <- do.call(rbind, results)
+saveRDS(results, file.path(opath, paste('discr_sims_os', '.rds', sep="")))
+
+
+
+two.sample.pca <- function(X, Y) {
+  pca.res <- lol.project.pca(X, r=2)
+  Xr <- pca.res$Xr
+  return(list(Y=Y, X1=Xr[, 1], X2=Xr[, 2]))
+}
+
+two.sample.spherical <- function(X, Y) {
+  mag <- apply(X, c(1), dist)
+  ang <- apply(X, c(1), function(x) {
+    uvec <- array(0, length(x)); uvec[1] <- 1
+    return(acos(x %*% uvec/(dist(x))))})
+}
+
+two.sample.tests <- list(discr.test.two_sample)
+stat.names <- c("Discr")
+## Two Sample Results
+# mcapply over the number of repetitions
+results <- mclapply(1:nrep, function(i) {
+  results <- data.frame(sim=c(), iteration=c(), stat=c(), n=c(),tstat=c(), pval=c())
+  for (j in length(sims)) {
+    sim <- sims[[j]]; sim.opt <- sims.opts[[j]]; sim.name <- sims.names[[j]]
+    for (k in 1:length(ns)) {
+      n <- ns[k]
+      sim.opt$n <- n
+      sim.dat <- do.call(sim, sim.opt); X <- sim.dat$X; Y <- sim.dat$Y
+      for (l in 1:length(one.sample.tests)) {
+        ost <- one.sample.tests[[l]]; stat.name <- stat.names[[l]]
+        t.res <- do.call(ost, list(X, Y)); tstat <- t.res$srel; pval <- t.res$pval
+        results <- rbind(results,  data.frame(sim=sim.name, iteration=i, stat=stat.name, n=n, tstat=tstat, pval=pval))
+      }
+    }
+  }
+  return(results)
+}, mc.cores=no_cores)
+
+results <- do.call(rbind, results)
+
+saveRDS(results, file.path(opath, paste('discr_sims_os', '.rds', sep="")))
