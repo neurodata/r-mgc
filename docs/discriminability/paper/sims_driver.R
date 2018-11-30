@@ -107,6 +107,7 @@ two.sample.spherical <- function(X, Y) {
   ang <- apply(X, c(1), function(x) {
     uvec <- array(0, length(x)); uvec[1] <- 1
     return(acos(x %*% uvec/(dist(x))))})
+  return(list(Y=Y, X1=mag, X2=ang))
 }
 
 two.sample.tests <- list(discr.test.two_sample)
@@ -121,8 +122,9 @@ results <- mclapply(1:nrep, function(i) {
       n <- ns[k]
       sim.opt$n <- n
       sim.dat <- do.call(sim, sim.opt); X <- sim.dat$X; Y <- sim.dat$Y
+      twosample.dat <-
       for (l in 1:length(one.sample.tests)) {
-        ost <- one.sample.tests[[l]]; stat.name <- stat.names[[l]]
+        ost <- two.sample.tests[[l]]; stat.name <- stat.names[[l]]
         t.res <- do.call(ost, list(X, Y)); tstat <- t.res$srel; pval <- t.res$pval
         results <- rbind(results,  data.frame(sim=sim.name, iteration=i, stat=stat.name, n=n, tstat=tstat, pval=pval))
       }
