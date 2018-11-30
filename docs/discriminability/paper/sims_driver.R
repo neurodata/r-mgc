@@ -8,16 +8,28 @@ require(ICC)
 require(I2C2)
 no_cores = detectCores() - 1
 
+
 # redefine sothat the IO is the same for ICC/I2C2
 iccadj <- function(X, Y) {
-  return(ICCbare(Y, lol.project.pca(X, r=1)$Xr))
+  Xr <- lol.project.pca(X, r=1)$Xr
+  data <- data.frame(x=Xr, y=Y)
+  fit <- anova(aov(x ~ y, data=data))
+  MSa <- fit$"Mean Sq"[1]
+  MSw <- var.w <- fit$"Mean Sq"[2]
+  a <- length(unique(Y))
+  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
+  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
+  var.a <- (MSa - MSw)/k
+  r <- var.a/(var.w + var.a)
+  p = fit[["Pr(>F)"]][1]
+  return(list(srel=r, pval=p))
 }
 
 i2c2adj <- function(X, Y) {
   return(i2c2(X, Y, visit=rep(1, length(Y)))$lambda)
 }
 
-one.sample.icc_i2c2 <- function(X, ids, metric, nperm=100, verbose=FALSE) {
+one.sample.icc_i2c2 <- function(X, ids, metric=i2c2, nperm=100, verbose=FALSE) {
   N <- length(ids)
   if (is.null((N))) {
     stop('Invalid datatype for N')
@@ -38,15 +50,6 @@ one.sample.icc_i2c2 <- function(X, ids, metric, nperm=100, verbose=FALSE) {
   result$pval <- (sum(nr>tr) + 1)/(nperm + 1)
   return(result)
 }
-
-one.sample.icc <- function(X, ids, nperm=100, verbose=FALSE) {
-  one.sample.icc_i2c2(X, ids, iccadj, nperm=nperm, verbose=verbose)
-}
-
-one.sample.i2c2 <- function(X, ids, nperm=100, verbose=FALSE) {
-  one.sample.icc_i2c2(X, ids, i2c2adj, nperm=nperm, verbose=verbose)
-}
-
 
 nrep=20
 n.max <- 1024
