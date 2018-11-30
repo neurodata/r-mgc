@@ -1,3 +1,67 @@
+#' Discriminability Statistic
+#'
+#' A function for computing the discriminability from a distance matrix and a set of associated labels.
+#'
+#' @param X is interpreted as:
+#' \describe{
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}
+#'    \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
+#' }
+#' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples.
+#' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.
+#' @param dist.xfm if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+#' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+#' as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.
+#' @param dist.params a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+#' Defaults to \code{list(method='euclidean')}.
+#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{NULL}.
+#' \describe{
+#'     \item{\code{is.null(dist.return)}}{use the return directly from \code{dist.xfm} as the distance matrix.}
+#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix.}
+#' }
+#' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
+#' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
+#' @return A list containing the following:
+#' \item{\code{discr} the discriminability statistic.}
+#' \item{\code{rdf} the rdfs for each sample.}
+#'
+#' @section Details:
+#' For more details see the help vignette:
+#' \code{vignette("discriminability", package = "mgc")}
+#'
+#' @examples
+#' sim <- discr.sims.linear(100, 10, K=2)
+#' X <- sim$X; Y <- sim$Y
+#' discr.stat(X, Y)
+#'
+#' @author Eric Bridgeford
+#' @export
+discr.stat <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.params=list(method='euclidean'),
+                       dist.return=NULL, remove.isolates=TRUE) {
+  if (!is.matrix(X)) {
+    tryCatch({
+      X <- as.matrix(X)
+    }, error=function(e) stop("You have not passed an object that can be coerced to a '[n x d] matrix'."))
+  }
+  # remove isolated subjects if requested.
+  if (remove.isolates) {
+    purged <- remove.isolates(X, Y, is.dist=is.dist)
+    X <- purged$X; Y <- purged$Y
+  }
+  # Distance transform if requested by the user.
+  if (!is.dist) {
+    X <- do.call(dist.xfm, c(list(X), dist.params))
+    if (!is.null(dist.return)) {
+      X <- X[[dist.return]]
+    }
+  }
+  if (length(unique(Y)) <= 1) {
+    stop("You have passed a vector containing only a single unique sample id.")
+  }
+  rdf <- discr.rdf(X, Y)
+  return(list(discr=discr.mnr(rdf), rdf=rdf))
+}
+
 #' Reliability Density Function
 #'
 #' A function for computing the reliability density function of a dataset.
@@ -20,75 +84,53 @@ discr.rdf <- function(X, ids) {
   }
 
   # loop over scans
-  rdf <- sapply(1:N, function(i) {
+  rdf <- sapply(1:length(ids), function(i) {
     ind <- which(ids[i] == ids) # all the indices that are the same subject
     di <- X[i,]
     Dii <- di[ind[ind != i]]  # indices of D corresponding to between scan i subject of scan i, excluding scan i
-    d <- min(Dii, na.rm=TRUE)
-
-    Dij <- di[-ind]  # all the distances excluding those associated with subject i
-    # # loop over the unique subjects
-    # inn <- sapply(K, function(j) {
-    #   indj <- which(j == ids)  # get index of subject j's scans
-    #   Dij <- di[indj[indj != i]]  # indices of D corresponding to between scan i and subject j, excluding scan i
-    #   return(min(Dij, na.rm=TRUE))  # nearest neighbor from scan i to collection of scans for subject j
-    # })
-    # # d between current scan and nearest neighbord of current subject
-    # d <- inn[K == ids[i]]
-    # # ds between current scan and nearest neighbor of other subject
-    # inn <- inn[K != ids[i]]
-    # return(1 - (sum(inn[!is.nan(inn)] < d) + 0.5*sum(inn[!is.nan(inn)] == d)) / (length(K) - 1))
-    return(as.numeric(1 - (as.numeric(Dij < d) + 0.5*(Dij == d))))
+    Dij <- di[-c(ind)]  # indices of D corresponding to between i and those of other subjects, excluding scans of this subject
+    # if there exist scans associated with this subject other than current scan and
+    # other subjects in dataset
+    if (length(Dii) > 0 & length(Dij) > 0) {
+      # return discriminability local rdfs as an array
+      return(unlist(sapply(Dii, function(d) {
+        # discriminability is (1 - count(< d) + 0.5*(count == d))/(N) where N is number of samples with different sample ids
+        1 - (sum(as.numeric(Dij < d)) + 0.5*sum(Dij == d))/length(Dij)
+      })))
+    } else {
+      warning(sprintf("Id %s is isolated in your dataset. Consider setting 'remove.isolates = TRUE'.", ids[i]))
+      return(NaN)
+    }
   })
 
   return(unlist(rdf))
 }
+
 #' Discriminability Mean Normalized Rank
 #' @param rdf the reliability densities.
 #' @return the mnr.
 discr.mnr <- function(rdf) {
   mean(rdf, is.nan=FALSE)
 }
-#' Discriminability Statistic
+
+#' Utility Validator
 #'
-#' A function for computing the discriminability from a distance matrix and a set of associated labels.
+#' A script that validates that data inputs are correct.
 #'
 #' @param X is interpreted as:
 #' \describe{
-#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}
+#'    \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
 #' }
 #' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples.
-#' @param remove_outliers boolean indicating whether to ignore observations with rdf below a certain cutoff. Defaults to \code{FALSE}.
-#' @param thresh the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation. Defaults to \code{0}.
-#' @param verbose a boolean indicating whether to print output. Defaults to \code{FALSE}.
-#' @return A list containing the following:
-#' \item{`discr` the discriminability statistic.}
-#' \item{`rdf` the rdfs for each sample.}
-#'
-#' @section Details:
-#' For more details see the help vignette:
-#' \code{vignette("discriminability", package = "mgc")}
-#'
-#' @examples
-#'
-#' nsrc <- 5
-#' nobs <- 10
-#' d <- 20
-#' set.seed(12345)
-#' src_id <- array(1:nsrc)
-#' labs <- sample(rep(src_id, nobs))
-#' dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
-#' discr.stat(dat, labs)
-#'
-#' @author Eric Bridgeford
-#' @export
-discr.stat <- function(X, Y) {
-  X <- as.matrix(X)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(X) != ncol(X) | sum(diag(X)^2) > 0){
-    X <- discr.distance(X)
+#' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not.
+discr.validator <- function(X, Y, is.dist) {
+  if (is.dist) {
+    if (nrow(X) != ncol(X)) {
+      stop("Your data is not a [n x n] distance matrix.")
+    }
   }
-  rdf <- discr.rdf(X, Y)
-  return(list(discr=discr.mnr(rdf), rdf=rdf))
+  if (nrow(X) != length(Y)) {
+    stop("Your X and Y do not have the same number of samples. 'X' should be [n x d], and 'Y' should be [n].")
+  }
 }

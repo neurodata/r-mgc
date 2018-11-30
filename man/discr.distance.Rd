@@ -4,15 +4,16 @@
 \alias{discr.distance}
 \title{Distance}
 \usage{
-discr.distance(X, method = "euclidian")
+discr.distance(X, method = "euclidean")
 }
 \arguments{
-\item{X}{\code{[n, d]} a data matrix for `n` samples of `d` variables.}
+\item{X}{\code{[n x d]} a data matrix for \code{d} samples of \code{d} variables.}
 
-\item{method}{the method for computing distances. Defaults to \code{'euclidian'}. See `\link[stats]{dist}` for details.}
+\item{method}{the method for computing distances. Defaults to \code{'euclidean'}. See \link[stats]{dist} for details.}
 }
 \value{
-a \code{[n, n]} distance matrix indicating the pairwise distances between all samples passed in.
+a \code{[n x n]} distance matrix.
+\code{[n, n]} distance matrix indicating the pairwise distances between all samples passed in.
 }
 \description{
 A function that returns a distance matrix given a collection of observations.

@@ -4,27 +4,41 @@
 \alias{discr.stat}
 \title{Discriminability Statistic}
 \usage{
-discr.stat(X, Y)
+discr.stat(X, Y, is.dist = FALSE, dist.xfm = discr.distance,
+  dist.params = list(method = "euclidean"), dist.return = NULL,
+  remove.isolates = TRUE)
 }
 \arguments{
 \item{X}{is interpreted as:
 \describe{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}
+   \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
 }}
 
 \item{Y}{\code{[n]} a vector containing the sample ids for our \code{n} samples.}
 
-\item{remove_outliers}{boolean indicating whether to ignore observations with rdf below a certain cutoff. Defaults to \code{FALSE}.}
+\item{is.dist}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
 
-\item{thresh}{the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation. Defaults to \code{0}.}
+\item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
 
-\item{verbose}{a boolean indicating whether to print output. Defaults to \code{FALSE}.}
+\item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{NULL}.
+\describe{
+    \item{\code{is.null(dist.return)}}{use the return directly from \code{dist.xfm} as the distance matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix.}
+}}
+
+\item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
+one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.}
 }
 \value{
 A list containing the following:
-\item{`discr` the discriminability statistic.}
-\item{`rdf` the rdfs for each sample.}
+\item{\code{discr} the discriminability statistic.}
+\item{\code{rdf} the rdfs for each sample.}
 }
 \description{
 A function for computing the discriminability from a distance matrix and a set of associated labels.
@@ -36,15 +50,9 @@ For more details see the help vignette:
 }
 
 \examples{
-
-nsrc <- 5
-nobs <- 10
-d <- 20
-set.seed(12345)
-src_id <- array(1:nsrc)
-labs <- sample(rep(src_id, nobs))
-dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
-discr.stat(dat, labs)
+sim <- discr.sims.linear(100, 10, K=2)
+X <- sim$X; Y <- sim$Y
+discr.stat(X, Y)
 
 }
 \author{
