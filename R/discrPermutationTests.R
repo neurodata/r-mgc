@@ -89,8 +89,8 @@ discr.test.two_sample <- function(D1, D2, ids, nperm=100, verbose=FALSE){
   disct2 <- matrix(0,N1,2)
 
   for (i in 1:N1){
-    disct1[i,] <- discr.test.dis_vec(D1[i,],i,ids)
-    disct2[i,] <- discr.test.dis_vec(D2[i,],i,ids)
+    disct1[i,] <- mgc:::discr.test.dis_vec(D1[i,],i,ids)
+    disct2[i,] <- mgc:::discr.test.dis_vec(D2[i,],i,ids)
   }
 
   disct1 <- disct1[!is.na(disct1[,1]),]
@@ -121,7 +121,7 @@ discr.test.two_sample <- function(D1, D2, ids, nperm=100, verbose=FALSE){
     }
     ndif[i] <- (sum(ndisct1[,1] * ndisct1[,2]) - sum(ndisct2[,1] * ndisct2[,2])) / tcount
   }
-  pvalue <- (sum(ndif > abs(tdif)) + 0.5 * sum(ndif == abs(tdif))) / nperm
+  pvalue <- (sum(ndif > abs(tdif)) + 0.5 * sum(ndif == abs(tdif)) + 1) / (nperm + 1)
   return (list(pval=pvalue))
 }
 

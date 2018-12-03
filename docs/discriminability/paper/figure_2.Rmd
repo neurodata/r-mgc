@@ -56,7 +56,18 @@ sim_twod_scatter <- function(X, Y, title="", xlab="", ylab="", nbreaks=4, outlie
 
 # redefine sothat the IO is the same for ICC/I2C2
 iccadj <- function(X, Y) {
-  return(ICCbare(Y, lol.project.pca(X, r=1)$Xr))
+  Xr <- lol.project.pca(X, r=1)$Xr
+  data <- data.frame(x=Xr, y=Y)
+  fit <- anova(aov(x ~ y, data=data))
+  MSa <- fit$"Mean Sq"[1]
+  MSw <- var.w <- fit$"Mean Sq"[2]
+  a <- length(unique(Y))
+  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
+  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
+  var.a <- (MSa - MSw)/k
+  r <- var.a/(var.w + var.a)
+  p = fit[["Pr(>F)"]][1]
+  return(r)
 }
 
 i2c2adj <- function(X, Y) {
@@ -106,11 +117,11 @@ g_legend<-function(a.gplot){
 n = 100; d = 2
 sims <- list(discr.sims.linear, discr.sims.linear, discr.sims.linear,# discr.sims.exp,
              discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
-sims.opts <- list(list(n=n, d=d, K=2, mean.scale=0, cov.scale=20), list(n=n, d=d, K=2, mean.scale=1, cov.scale=20), list(n=n, d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(n=n, d=d, K=2, cov.scale=5), list(n=n, d=d, K=2))#,
+sims.opts <- list(list(n=n, d=d, K=2, mean.scale=0, cov.scale=3), list(n=n, d=d, K=2, mean.scale=2, cov.scale=20), list(n=n, d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
+                  list(n=n, d=d, K=2, cov.scale=20), list(n=n, d=d, K=2))#,
                   #list(n=n, d=d))
-sims.titles = c("(A) No Signal", "(A) 2 Class, Linear", "(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
-                "(D) 2 Class, Cross", "(E) 2 Class, Spherical")#, "(F) 5 Class, Beta")
+sims.titles = c("(N) No Signal", "(A) 2 Class, Linear", "(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
+                "(C) 2 Class, Cross", "(D) 2 Class, Spherical")#, "(F) 5 Class, Beta")
 plots <- list()
 for (i in 1:length(sims)) {
   sim <- do.call(sims[[i]], sims.opts[[i]])
@@ -123,7 +134,7 @@ for (i in 1:length(sims)) {
 
 ```{r}
 i=2
-sim <- do.call(sims[[i]], sims.opts[[i]])
+sim <- do.call(sims[[3]], sims.opts[[3]])
 X <- sim$X; Y <- sim$Y
 sim_leg <- g_legend(
   sim_twod_scatter(X, Y, title="", xlab="", ylab="") +
