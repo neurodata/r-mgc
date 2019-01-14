@@ -40,9 +40,9 @@ plot_dist <- function(D, name="") {
     geom_tile() +
     xlab(TeX("$S_1$")) +
     ylab(TeX("$S_2$")) +
-    ggtitle(name) +
-    scale_fill_continuous(name=TeX("$||S_1 - S_2||^2$"), low="#3f007d",
-                          high="#fcfbfd") +
+    ggtitle(TeX(name)) +
+    scale_fill_continuous(name=TeX("$||S_1 - S_2||^2$"), high="#3f007d",
+                          low="#fcfbfd") +
     theme_bw()
 }
 
@@ -52,15 +52,27 @@ plot_rdf <- function(rdfs, name="") {
     geom_histogram(color='black', fill='blue') +
     xlab(TeX("Reliability")) +
     ylab("Relative Frequency") +
-    ggtitle(name) +
+    ggtitle(TeX(name)) +
     theme_bw()
+}
+
+min.f1f2 <- function(x, mu1, mu2, sd1, sd2) {
+    f1 <- dnorm(x, mean=mu1, sd=sd1)
+    f2 <- dnorm(x, mean=mu2, sd=sd2)
+    pmin(f1, f2)
+}
+
+theoretical_discr <- function(mus, Sigmas, d=1) {
+  mu.class <- mus[d,]
+  Sigmas.class <- Sigmas[d,d,]
+  ov <- integrate(min.f1f2, -Inf, Inf, mu1=mu.class[1], mu2=mu.class[2], sd1=Sigmas.class[1], sd2=Sigmas.class[2])
 }
 ```
 
 # Figure 1
 
 ```{r}
-sim_simp <- discr.sims.linear(1000, 2, 6, mean=2)
+sim_simp <- discr.sims.linear(1000, 2, 2, mean=2)
 srt <- sort(as.numeric(sim_simp$Y), index.return=TRUE)$ix
 sim_simp$X <- sim_simp$X[srt,]; sim_simp$Y <- sim_simp$Y[srt]
 plot_sim_fig1 <- plot_sim(sim_simp$X, sim_simp$Y, name="Data")
@@ -70,11 +82,40 @@ plot_dist_fig1 <- plot_dist(Dmtx, name="Distance Matrix")
 
 rdfs <- mgc:::discr.rdf(Dmtx, sim_simp$Y)
 discr <- mean(rdfs)
-plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("Discriminability = %.3f", discr))
+plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("$\\hat{D} = %.3f$", discr))
+
+# Convergence of Dhat to Truth
+niter <- 100
+n.min <- 20; n.max <- 1000
+rlen <- 10
+log.seq <- function(from=0, to=30, length=rlen) {
+  round(exp(seq(from=log(from), to=log(to), length.out=length)))
+}
+
+ns <- log.seq(from=n.min, to=n.max)
+result <- data.frame(dhat=c(), n=c(), i=c())
+for (n in ns) {
+  for (i in 1:niter) {
+    sim_res <- discr.sims.linear(n, 2, 2, mean=2)
+    Dhat <- discr.stat(sim_res$X, sim_res$Y)$discr
+    result <- rbind(result, data.frame(dhat=Dhat, n=n, i=i))
+  }
+}
+
+theoretical_d <- theoretical_discr(sim_simp$mus, sim_simp$Sigmas, d=1)
+theoretical_d <- 0.9319
+result$diff <- result$dhat - theoretical_d
+plot_conv <- ggplot(result, aes(x=n, y=diff)) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=2) +
+  xlab("Number of Samples") +
+  ylab(TeX("\\hat{D} - D")) +
+  ggtitle(TeX("Convergence of $\\hat{D}$ to $D$")) +
+  theme_bw()
 ```
 
 ```{r, fig.width=10, fig.height=3}
-grid.arrange(arrangeGrob(grobs=list(plot_sim_fig1, plot_dist_fig1, plot_discr_fig1), widths=c(0.3, 0.4, 0.24), nrow=1))
+grid.arrange(arrangeGrob(grobs=list(plot_sim_fig1, plot_dist_fig1, plot_discr_fig1, plot_conv), widths=c(0.3, 0.4, 0.24, 0.3), nrow=1))
 ```
 
 # Figure 2

@@ -99,10 +99,10 @@ plot_dat <- function(X, Y, title="", xlab="", ylab="") {
     xlab("") +
     ylab("") +
     ggtitle("")
-  rplot <- ggdraw() +
-    draw_plot(datplot + theme(legend.position='none')) +
-    draw_plot(bplot, x=.75, y=.73, width=.15, height=.25)
-  return(rplot)
+  #rplot <- ggdraw() +
+  #  draw_plot(datplot + theme(legend.position='none')) +
+  #  draw_plot(bplot, x=.75, y=.73, width=.15, height=.25)
+  return(datplot)
 }
 
 g_legend<-function(a.gplot){
@@ -115,13 +115,13 @@ g_legend<-function(a.gplot){
 
 ```{r}
 n = 100; d = 2
-sims <- list(discr.sims.linear, discr.sims.linear, discr.sims.linear,# discr.sims.exp,
+sims <- list(discr.sims.linear, discr.sims.linear, #discr.sims.linear,# discr.sims.exp,
              discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
-sims.opts <- list(list(n=n, d=d, K=2, mean.scale=0, cov.scale=3), list(n=n, d=d, K=2, mean.scale=1, cov.scale=20), list(n=n, d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
+sims.opts <- list(list(n=n, d=d, K=2, mean.scale=0, cov.scale=3), list(n=n, d=d, K=2, mean.scale=1, cov.scale=20), #list(n=n, d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
                   list(n=n, d=d, K=2, cov.scale=20), list(n=n, d=d, K=2))#,
                   #list(n=n, d=d))
-sims.titles = c("(N) No Signal", "(A) 2 Class, Linear", "(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
-                "(C) 2 Class, Cross", "(D) 2 Class, Spherical")#, "(F) 5 Class, Beta")
+sims.titles = c("(N) No Signal", "(A) 2 Class, Linear", #"(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
+                "(B) 2 Class, Cross", "(C) 2 Class, Spherical")#, "(F) 5 Class, Beta")
 plots <- list()
 for (i in 1:length(sims)) {
   sim <- do.call(sims[[i]], sims.opts[[i]])
@@ -132,14 +132,14 @@ for (i in 1:length(sims)) {
 
 # Multiplot
 
-```{r, fig.width=12, fig.height=2}
+```{r, fig.width=10, fig.height=2}
 i=2
 sim <- do.call(sims[[3]], sims.opts[[3]])
 X <- sim$X; Y <- sim$Y
 sim_leg <- g_legend(
   sim_twod_scatter(X, Y, title="", xlab="", ylab="") +
-    scale_color_discrete(name="Class") + theme(legend.position='bottom')
+    scale_color_manual(name="Class", values=mcols) + theme(legend.position='bottom')
 )
 
-grid.arrange(arrangeGrob(grobs=plots, ncol=5), sim_leg, heights=c(0.9, 0.05))
+grid.arrange(arrangeGrob(grobs=plots, ncol=length(sims)), sim_leg, heights=c(0.9, 0.05))
 ```
