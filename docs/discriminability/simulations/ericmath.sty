@@ -1,0 +1,184 @@
+\usepackage{amsmath,amsfonts,amsthm,amssymb,mathtools}
+\usepackage{mathrsfs}
+\usepackage[english]{babel}
+\usepackage{ifthen}
+\usepackage{xifthen}
+
+%================================
+% general linear algebra notation
+%================================
+% use as \<command>* to have operands sized appropriately
+\DeclarePairedDelimiterX{\iprod}[2]{\langle}{\rangle}{#1, #2}
+\DeclarePairedDelimiterX{\norm}[1]{\lVert}{\rVert}{#1}
+\DeclarePairedDelimiterX{\abs}[1]{\lvert}{\rvert}{#1}
+% Linear Algebra Operators
+\DeclareMathOperator*{\rank}{rank}
+\DeclareMathOperator*{\crank}{col\,rank}
+\DeclareMathOperator*{\rrank}{row\,rank}
+\DeclareMathOperator*{\dims}{dim}
+\DeclareMathOperator*{\col}{Col}
+\DeclareMathOperator*{\row}{Row}
+\DeclareMathOperator*{\kernel}{Kernel}
+\DeclareMathOperator*{\range}{range}
+\DeclareMathOperator*{\spn}{span}
+\DeclareMathOperator*{\eig}{eig}
+\DeclareMathOperator*{\trace}{trace}
+% above operators with parentheses/curly bracs; use
+% as \<command>* for appropriate formatting of operands
+\DeclarePairedDelimiterX{\rankp}[1]{\rank\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\crankp}[1]{\crank\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\rrankp}[1]{\rrank\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\colp}[1]{\col\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\rowp}[1]{\row\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\dimsp}[1]{\dim\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\kernelp}[1]{\kernel\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\rangep}[1]{\range\lparen}{\rparen}{#1}
+\DeclarePairedDelimiterX{\tracep}[1]{\trace\lparen}{\rparen}{#1}
+
+\DeclarePairedDelimiterX{\ranks}[1]{\rank\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\cranks}[1]{\crank\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\rranks}[1]{\rrank\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\cols}[1]{\col\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\rows}[1]{\row\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\dimss}[1]{\dim\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\kernels}[1]{\kernel\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\ranges}[1]{\range\lbrace}{\rbrace}{#1}
+
+%=====================================
+% notation for common numerical spaces
+%=====================================
+% use as \<command>^{<dimensions>} to have appropriate formatting
+\newcommand{\realn}{\mathbb{R}}
+\newcommand{\natn}{\mathbb{N}}
+\newcommand{\imagn}{\mathbb{I}}
+\newcommand{\intn}{\mathbb{Z}}
+\newcommand{\complexn}{\mathbb{C}}
+
+%=================
+% general notation
+%=================
+% use as \<command>* to have formatting left/right as appropriate
+\DeclarePairedDelimiterX{\bracks}[1]{\lbrack}{\rbrack}{#1}
+\DeclarePairedDelimiterX{\set}[1]{\lbrace}{\rbrace}{#1}
+\DeclarePairedDelimiterX{\parens}[1]{\lparen}{\rparen}{#1}
+
+%======================
+% optimization notation
+%======================
+% \hat{\beta} = \argmin_{\beta} \norm*{Y - X\beta}^2
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% \frac{\hcancel{x}v}{\hcancel{x}y}
+\newcommand\hcancel[2][black]{\setbox0=\hbox{$#2$}%
+\rlap{\raisebox{.45\ht0}{\textcolor{#1}{\rule{\wd0}{1pt}}}}#2} 
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+\newcommand{\para}[1]{\paragraph{#1}\mbox{}\\}
+% \combn{x}{y}
+\newcommand{\combn}[2]{\begin{pmatrix}#1 \\ #2 \end{pmatrix}}
+
+%=====================
+%% statistics notation
+%=====================
+% X_i \distas{iid} \Norm{0, 1}
+\newcommand{\distas}[1]{\mathbin{\overset{#1}{\kern\z@\sim}}}
+\newcommand{\indep}{\protect\mathpalette{\protect\independenT}{\perp}}
+% properly sized conditionals
+\newcommand{\cond}{\big|}
+\newcommand{\bcond}{\bigg|}
+% X \indep Y
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+% \Var{X}{X}
+\newcommand{\Var}[2]{
+    \ifthenelse{\isempty{#1}}{
+        \textrm{Var}\parens*{#2}
+    }{
+      \textrm{Var}_{#1}\parens*{#2}  
+    }
+}
+\DeclareMathOperator*{\var}{Var}
+% \Cov{X}{X}
+\newcommand{\Cov}[2]{
+    \ifthenelse{\isempty{#1}}{
+        \textrm{Cov}\parens*{#2}
+    }{
+      \textrm{Cov}_{#1}\parens*{#2}  
+    }
+}
+\DeclareMathOperator*{\cov}{Cov}
+
+% use \expect and \prob as \<command>{}{expr} to obtain the
+% respective notation without a subscript, and \<command>{sub}{expr}
+% to have sub in a subscript and expr within the operands
+\newcommand{\expect}[2]{
+    \ifthenelse{\isempty{#1}}{
+        \mathbb{E}\bracks*{#2}
+    }{
+      \mathbb{E}_{#1}\bracks*{#2}  
+    }
+}
+
+\newcommand{\indicator}[1]{\mathbb{I}_{\set*{#1}}}
+
+\newcommand{\prob}[2]{
+    \ifthenelse{\isempty{#1}}{
+        \mathbb{P}\parens*{#2}
+    }{
+      \mathbb{P}_{#1}\parens*{#2}  
+    }
+}
+
+\newcommand{\Lh}[2]{
+    \ifthenelse{\isempty{#2}}{
+        \mathscr{L}\parens*{#1}
+    }{
+        \mathscr{L}\parens*{#1 \cond #2}
+    }
+}
+
+\newcommand{\loglh}[2]{
+    \ifthenelse{\isempty{#2}}{
+        \ell\parens*{#1}
+    }{
+        \ell\parens*{#1 \cond #2}
+    }
+}
+%======================
+% distribution notation
+%======================
+\newcommand{\Pois}[1]{\textrm{Pois}\parens*{#1}}
+\newcommand{\Norm}[1]{\mathcal{N}\parens*{#1}}
+\newcommand{\Snorm}[1]{\mathcal{SN}\parens*{#1}}
+\newcommand{\Binom}[1]{\textrm{Binom}\parens*{#1}}
+\newcommand{\Bern}[1]{\textrm{Bern}\parens*{#1}}
+\newcommand{\Multinom}[1]{\textrm{Multinom}\parens*{#1}}
+\newcommand{\Unif}[1]{\textrm{Unif}\parens*{#1}}
+\newcommand{\Exp}[1]{\textrm{Exp}\parens*{#1}}
+\newcommand{\Bdist}[1]{\textrm{Beta}\parens*{#1}}
+\newcommand{\Gdist}[1]{\textrm{Gamma}\parens*{#1}}
+\newcommand{\Hypergeometric}[1]{\textrm{Hypergeometric}\parens*{#1}}
+\newcommand{\Lapldist}[1]{\textrm{Laplace}\parens*{#1}}
+\newcommand{\nchi}[2]{\chi_{#1}\parens*{#2}}
+\newcommand{\nchis}[2]{\chi^2_{#1}\parens*{#2}}
+
+
+%==============
+% Random Stuffs
+%==============
+% stirling's approximation for gamma function
+\newcommand{\stapprox}[1]{\sqrt{\frac{2 \pi}{#1}} \parens*{\frac{#1}{e}}^{#1}}
+\newcommand{\rb}[1]{\textrm{\textbf{#1}}}
+\newcommand{\gammafunc}[1]{\Gamma\parens*{#1}}
+\newcommand{\erf}[1]{\textrm{erf}\parens*{#1}}
+
+% arguments for integral are lower limit, upper limit, integrand, integration
+% variable
+\newcommand{\integral}[4]{
+    \int_{#1}^{#2}{#3}\;\textrm{d}{#4}
+}
+\newcommand{\deriv}[1]{\frac{\textrm{d}}{\textrm{d}{#1}}}
+\newcommand{\secderiv}[1]{\frac{\textrm{d}^2}{\textrm{d}{#1}^2}}
+\newcommand{\pderiv}[1]{\frac{\partial}{\partial{#1}}}
+
+\newcommand{\undereq}{\;\;\;\;\;\;\;\;}
+\allowdisplaybreaks
