@@ -80,7 +80,7 @@ Then with $S = QZ_p$, $S$ is also multivariate normal since it is a full-rank li
   &= \parens*{S + u}'\Lambda \parens*{S + u} \\
   &= \sum_{i = 1}^p (S_i + u_i)^2 \lambda_i
 \end{align*}
-where $u = QL^{-1}\mu^{(y)}$. Then $u_i = Q\frac{\mu^{(y)}}{\sigma_i^{(y)}}$, since $L_{i, i} = \sigma^{(y)}_i$ as $\Sigma$ is diagonal and $0$ otherwise. Note then that by definition, $(S_i + u_i)^2$ is non-central chi-squared distributed, so again we see that $\norm{Y}^2$ is a linear combination of independent chi-squareds.
+where $u = QL^{-1}\mu^{(y)}$. Then $u_i = Q\frac{\mu^{(y)}}{\sigma_i^{(y)}}$, since $L_{i, i} = \sigma^{(y)}_i$ as $\Sigma$ is diagonal and $0$ otherwise. Note then that by definition, $(S_i + u_i)^2$ is non-central chi-squared distributed, so again we see that $\norm{Y}^2$ is a linear combination of independent non-central chi-squareds.
 
 Then by both of the above approaches, it is clear that $\norm{Y}$ is distributed as the generalized chi-distribution. In the case when the variances are the same, this is simply the [Rice distribution](https://en.wikipedia.org/wiki/Rice_distribution).
 
