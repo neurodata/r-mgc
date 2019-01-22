@@ -394,31 +394,34 @@ mgc.sims.ubern <- function(n, d, eps=0.5, p=0.5) {
 
 #' Discriminability Linear Simulation
 #'
-#' A function to simulate multi-class data with a linear class-mean trend.
+#' A function to simulate multi-class data with a linear class-mean trend. The signal dimension is the dimension carrying all of the
+#' between-class difference, and the non-signal dimensions are noise.
 #'
 #' @import abind
 #' @param n the number of samples.
 #' @param d the number of dimensions. The first dimension will be the signal dimension; the remainders noise.
 #' @param K the number of classes in the dataset.
-#' @param cov.scale the scaling for the class-variance. Defaults to \code{1}.
-#' @param mean.scale the scaling for the dimension's class-means. Defaults to \code{1}.
+#' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
+#' @param signal.lshift the location shift for the signal dimension between the classes. Defaults to \code{1}.
+#' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
 #' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
 #' @author Eric Bridgeford
 #' @export
-discr.sims.linear <- function(n, d, K, cov.scale=1, mean.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+discr.sims.linear <- function(n, d, K, signal.scale=1, signal.lshift=1, non.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
   priors <- gen.sample.labels(K, class.equal=class.equal)
   S <- diag(d)
-  S[-c(1), -c(1)] <- cov.scale
+  S[1, 1] <- signal.scale
+  S[-c(1), -c(1)] <- non.scale
   S <- abind(lapply(1:K, function(i) {
     S
   }), along=3)
   mu <- c(1, rep(0, d-1))
-  mu[1] <- mean.scale
+  mu[1] <- signal.lshift
   mus <- abind(lapply(1:K, function(i) {
-    mu*i*mean.scale
+    mu*i*signal.lshift
   }), along=2)
 
   if (rotate) {
@@ -431,8 +434,8 @@ discr.sims.linear <- function(n, d, K, cov.scale=1, mean.scale=1, rotate=FALSE, 
   sim <- mgc.sims.sim_gmm(mus, S, n, priors=priors)
   X <- sim$X; Y <- factor(sim$Y)
   return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Linear",
-              params=list(cov.scale=cov.scale, mean.scale=mean.scale, rotate=rotate, class.equal=class.equal,
-                          ind=ind)))
+              params=list(signal.scale=signal.scale, signal.lshift=signal.lshift, non.scale=non.scale,
+                          rotate=rotate, class.equal=class.equal, ind=ind)))
 }
 
 #' Discriminability Exponential Simulation

@@ -8,45 +8,75 @@ require(ICC)
 require(I2C2)
 no_cores = detectCores() - 1
 
-# redefine sothat the IO is the same for ICC/I2C2
-iccadj <- function(Xr, Y) {
-  if (!is.null(dim(Xr))) {
-    if (dim(Xr)[2] > 1) {
-      Xr <- lol.project.pca(Xr, r=1)$Xr
-    }
-  }
-  data <- data.frame(x=Xr, y=Y)
-  fit <- anova(aov(x ~ y, data=data))
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(Y))
-  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
-  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-  var.a <- (MSa - MSw)/k
-  r <- var.a/(var.w + var.a)
-  p = fit[["Pr(>F)"]][1]
-  return(list(srel=r, pval=p))
+# Set Global Parameters for Investigating
+nrep=50  # number of iterations per n, trial
+n.max <- 512  # maximum number of samples
+n.min <- 16  # minimum number of samples
+d=2  # number of dimensions
+rlen=10  # number of ns to try
+opath='./data/sims'  # output path
+
+
+# redefine simulations so that we can obtain the best/worst dimensions relatively
+# easily
+sim.linear.os <- function(...) {
+  simout <- discr.sims.linear(...)
+  simout$d.best <- simout$X[,1]  # first dimension has all signal
+  simout$d.worst <- simout$X[,2]  # second has none
+  return(simout)
 }
 
-i2c2adj <- function(X, Y, Z=NULL) {
-  if (is.null(Z)) {
-    return(I2C2.original(X, Y, I=length(unique(Y)), twoway = FALSE)$lambda)
-  } else {
-    return(I2C2.original(X, Y, visit=Z)$lambda)
-  }
+sim.cross.os <- function(...) {
+  simout <- discr.sims.cross(...)
+  simout$d.best <- simout$X[,1]  # either first or second dimension are top signal wise
+  simout$d.worst <- simout$X %*% array(c(1, 1), dim=c(dim(simout$X)[2])) # worst dimension is the direction of maximal variance
+  return(simout)
 }
 
-manova <- function(X, Y) {
-  fit <- manova(X ~ Y)
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(Y))
-  tmp.outj <- as.numeric(aggregate(X ~ Y, data=data, FUN = length))
-  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-  var.a <- (MSa - MSw)/k
-  r <- var.a/(var.w + var.a)
-  p = fit[["Pr(>F)"]][1]
+sim.radial.os <- function(...) {
+  simout <- discr.sims.radial(...)
+  simout$d.best <- apply(X, c(1), dist)  # best dimension is the radius of the point
+  # worst dimension is the angle of the point in radians relative 0 rad
+  simout$d.worst <- apply(X, c(1), function(x) {
+    uvec <- array(0, length(x)); uvec[1] <- 1
+    return(acos(x %*% uvec/(sqrt(sum(x^2)))))})
 }
+
+sims <- list(sim.linear.os, sim.linear.os, #sim.linear,# discr.sims.exp,
+             sim.cross.os, sim.radial.os)#, discr.sims.beta)
+sims.opts <- list(list(d=d, K=2, signal.lshift=0), list(d=d, K=2, signal.lshift=1),
+                  #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
+                  list(d=d, K=2, cov.scale=20), list(d=d, K=2))#,
+sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
+                "Cross", "Radial")
+
+anova.onesample <- function(sim) {
+  Xrs <- list(best=sim$d.best, worst=sim$d.worst)
+  names(Xrs) <- c("Anova, best", "Anova, worst")
+  result <- lapply(seq_along(Xrs), function(Xrs, algs, i) {
+    data <- data.frame(x=Xrs[[i]], y=sim$Y)
+    fit <- anova(aov(x ~ y, data=data))
+    MSa <- fit$"Mean Sq"[1]
+    MSw <- var.w <- fit$"Mean Sq"[2]
+    a <- length(unique(sim$Y))
+    tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
+    k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
+    var.a <- (MSa - MSw)/k
+    r <- var.a/(var.w + var.a)
+    p = fit[["Pr(>F)"]][1]
+    return(data.frame(alg=algs[[i]], icc=r, tstat=r, pval=p))
+  }, Xrs=Xrs, algs=names(Xrs))
+  res <- do.call(rbind, result)
+  return(res)
+}
+
+manova.onesample <- function(sim) {
+  fit <- manova(sim$X ~ sim$Y)
+  return(data.frame("Manova", i2c2=, i2c2.pval=, tstat=summary(fit)$stats["sim$Y", "approx F"],
+                    pval=summary(fit)$stats["sim$Y", "Pr(>F)"]))
+}
+
+discr.onesample <- function()
 
 one.sample.i2c2 <- function(X, ids, Z=NULL, metr=i2c2adj, nperm=100, verbose=FALSE) {
   N <- length(ids)
@@ -73,25 +103,11 @@ one.sample.i2c2 <- function(X, ids, Z=NULL, metr=i2c2adj, nperm=100, verbose=FAL
   return(result)
 }
 
-nrep=50
-n.max <- 512
-n.min <- 16
-d=2
-rlen=10
-opath='./data/sims'
-
 log.seq <- function(from=0, to=30, length=rlen) {
   round(exp(seq(from=log(from), to=log(to), length.out=length)))
 }
 
 ns <- log.seq(from=n.min, to=n.max)
-
-sims <- list(discr.sims.linear, discr.sims.linear, discr.sims.linear,# discr.sims.exp,
-             discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
-sims.opts <- list(list(d=d, K=2, mean.scale=0, cov.scale=20), list(d=d, K=2, mean.scale=1, cov.scale=20),
-                  list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(d=d, K=2, cov.scale=20), list(d=d, K=2))#,
-sims.names <- c("No Signal", "Linear, 2 Class", "Linear, 5 Class", "Cross", "Radial")
 
 one.sample.tests <- list(discr.test.one_sample, iccadj, one.sample.i2c2)
 stat.names <- c("Discr", "ICC", "I2C2")
@@ -128,10 +144,7 @@ two.sample.pca <- function(X, Y) {
 }
 
 two.sample.spherical <- function(X, Y) {
-  mag <- apply(X, c(1), dist)
-  ang <- apply(X, c(1), function(x) {
-    uvec <- array(0, length(x)); uvec[1] <- 1
-    return(acos(x %*% uvec/(sqrt(sum(x^2)))))})
+
   return(list(Y=Y, X1=mag, X2=ang))
 }
 

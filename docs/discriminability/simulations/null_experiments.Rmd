@@ -18,17 +18,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Setup
 
-Given the following two-class problem:
+Given the following $K$-class problem:
 
 \begin{align*}
   X_i \distas{d} \Norm{\mu_i^{(x)}, \Sigma_i^{(x)}}
 \end{align*}
 
-with $\mu_i^{(x)} \in \realn^p, \Sigma_i^{(x)} \in \realn^{p \times p}$, then the goal is the distribution of $\norm{Y} = \norm{X_1 - X_2}$, where:
+with $\mu_i^{(x)} \in \realn^p, \Sigma_i^{(x)} \in \realn^{p \times p}$, then in the two-class case, the goal is the distribution of $\norm{Y} = \norm{X_1 - X_2}$, where:
 \begin{align*}
   Y = X_1 - X_2 \distas{d} \Norm{\mu^{(y)} = \mu_1^{(x)} - \mu_2^{(x)}, \Sigma^{(y)} = \Sigma_1^{(x)} + \Sigma_2^{(x)}}
 \end{align*}
-To simplify the math, assume that $\Sigma_{i, j}^{(x)} = \sigma_{i}^{(x)}$ when $i=j$, and $0$ otherwise. That is, observations between dimensions are assumed to be independent. Let $Y = (Y_i)_{i = 1}^p$, so $Y_i$ is a random variable for each dimension, where $\Sigma_{i, j}^{(y)} = \sigma_{i}^{(y)}$ when $i = j$ and zero otherwise. Then:
+To simplify the math, assume that $\Sigma_{i, j}^{(x)} = \sigma_{i}^{(x)}$ when $i=j$, and $0$ otherwise. That is, observations between dimensions are assumed to be independent. Let $Y = (Y_i)_{i = 1}^p$, so $Y_i$ is a random variable for each dimension, where $\Sigma_{i, j}^{(y)} = \sigma_{i}^{(y)}$ when $i = j$ and zero otherwise. That is, $Y_i \indep Y_j$ for all $i \neq j$. Note:
 \begin{align*}
   \norm{Y}^2 &= \sum_{i = 1}^p Y_i
 \end{align*}
@@ -62,7 +62,7 @@ is non-central chi-squared with $1$ degree of freedom and non-centrality paramet
 \begin{align*}
   \norm{Y}^2 &= \sum_{i = 1}^p \sigma_i^2 \parens*{\frac{Y_i}{\sigma_i^{(y)}}}^2
 \end{align*}
-which is a linear combination of non-central chi-squareds, which is the definition of the generalized chi-squared distribution.
+which is a linear combination of non-central chi-squareds, which is the definition of the generalized chi-squared distribution. Then $\norm{Y}$ is distributed as generalized chi.
 
 ## Approach 2
 
@@ -80,11 +80,24 @@ Then with $S = QZ_p$, $S$ is also multivariate normal since it is a full-rank li
   &= \parens*{S + u}'\Lambda \parens*{S + u} \\
   &= \sum_{i = 1}^p (S_i + u_i)^2 \lambda_i
 \end{align*}
-where $u = QL^{-1}\mu^{(y)}$. Then $u_i = Q\frac{\mu^{(y)}}{\sigma_i^{(y)}}$, since $L_{i, i} = \sigma^{(y)}_i$ as $\Sigma$ is diagonal and $0$ otherwise. Note then that by definition, $(S_i + u_i)^2$ is non-central chi-squared distributed, so again we see that $\norm{Y}^2$ is a linear combination of independent non-central chi-squareds.
+where $u = QL^{-1}\mu^{(y)}$. Then $u_i = Q\frac{\mu^{(y)}}{\sigma_i^{(y)}}$, since $L_{i, i} = \sigma^{(y)}_i$ as $\Sigma$ is diagonal and $0$ otherwise. Note then that by definition, $(S_i + u_i)^2$ is non-central chi-squared distributed, so again we see that $\norm{Y}^2$ is a linear combination of independent non-central chi-squareds, which is the generalized chi distribution.
 
-Then by both of the above approaches, it is clear that $\norm{Y}$ is distributed as the generalized chi-distribution. In the case when the variances are the same, this is simply the [Rice distribution](https://en.wikipedia.org/wiki/Rice_distribution).
+Then by both of the above approaches, it is clear that $\norm{Y}$ is distributed as the generalized chi distribution.
 
-I'm honestly shocked but apparently when $\Sigma$ is not a simple scaling of the identity, this distribution does not have any real empirical methods associated with it (ie, nice pdf, cdf, etc).
+## Special Cases
+
+
+### One Dimensional
+
+
+### Scaled Identity Covariance
+
+
+### Zero Mean
+
+
+### Diagonal Covariance
+
 
 # Empirical Approach
 

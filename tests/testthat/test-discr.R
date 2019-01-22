@@ -21,12 +21,12 @@ test_that("Discriminability - 2 Class, d==1", {
 test_that("Discriminability - 2 Class, d > 1", {
   n=100; d=10
   # large class difference
-  sim <- discr.sims.linear(n=n, d=d, K=2, mean.scale=10); X <- sim$X; Y <- sim$Y
+  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10); X <- sim$X; Y <- sim$Y
   dstat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
   expect_equal(dstat$discr, 1)
 
   # small class difference with distance matrix and data produces same result
-  sim <- discr.sims.linear(n=n, d=d, K=2, mean.scale=1); X <- sim$X; Y <- sim$Y
+  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=1); X <- sim$X; Y <- sim$Y
   dstat.dat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
 
   D <- discr.distance(X)
