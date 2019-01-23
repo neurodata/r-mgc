@@ -113,13 +113,19 @@ g_legend<-function(a.gplot){
 }
 ```
 
+## Data Plots
+
 ```{r}
 n = 100; d = 2
-sims <- list(discr.sims.linear, discr.sims.linear, #discr.sims.linear,# discr.sims.exp,
+
+# simulations and options as a list
+sims <- list(discr.sims.linear, discr.sims.linear, #sim.linear,# discr.sims.exp,
              discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
-sims.opts <- list(list(n=n, d=d, K=2, mean.scale=0, cov.scale=3), list(n=n, d=d, K=2, mean.scale=1, cov.scale=20), #list(n=n, d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
+sims.opts <- list(list(n=n, d=d, K=2, signal.lshift=0), list(n=n, d=d, K=2, signal.lshift=1),
+                  #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
                   list(n=n, d=d, K=2, cov.scale=20), list(n=n, d=d, K=2))#,
-                  #list(n=n, d=d))
+sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
+                "Cross", "Radial")
 sims.titles = c("(N) No Signal", "(A) 2 Class, Linear", #"(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
                 "(B) 2 Class, Cross", "(C) 2 Class, Spherical")#, "(F) 5 Class, Beta")
 plots <- list()
@@ -130,16 +136,85 @@ for (i in 1:length(sims)) {
 }
 ```
 
-# Multiplot
-
 ```{r, fig.width=10, fig.height=2}
 i=2
 sim <- do.call(sims[[3]], sims.opts[[3]])
 X <- sim$X; Y <- sim$Y
 sim_leg <- g_legend(
   sim_twod_scatter(X, Y, title="", xlab="", ylab="") +
-    scale_color_manual(name="Class", values=mcols) + theme(legend.position='bottom')
+    scale_color_manual(name="Class", values=mcols) + theme(legend.position='right')
 )
 
-grid.arrange(arrangeGrob(grobs=plots, ncol=length(sims)), sim_leg, heights=c(0.9, 0.05))
+dplots <- arrangeGrob(arrangeGrob(grobs=plots, ncol=length(sims)), sim_leg, widths=c(0.9, 0.05))
+```
+## One and Two Sample Plots
+
+```{r}
+one.sample.results <- readRDS('./data/sims/discr_sims_os.rds')
+two.sample.results <- readRDS('./data/sims/discr_sims_ts.rds')
+
+al=0.05  # alpha for the power testing
+
+alg.colors <- c("#c70000", "#a7aec5", "#a7aec5", "#6d7694", "#6d7694", "#989898", "#4f4f4f")
+names(alg.colors) <- c("Discr", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+line.types <- c(1, 1, 2, 1, 2, 1, 1)
+names(line.types) <- c("Discr", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+```
+
+### Convergence of Discriminability
+
+```{r}
+discr.os.results <- subset(one.sample.results, alg=="Discr")
+
+conv.plots <- lapply(unique(discr.os.results$sim.name), function(simn) {
+  sim.ss <- subset(discr.os.results, sim.name == simn)
+  dtheo <- mean(sim.ss$tstat)
+  sim.ss$diff <- sim.ss$tstat - dtheo
+  agg <- abs(aggregate(diff ~ n, data=sim.ss, FUN=mean)$diff) + aggregate(diff ~ n, data=sim.ss, FUN=var)$diff
+  l <- ceiling(100*max(agg))/100 + .01
+  ggplot(sim.ss, aes(x=n, y=diff)) +
+    stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
+    stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=2) +
+    geom_hline(yintercept=0, linetype=2, size=1.5) +
+    xlab("") +
+    ylab("") +
+    coord_cartesian(ylim=c(-l, l)) +
+    scale_x_continuous(trans=log2_trans()) +
+    theme_bw()
+})
+```
+
+### One Sample Plot
+
+```{r}
+os.plots <- lapply(unique(one.sample.results$sim.name), function(simn) {
+  sim.ss <- subset(one.sample.results, sim.name == simn)
+  sim.ss$reject <- as.numeric(sim.ss$pval < al)
+  power.dat <- aggregate(reject ~ n + alg, data=sim.ss, FUN=mean)
+  ggplot(power.dat, aes(x=n, y=reject, color=alg, linetype=alg)) +
+    geom_line(size=1.5) +
+    scale_color_manual(name="Algorithm", values=alg.colors) +
+    scale_linetype_manual(name="Algorithm", values=line.types) +
+    scale_x_continuous(trans=log2_trans()) +
+    coord_cartesian(ylim=c(0, 1)) +
+    xlab("") +
+    ylab("") +
+    theme_bw()
+})
+
+os.plots.leg <- g_legend(os.plots[[1]])
+os.plots <- lapply(os.plots, function(plot) {
+  plot +
+    theme_bw()
+})
+```
+
+### Two Sample Plot
+
+### Combined Plot
+
+# Full Plot
+
+```{r}
+
 ```
