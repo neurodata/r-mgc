@@ -18,7 +18,8 @@ Depends:
 Imports:
   stats,
   SDMTools,
-  MASS
+  MASS,
+  abind
 URL: https://github.com/neurodata/mgc
 Suggests: testthat,
   ggplot2,
