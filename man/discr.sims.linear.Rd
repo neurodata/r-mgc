@@ -27,7 +27,8 @@ of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
 \item{ind}{whether to sample x and y independently. Defaults to \code{FALSE}.}
 }
 \description{
-A function to simulate multi-class data with a linear class-mean trend.
+A function to simulate multi-class data with a linear class-mean trend. The signal dimension is the dimension carrying all of the
+between-class difference, and the non-signal dimensions are noise.
 }
 \author{
 Eric Bridgeford
