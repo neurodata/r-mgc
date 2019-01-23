@@ -19,6 +19,7 @@ require(ICC)
 require(I2C2)
 require(cowplot)
 require(lolR)
+require(plyr)
 ```
 
 ```{r}
@@ -126,13 +127,13 @@ sims.opts <- list(list(n=n, d=d, K=2, signal.lshift=0), list(n=n, d=d, K=2, sign
                   list(n=n, d=d, K=2, cov.scale=20), list(n=n, d=d, K=2))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
-sims.titles = c("(N) No Signal", "(A) 2 Class, Linear", #"(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
-                "(B) 2 Class, Cross", "(C) 2 Class, Spherical")#, "(F) 5 Class, Beta")
-plots <- list()
+sims.titles = c("i. No Signal", "ii. 2 Class, Linear", #"(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
+                "iii. 2 Class, Cross", "iv. 2 Class, Spherical")#, "(F) 5 Class, Beta")
+dat.plots <- list()
 for (i in 1:length(sims)) {
   sim <- do.call(sims[[i]], sims.opts[[i]])
   X <- sim$X; Y <- sim$Y
-  plots[[i]] <- plot_dat(X, Y, title=sims.titles[i], xlab="", ylab="")
+  dat.plots[[i]] <- plot_dat(X, Y, title=sims.titles[i], xlab="", ylab="")
 }
 ```
 
@@ -145,26 +146,27 @@ sim_leg <- g_legend(
     scale_color_manual(name="Class", values=mcols) + theme(legend.position='right')
 )
 
-dplots <- arrangeGrob(arrangeGrob(grobs=plots, ncol=length(sims)), sim_leg, widths=c(0.9, 0.05))
+dplots <- arrangeGrob(arrangeGrob(grobs=dat.plots, left="(A)", ncol=length(sims)), sim_leg, widths=c(0.9, .15))
 ```
 ## One and Two Sample Plots
 
 ```{r}
 one.sample.results <- readRDS('./data/sims/discr_sims_os.rds')
 two.sample.results <- readRDS('./data/sims/discr_sims_ts.rds')
-
+one.sample.results$alg <- revalue(one.sample.results$alg, c("Discr" = "Discriminability"))
+two.sample.results$alg <- revalue(two.sample.results$alg, c("Discr" = "Discriminability"))
 al=0.05  # alpha for the power testing
 
 alg.colors <- c("#c70000", "#a7aec5", "#a7aec5", "#6d7694", "#6d7694", "#989898", "#4f4f4f")
-names(alg.colors) <- c("Discr", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+names(alg.colors) <- c("Discriminability", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
 line.types <- c(1, 1, 2, 1, 2, 1, 1)
-names(line.types) <- c("Discr", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+names(line.types) <- c("Discriminability", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
 ```
 
 ### Convergence of Discriminability
 
 ```{r}
-discr.os.results <- subset(one.sample.results, alg=="Discr")
+discr.os.results <- subset(one.sample.results, alg=="Discriminability")
 
 conv.plots <- lapply(unique(discr.os.results$sim.name), function(simn) {
   sim.ss <- subset(discr.os.results, sim.name == simn)
@@ -174,7 +176,7 @@ conv.plots <- lapply(unique(discr.os.results$sim.name), function(simn) {
   l <- ceiling(100*max(agg))/100 + .01
   ggplot(sim.ss, aes(x=n, y=diff)) +
     stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
-    stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=2) +
+    stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=1) +
     geom_hline(yintercept=0, linetype=2, size=1.5) +
     xlab("") +
     ylab("") +
@@ -182,6 +184,8 @@ conv.plots <- lapply(unique(discr.os.results$sim.name), function(simn) {
     scale_x_continuous(trans=log2_trans()) +
     theme_bw()
 })
+
+convplot <- arrangeGrob(grobs=conv.plots, left="(B)", ncol=length(conv.plots))
 ```
 
 ### One Sample Plot
@@ -192,7 +196,7 @@ os.plots <- lapply(unique(one.sample.results$sim.name), function(simn) {
   sim.ss$reject <- as.numeric(sim.ss$pval < al)
   power.dat <- aggregate(reject ~ n + alg, data=sim.ss, FUN=mean)
   ggplot(power.dat, aes(x=n, y=reject, color=alg, linetype=alg)) +
-    geom_line(size=1.5) +
+    geom_line(size=1) +
     scale_color_manual(name="Algorithm", values=alg.colors) +
     scale_linetype_manual(name="Algorithm", values=line.types) +
     scale_x_continuous(trans=log2_trans()) +
@@ -205,8 +209,11 @@ os.plots <- lapply(unique(one.sample.results$sim.name), function(simn) {
 os.plots.leg <- g_legend(os.plots[[1]])
 os.plots <- lapply(os.plots, function(plot) {
   plot +
-    theme_bw()
+    guides(color=FALSE, linetype=FALSE)
 })
+
+
+osplot <- arrangeGrob(grobs=os.plots, left="(C)", ncol=length(os.plots))
 ```
 
 ### Two Sample Plot
@@ -216,5 +223,28 @@ os.plots <- lapply(os.plots, function(plot) {
 # Full Plot
 
 ```{r}
+ts.plots <- lapply(unique(two.sample.results$sim.name), function(simn) {
+  sim.ss <- subset(two.sample.results, sim.name == simn)
+  sim.ss$reject <- as.numeric(sim.ss$pval < al)
+  power.dat <- aggregate(reject ~ n + alg, data=sim.ss, FUN=mean)
+  ggplot(power.dat, aes(x=n, y=reject, color=alg, linetype=alg)) +
+    geom_line(size=1) +
+    scale_color_manual(name="Algorithm", values=alg.colors) +
+    scale_linetype_manual(name="Algorithm", values=line.types) +
+    scale_x_continuous(trans=log2_trans()) +
+    coord_cartesian(ylim=c(0, 1)) +
+    xlab("") +
+    ylab("") +
+    theme_bw()
+})
 
+ts.plots.leg <- g_legend(ts.plots[[1]])
+ts.plots <- lapply(os.plots, function(plot) {
+  plot +
+    guides(color=FALSE, linetype=FALSE)
+})
+
+tsplot <- arrangeGrob(grobs=ts.plots, left="(D)", ncol=length(ts.plots))
 ```
+
+
