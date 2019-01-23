@@ -8,14 +8,9 @@ require(ICC)
 require(I2C2)
 no_cores = detectCores() - 1
 
-# Set Global Parameters for Investigating
-nrep=50  # number of iterations per n, trial
-n.max <- 512  # maximum number of samples
-n.min <- 16  # minimum number of samples
-d=2  # number of dimensions
-rlen=10  # number of ns to try
-opath='./data/sims'  # output path
-
+# -----------------------------
+# Simulations
+# -----------------------------
 
 # redefine simulations so that we can obtain the best/worst dimensions relatively
 # easily
@@ -42,66 +37,140 @@ sim.radial.os <- function(...) {
     return(acos(x %*% uvec/(sqrt(sum(x^2)))))})
 }
 
+# simulations and options as a list
 sims <- list(sim.linear.os, sim.linear.os, #sim.linear,# discr.sims.exp,
              sim.cross.os, sim.radial.os)#, discr.sims.beta)
-sims.opts <- list(list(d=d, K=2, signal.lshift=0), list(d=d, K=2, signal.lshift=1),
+sims.opts <- list(list(K=2, signal.lshift=0), list(K=2, signal.lshift=1),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(d=d, K=2, cov.scale=20), list(d=d, K=2))#,
+                  list(K=2, cov.scale=20), list(K=2))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
 
-anova.onesample <- function(sim) {
+# -----------------------------
+# One-Sample Testing Algorithms
+# -----------------------------
+# define all the relevant one-sample tests with a similar interface for simplicity in the driver
+
+# one-way anova
+anova.os <- function(x, y) {
+  data <- data.frame(x=Xrs[[i]], y=sim$Y)
+  fit <- anova(aov(x ~ y, data=data))
+  MSa <- fit$"Mean Sq"[1]
+  MSw <- var.w <- fit$"Mean Sq"[2]
+  f = fit[["F value"]][1]
+  p = fit[["Pr(>F)"]][1]
+  return(list(f=f, p=p))
+}
+
+# driver for one-way anova
+anova.onesample.driver <- function(sim, ...) {
   Xrs <- list(best=sim$d.best, worst=sim$d.worst)
-  names(Xrs) <- c("Anova, best", "Anova, worst")
+  names(Xrs) <- c("ANOVA, best", "ANOVA, worst")
   result <- lapply(seq_along(Xrs), function(Xrs, algs, i) {
-    data <- data.frame(x=Xrs[[i]], y=sim$Y)
-    fit <- anova(aov(x ~ y, data=data))
-    MSa <- fit$"Mean Sq"[1]
-    MSw <- var.w <- fit$"Mean Sq"[2]
-    a <- length(unique(sim$Y))
-    tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
-    k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-    var.a <- (MSa - MSw)/k
-    r <- var.a/(var.w + var.a)
-    p = fit[["Pr(>F)"]][1]
-    return(data.frame(alg=algs[[i]], icc=r, tstat=r, pval=p))
+    res <- anova.os(Xrs[[i]], sim$Y)
+    return(data.frame(alg=algs[[i]], tstat=res$f, pval=res$p))
+  }, Xrs=Xrs, algs=names(Xrs))
+  res <- do.call(rbind, result)
+  return(result)
+}
+
+# one-way ICC
+icc.os <- function(x, y) {
+  data <- data.frame(x=x, y=y)
+  fit <- anova(aov(x ~ y, data=data))
+  MSa <- fit$"Mean Sq"[1]
+  MSw <- var.w <- fit$"Mean Sq"[2]
+  a <- length(unique(sim$Y))
+  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
+  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
+  var.a <- (MSa - MSw)/k
+  r <- var.a/(var.w + var.a)
+  return(r)
+}
+
+# driver for one-way ICC
+icc.onesample.driver <- function(sim, nrep=100, ...) {
+  Xrs <- list(best=sim$d.best, worst=sim$d.worst)
+  names(Xrs) <- c("ICC, best", "ICC, worst")
+  N <- length(sim$Y)
+  result <- lapply(seq_along(Xrs), function(Xrs, algs, i) {
+    # relative statistic
+    r <- icc.os(Xrs[[i]], sim$Y)
+    # permutation approach for p-value
+    nr <- sapply(1:nperm, function(j) {
+      samplen <- sample(N)
+      # randomly permute labels
+      perm.stat <- do.call(icc.os, list(x=Xrs[[i]], y=sim$Y[samplen]))
+      return(perm.stat)
+    })
+    # p-value is fraction of times statistic of permutations
+    # is more extreme than the relative statistic
+    p <- (sum(nr>r) + 1)/(nperm + 1)
+    return(data.frame(alg=algs[[i]], tstat=r, pval=p))
   }, Xrs=Xrs, algs=names(Xrs))
   res <- do.call(rbind, result)
   return(res)
 }
 
-manova.onesample <- function(sim) {
-  fit <- manova(sim$X ~ sim$Y)
-  return(data.frame("Manova", i2c2=, i2c2.pval=, tstat=summary(fit)$stats["sim$Y", "approx F"],
+# one-sample MANOVA
+manova.onesample.driver <- function(sim) {
+  fit.man <- manova(sim$X ~ sim$Y)
+  return(data.frame("MANOVA", tstat=summary(fit)$stats["sim$Y", "approx F"],
                     pval=summary(fit)$stats["sim$Y", "Pr(>F)"]))
 }
 
-discr.onesample <- function()
-
-one.sample.i2c2 <- function(X, ids, Z=NULL, metr=i2c2adj, nperm=100, verbose=FALSE) {
-  N <- length(ids)
-  if (is.null((N))) {
-    stop('Invalid datatype for N')
-  }
-  tr <- do.call(i2c2adj, list(X, ids))
-
-  nr <- rep(0,nperm)
-  for (i in 1:nperm){
-    if (verbose) {
-      print(i)
-    }
-    samplen <- sample(N)
-    if (is.null(Z)) {
-      Z = Z[samplen]
-    }
-    nr[i] <- do.call(i2c2adj, list(X=X[samplen,], Y=ids[samplen], Z=Z))
-  }
-  result <- list()
-  result$srel <- tr
-  result$null <- sort(nr)
-  result$pval <- (sum(nr>tr) + 1)/(nperm + 1)
-  return(result)
+# I2C2 wrapper
+i2c2.os <- function(X, Y) {
+  return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
 }
+
+# one-sample I2C2
+i2c2.onesample.driver <- function(sim, nrep=100, ...) {
+  # relative statistic
+  N <- length(sim$Y)
+  r <- i2c2.os(sim$X, sim$Y)
+  # permutation approach for p-value
+  nr <- sapply(1:nperm, function(i) {
+    samplen <- sample(N)
+    # randomly permute labels
+    do.call(i2c2.os, list(X=sim$X, Y=sim$Y[samplen]))
+  })
+  # p-value is fraction of times statistic of permutations
+  # is more extreme than the relative statistic
+  p <- (sum(nr>r) + 1)/(nperm + 1)
+  return(data.frame(alg="I2C2", tstat=r, pval=p))
+}
+
+discr.onesample.driver <- function(sim, nperm=100, ...) {
+  # relative statistic
+  N <- length(sim$Y)
+  D <- discr.distance(sim$X)
+  r <- discr.stat(D, sim$Y, is.dist=TRUE)$discr
+  # permutation approach for p-value
+  nr <- sapply(1:nperm, function(i) {
+    samplen <- sample(N)
+    # randomly permute labels
+    do.call(discr.stat, list(X=D, Y=sim$Y[samplen], is.dist=TRUE))$discr
+  })
+  # p-value is fraction of times statistic of permutations
+  # is more extreme than the relative statistic
+  p <- (sum(nr>r) + 1)/(nperm + 1)
+  return(data.frame(alg="Discr", tstat=r, pval=p))
+}
+
+algs <- list(discr.onesample.driver, anova.onesample.driver, icc.onesample.driver,
+             manova.onesample.driver, i2c2.onesample.driver)
+# ----------------------------------
+## One-Sample Driver
+# ----------------------------------
+
+# Set Global Parameters for Investigating
+nrep=50  # number of iterations per n, trial
+n.max <- 512  # maximum number of samples
+n.min <- 16  # minimum number of samples
+d=2  # number of dimensions
+rlen=10  # number of ns to try
+opath='./data/sims'  # output path
 
 log.seq <- function(from=0, to=30, length=rlen) {
   round(exp(seq(from=log(from), to=log(to), length.out=length)))
@@ -109,29 +178,23 @@ log.seq <- function(from=0, to=30, length=rlen) {
 
 ns <- log.seq(from=n.min, to=n.max)
 
-one.sample.tests <- list(discr.test.one_sample, iccadj, one.sample.i2c2)
-stat.names <- c("Discr", "ICC", "I2C2")
+experiments <- do.call(c, lapply(seq_along(sims), function(sims, sims.names, sims.opts, i) {
+  sim <- sims[[i]]; sim.name <- sims.names[[i]]; sim.opts <- sims.opts[[i]]
+  do.call(c, lapply(ns, function(n) {
+    do.call(c, lapply(1:nrep, function(j) {
+      sim <- do.call(sim, c(sim.opts, n=n, d=d))
+      lapply(algs, function(alg) {
+        return(list(sim.name=sim.name, sim=sim, i=j, n=n, d=d, alg=alg))
+      })
+    }))
+  }))
+}, sims=sims, sims.names=sims.names, sims.opts=sims.opts))
 
 ## One Sample Results
 # mcapply over the number of repetitions
-results <- mclapply(1:nrep, function(i) {
-  results <- data.frame(sim=c(), iteration=c(), stat=c(), n=c(), tstat=c(), pval=c())
-  for (j in 1:length(sims)) {
-    print(sprintf("j: %d", j))
-    sim <- sims[[j]]; sim.opt <- sims.opts[[j]]; sim.name <- sims.names[[j]]
-    for (k in 1:length(ns)) {
-      n <- ns[k]
-      print(sprintf("n: %d", n))
-      sim.opt$n <- n
-      sim.dat <- do.call(sim, sim.opt); X <- sim.dat$X; Y <- sim.dat$Y
-      for (l in 1:length(one.sample.tests)) {
-        ost <- one.sample.tests[[l]]; stat.name <- stat.names[[l]]
-        t.res <- do.call(ost, list(X, Y)); tstat <- t.res$srel; pval <- t.res$pval
-        results <- rbind(results,  data.frame(sim=sim.name, iteration=i, stat=stat.name, n=n, tstat=tstat, pval=pval))
-      }
-    }
-  }
-  return(results)
+results <- mclapply(experiments, function(exp) {
+  res <- do.call(exp$alg, list(exp$sim))
+  return(data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, tstat=res$tstat, pval=res$pval))
 }, mc.cores=no_cores)
 
 results <- do.call(rbind, results)
