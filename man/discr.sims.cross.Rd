@@ -4,8 +4,8 @@
 \alias{discr.sims.cross}
 \title{Discriminability Cross Simulation}
 \usage{
-discr.sims.cross(n, d, K, cov.scale = 1, rotate = FALSE,
-  class.equal = TRUE, ind = FALSE)
+discr.sims.cross(n, d, K, signal.scale = 10, non.scale = 1,
+  rotate = FALSE, class.equal = TRUE, ind = FALSE)
 }
 \arguments{
 \item{n}{the number of samples.}
@@ -14,7 +14,9 @@ discr.sims.cross(n, d, K, cov.scale = 1, rotate = FALSE,
 
 \item{K}{the number of classes in the dataset.}
 
-\item{cov.scale}{the scaling for the class-covariance. Defaults to \code{1}.}
+\item{signal.scale}{the scaling for the signal dimension. Defaults to \code{10}.}
+
+\item{non.scale}{the scaling for the non-signal dimensions. Defaults to \code{1}.}
 
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior

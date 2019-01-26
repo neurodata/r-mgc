@@ -4,7 +4,7 @@
 \alias{discr.sims.fat_tails}
 \title{Discriminability Spread Simulation}
 \usage{
-discr.sims.fat_tails(n, d, K, cov.scale = 1, rotate = FALSE,
+discr.sims.fat_tails(n, d, K, signal.scale = 1, rotate = FALSE,
   class.equal = TRUE, ind = FALSE)
 }
 \arguments{
@@ -14,7 +14,7 @@ discr.sims.fat_tails(n, d, K, cov.scale = 1, rotate = FALSE,
 
 \item{K}{the number of classes in the dataset.}
 
-\item{cov.scale}{the scaling for the class-covariance. Defaults to \code{1}.}
+\item{signal.scale}{the scaling for the signal dimension. Defaults to \code{1}.}
 
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior

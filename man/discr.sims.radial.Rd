@@ -4,7 +4,7 @@
 \alias{discr.sims.radial}
 \title{Discriminability Radial Simulation}
 \usage{
-discr.sims.radial(n, d, K, cov.scale = 0.1, r = 1, class.equal = TRUE,
+discr.sims.radial(n, d, K, er.scale = 0.1, r = 1, class.equal = TRUE,
   ind = FALSE)
 }
 \arguments{
@@ -14,7 +14,7 @@ discr.sims.radial(n, d, K, cov.scale = 0.1, r = 1, class.equal = TRUE,
 
 \item{K}{the number of classes in the dataset.}
 
-\item{cov.scale}{the scaling for the class-variance. Defaults to \code{0.1}.}
+\item{er.scale}{the scaling for the error of the samples. Defaults to \code{0.1}.}
 
 \item{r}{the radial spacing between each class. Defaults to \code{1}.}
 

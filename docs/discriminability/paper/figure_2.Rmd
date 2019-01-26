@@ -124,11 +124,11 @@ sims <- list(discr.sims.linear, discr.sims.linear, #sim.linear,# discr.sims.exp,
              discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
 sims.opts <- list(list(n=n, d=d, K=2, signal.lshift=0), list(n=n, d=d, K=2, signal.lshift=1),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(n=n, d=d, K=2, cov.scale=20), list(n=n, d=d, K=2))#,
+                  list(n=n, d=d, K=2, signal.scale=20), list(n=n, d=d, K=2))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
 sims.titles = c("i. No Signal", "ii. 2 Class, Linear", #"(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
-                "iii. 2 Class, Cross", "iv. 2 Class, Spherical")#, "(F) 5 Class, Beta")
+                "iii. 2 Class, Cross", "iv. 2 Class, Radial")#, "(F) 5 Class, Beta")
 dat.plots <- list()
 for (i in 1:length(sims)) {
   sim <- do.call(sims[[i]], sims.opts[[i]])
@@ -153,6 +153,7 @@ dplots <- arrangeGrob(arrangeGrob(grobs=dat.plots, left="(A)", ncol=length(sims)
 ```{r}
 one.sample.results <- readRDS('./data/sims/discr_sims_os.rds')
 two.sample.results <- readRDS('./data/sims/discr_sims_ts.rds')
+two.sample.results <- two.sample.results[two.sample.results$alg %in% c("ANOVA, best", "ANOVA, worst", "MANOVA", "discr"),]
 one.sample.results$alg <- revalue(one.sample.results$alg, c("Discr" = "Discriminability"))
 two.sample.results$alg <- revalue(two.sample.results$alg, c("Discr" = "Discriminability"))
 al=0.05  # alpha for the power testing
@@ -218,10 +219,6 @@ osplot <- arrangeGrob(grobs=os.plots, left="(C)", ncol=length(os.plots))
 
 ### Two Sample Plot
 
-### Combined Plot
-
-# Full Plot
-
 ```{r}
 ts.plots <- lapply(unique(two.sample.results$sim.name), function(simn) {
   sim.ss <- subset(two.sample.results, sim.name == simn)
@@ -245,6 +242,19 @@ ts.plots <- lapply(os.plots, function(plot) {
 })
 
 tsplot <- arrangeGrob(grobs=ts.plots, left="(D)", ncol=length(ts.plots))
+```
+
+### Combined Plot
+
+```{r}
+result.plot <- arrangeGrob(arrangeGrob(convplot, osplot, tsplot, nrow=3), os.plots.leg, widths=c(.9, .15))
+```
+
+# Full Plot
+
+```{r, height=20, width=20}
+full.plot <- arrangeGrob(dplots, result.plot, nrow=2, heights=c(.25, .75))
+as_ggplot(full.plot)
 ```
 
 
