@@ -43,7 +43,7 @@ sims <- list(sim.linear.os, sim.linear.os, #sim.linear,# discr.sims.exp,
              sim.cross.os, sim.radial.os)#, discr.sims.beta)
 sims.opts <- list(list(K=2, signal.lshift=0), list(K=2, signal.lshift=1),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(K=2, cov.scale=20), list(K=2))#,
+                  list(K=2, signal.scale=20), list(K=2))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
 
@@ -369,7 +369,7 @@ algs <- list(discr.twosample.driver, anova.twosample.driver, #icc.twosample.driv
 # ----------------------------------
 
 # Set Global Parameters for Investigating
-nrep=50  # number of iterations per n, trial
+nrep=200  # number of iterations per n, trial
 n.max <- 512  # maximum number of samples
 n.min <- 16  # minimum number of samples
 d=2  # number of dimensions
