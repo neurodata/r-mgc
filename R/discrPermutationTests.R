@@ -64,16 +64,6 @@ discr.test.one_sample <- function(D, ids, nperm=100, verbose=FALSE) {
 #' @author Shangsi Wang and Eric Bridgeford
 #' @export
 discr.test.two_sample <- function(D1, D2, ids, nperm=100, verbose=FALSE){
-  D2 <- as.matrix(D2)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(D2) != ncol(D2) | sum(diag(D2)^2) > 0){
-    D2 <- discr.distance(D2)
-  }
-  D1 <- as.matrix(D1)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(D1) != ncol(D1) | sum(diag(D1)^2) > 0){
-    D1 <- discr.distance(D1)
-  }
   # test two discriminability are the same
   N1 <- dim(D1)[1]
   N2 <- dim(D2)[1]
@@ -89,8 +79,8 @@ discr.test.two_sample <- function(D1, D2, ids, nperm=100, verbose=FALSE){
   disct2 <- matrix(0,N1,2)
 
   for (i in 1:N1){
-    disct1[i,] <- mgc:::discr.test.dis_vec(D1[i,],i,ids)
-    disct2[i,] <- mgc:::discr.test.dis_vec(D2[i,],i,ids)
+    disct1[i,] <- discr.test.dis_vec(D1[i,],i,ids)
+    disct2[i,] <- discr.test.dis_vec(D2[i,],i,ids)
   }
 
   disct1 <- disct1[!is.na(disct1[,1]),]
@@ -121,7 +111,7 @@ discr.test.two_sample <- function(D1, D2, ids, nperm=100, verbose=FALSE){
     }
     ndif[i] <- (sum(ndisct1[,1] * ndisct1[,2]) - sum(ndisct2[,1] * ndisct2[,2])) / tcount
   }
-  pvalue <- (sum(ndif > abs(tdif)) + 0.5 * sum(ndif == abs(tdif)) + 1) / (nperm + 1)
+  pvalue <- (sum(ndif > abs(tdif)) + 0.5 * sum(ndif == abs(tdif))) / nperm
   return (list(pval=pvalue))
 }
 
