@@ -81,7 +81,7 @@ icc.os <- function(x, y) {
   fit <- anova(aov(x ~ y, data=data))
   MSa <- fit$"Mean Sq"[1]
   MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(sim$Y))
+  a <- length(unique(y))
   tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
   k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
   var.a <- (MSa - MSw)/k
@@ -203,7 +203,6 @@ saveRDS(results, file.path(opath, paste('discr_sims_os', '.rds', sep="")))
 
 # Parallelize Stuff
 #=========================#
-require(lolR)
 require(MASS)
 library(parallel)
 require(mgc)
