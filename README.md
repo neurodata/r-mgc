@@ -1,3 +1,5 @@
+This R repo is a development branch, the actively developed repo is in Python at https://github.com/neurodata/mgcpy.
+
 # Multiscale Graph Correlation (MGC)
 
 [![CRAN Status Badge](http://www.r-pkg.org/badges/version/mgc)](http://cran.r-project.org/web/packages/mgc)
