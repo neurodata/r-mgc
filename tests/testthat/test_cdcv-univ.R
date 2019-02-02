@@ -53,7 +53,7 @@ test_that("Fully indpendent data, check size of test.", {
   n <- 20
 
   pval <- function(t) {
-    X <- rnorm(n, 0, 1)
+    X <- array(rnorm(n), dim=c(n))
     Y <- rnorm(n, 0, 1)
     result <- cdcv.univ.test(X,Y, M = 3, unbiased = TRUE, type = "circular")
     return(result$pCDCV)
