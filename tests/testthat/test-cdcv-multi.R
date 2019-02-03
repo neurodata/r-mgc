@@ -49,7 +49,7 @@ test_that("All 0 inputs.", {
 
 test_that("Fully independent data, check size of test.", {
   set.seed(730)
-  num_sims <- 30
+  num_sims <- 5
   n <- 100
   d_X <- 4
   d_Y <- 1
@@ -69,7 +69,7 @@ test_that("Fully independent data, check size of test.", {
 
 test_that("Highly dependent data.", {
   set.seed(730)
-  num_sims <- 30
+  num_sims <- 5
   n <- 40
   d_X <- 1
   d_Y <- 2
@@ -81,18 +81,17 @@ test_that("Highly dependent data.", {
   Sigma <- matrix(c(1,0,0,0,1,0,0,0,1),3,3)
 
   pval <- function(t) {
-
     Z <- varma(n, Phis, Thetas, Sigma)
     X <- Z[,1:d_X]
     Y <- Z[,(d_X+1):(d_X+d_Y)]
     result <- cdcv.multi.test(X,Y)
     return(result$pCDCV)
   }
-
   pvals <- sapply(1:num_sims, pval)
   suppressWarnings({
     result <- wilcox.test(pvals, alternative = "less", mu = 0.5)
     expect_lt(result$p.value, 0.05)
   })
+
 })
 
