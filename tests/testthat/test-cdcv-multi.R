@@ -1,4 +1,4 @@
-context("cdcv-univ")
+context("cdcv-multi")
 
 #' Bivariate VARMA process simulation.
 #'
@@ -10,7 +10,7 @@ context("cdcv-univ")
 varma <- function(n, Phis, Thetas, Sigma) {
   d <- nrow(Sigma)
   Z <- matrix(rep(0, d*n), n, d)
-  innov <- mvrnorm(n, rep(0, d), Sigma)
+  innov <- MASS::mvrnorm(n, rep(0, d), Sigma)
   Z[1,] <- innov[1,]
   for (t in 2:n) {
     # AR.
@@ -32,30 +32,32 @@ varma <- function(n, Phis, Thetas, Sigma) {
     # Innovation.
     Z[t,] <- Z[t,] + innov[t,]
   }
-  colnames(Z) <- c("X", "Y")
   Z
 }
 
 test_that("All 0 inputs.", {
   n <- 20
-  X <- rep(0, n)
-  Y <- rep(0, n)
-  result <- cdcv.univ.test(X,Y)
+  d_X <- 3
+  d_Y <- 4
+  X <- matrix(rep(0, n*d_X), n, d_X)
+  Y <- matrix(rep(0, n*d_Y), n, d_Y)
+  result <- cdcv.multi.test(X,Y)
   expect_equal(result$pCDCV, 1)
   expect_equal(result$statCDCV, 0)
-  expect_false(result$unbiased)
   expect_equal(result$max_lag, 5)
 })
 
-test_that("Fully indpendent data, check size of test.", {
+test_that("Fully independent data, check size of test.", {
   set.seed(730)
   num_sims <- 30
-  n <- 20
+  n <- 100
+  d_X <- 4
+  d_Y <- 1
 
   pval <- function(t) {
-    X <- array(rnorm(n), dim=c(n))
-    Y <- rnorm(n, 0, 1)
-    result <- cdcv.univ.test(X,Y, M = 3, unbiased = TRUE, type = "circular")
+    X <- matrix(rnorm(n*d_X, 0, 1), n, d_X)
+    Y <- matrix(rnorm(n*d_Y, 0, 1), n, d_Y)
+    result <- cdcv.multi.test(X,Y, M = 3, boot_type = "circular")
     return(result$pCDCV)
   }
   pvals <- sapply(1:num_sims, pval)
@@ -68,24 +70,29 @@ test_that("Fully indpendent data, check size of test.", {
 test_that("Highly dependent data.", {
   set.seed(730)
   num_sims <- 30
-  n <- 20
+  n <- 40
+  d_X <- 1
+  d_Y <- 2
 
-  Phis <- list(matrix(c(0,0.5,-0.5,0), 2, 2))
+  Phis <- list(matrix(c(0,0.5,-0.5,
+                        0.5,0,-0.5,
+                        -0.5,0.5,0), 3, 3))
   Thetas <- list()
-  Sigma <- matrix(c(1,0,0,1),2,2)
+  Sigma <- matrix(c(1,0,0,0,1,0,0,0,1),3,3)
 
   pval <- function(t) {
 
     Z <- varma(n, Phis, Thetas, Sigma)
-    X <- Z[,"X"]
-    Y <- Z[,"Y"]
-    result <- cdcv.univ.test(X,Y)
+    X <- Z[,1:d_X]
+    Y <- Z[,(d_X+1):(d_X+d_Y)]
+    result <- cdcv.multi.test(X,Y)
     return(result$pCDCV)
   }
 
   pvals <- sapply(1:num_sims, pval)
   suppressWarnings({
-    result <- wilcox.test(pvals, mu = 0.5)
+    result <- wilcox.test(pvals, alternative = "less", mu = 0.5)
     expect_lt(result$p.value, 0.05)
   })
 })
+

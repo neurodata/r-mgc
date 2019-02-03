@@ -13,15 +13,15 @@ cdcv.univ.test(X, Y, M = NA, num_boot = 100, unbiased = FALSE,
 
 \item{Y}{Time series as n length vector.}
 
-\item{M}{Maximum lag to consider for cross-distance covariance.}
+\item{M}{Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.}
 
-\item{num_boot}{Number of bootstrapped samples.}
+\item{num_boot}{Number of bootstrapped samples. Defaults to \code{100}.}
 
-\item{unbiased}{Whether to use the biased or unbiased estimate of dCov.}
+\item{unbiased}{Whether to use the biased or unbiased estimate of dCov. Defaults to \code{FALSE}.}
 
-\item{type}{"circular" or "stationary" boostrap.}
+\item{type}{"circular" or "stationary" bootstrap. Defaults to \code{"stationary"}.}
 
-\item{block_size}{Block size or mean block size.}
+\item{block_size}{Block size or mean block size. Defaults to \code{sqrt(n)}.}
 }
 \value{
 A list containing the following:
