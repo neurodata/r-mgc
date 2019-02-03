@@ -4,12 +4,10 @@
 #'
 #' @param X Time series as n x d_X matrix.
 #' @param Y Time series as n x d_Y matrix.
-#' @param M Maximum lag to consider for cross-distance covariance.
-#' @param num_boot Number of bootstrapped samples.
-#' @param alpha Significance level of test.
-#' @param unbiased Whether to use the biased or unbiased estimate of dCov.
-#' @param type "circular" or "stationary" boostrap.
-#' @param block_size Block size or mean block size.
+#' @param M Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.
+#' @param num_boot Number of bootstrapped samples. Defaults to \code{100}.
+#' @param boot_type "stationary" or "circular" bootstrap. Defaults to \code{stationary}.
+#' @param block_size Block size or mean block size. Defaults to \code{sqrt(n)}.
 #' @return A list containing the following:
 #' \item{\code{pCDCV}}{P-value of CDCV}
 #' \item{\code{statCDCV}}{test statistic value}
@@ -17,7 +15,15 @@
 #' \item{\code{M}}{the max lead/lag considered}
 #'
 #'@export
-cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, alpha = 0.05, unbiased = FALSE, type = "stationary", block_size = NA) {
+cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, boot_type = "stationary", block_size = NA) {
+
+  # Correct X and Y into matrices, if they are vectors.
+  if (class(X) == "numeric") {
+    X <- matrix(X, nrow = length(X))
+  }
+  if (class(Y) == "numeric") {
+    Y <- matrix(Y, nrow = length(X))
+  }
 
   # Default block size is sqrt(n).
   n <- nrow(X)
@@ -28,32 +34,40 @@ cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, alpha = 0.05, unbiased
   # Must be defined internally to maintain Y in scope.
   # Uses Bartlett kernel adapted to FP statistic.
   test_stat <- function(X) {
-    n <- nrow(X)
     p <- sqrt(n)
-    stat_type <- if (unbiased) "U" else "V"
 
-    result <- n*(energy::dcov(X, Y, type = stat_type))
+    result <- n*(energy::dcov(X, Y))
     if (M) {
       for (j in 1:M) {
-        x <- X[(1+j):n,]
-        y <- Y[1:(n-j),]
-        result <- result + (n-j)*((1 - j/(p*(M+1)))^2)*(energy::dcov(x, y, type = stat_type))
+        if (class(X) == "numeric") {
+          x_lead <- X[(1+j):n]
+          x_lag <- X[(1+j):n]
+        } else {
+          x_lead <- X[(1+j):n,]
+          x_lag <- X[(1+j):n,]
+        }
+        if (class(Y) == "numeric") {
+          y_lag <- Y[1:(n-j)]
+          y_lead <- Y[(1+j):n]
+        } else {
+          y_lag <- Y[1:(n-j),]
+          y_lead <- Y[(1+j):n,]
+        }
 
-        x <- X[1:(n-j),]
-        y <- Y[(1+j):n,]
-        result <- result + (n-j)*((1 - j/(p*(M+1)))^2)*(energy::dcov(x, y, type = stat_type))
+        result <- result + (n-j)*((1 - j/(p*(M+1)))^2)*(energy::dcov(x_lead, y_lag)) +
+          (n-j)*((1 - j/(p*(M+1)))^2)*(energy::dcov(x_lag, y_lead))
       }
     }
-    result
+    return(result)
   }
 
   # Block boostrap.
-  if (type == "circular") sim <- "fixed" else sim <- "geom"
+  if (boot_type == "circular") sim <- "fixed" else sim <- "geom"
   boot_sample <- boot::tsboot(tseries = X,
                               statistic = test_stat,
                               R = num_boot,
                               l = block_size,
-                              sim = "fixed",
+                              sim = sim,
                               orig.t = FALSE)
 
   statCDCV <- test_stat(X)
@@ -61,7 +75,6 @@ cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, alpha = 0.05, unbiased
 
   result <- list(pCDCV = pCDCV,
                  statCDCV = statCDCV,
-                 unbiased = unbiased,
                  max_lag = M)
   return(result)
 }

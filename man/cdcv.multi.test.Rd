@@ -6,25 +6,21 @@
 Uses cross-distance covariance and circular or stationary bootstrap.
 For univariate data, use cdcv.univ.test.}
 \usage{
-cdcv.multi.test(X, Y, M = NA, num_boot = 100, alpha = 0.05,
-  unbiased = FALSE, type = "stationary", block_size = NA)
+cdcv.multi.test(X, Y, M = NA, num_boot = 100, boot_type = "stationary",
+  block_size = NA)
 }
 \arguments{
 \item{X}{Time series as n x d_X matrix.}
 
 \item{Y}{Time series as n x d_Y matrix.}
 
-\item{M}{Maximum lag to consider for cross-distance covariance.}
+\item{M}{Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.}
 
-\item{num_boot}{Number of bootstrapped samples.}
+\item{num_boot}{Number of bootstrapped samples. Defaults to \code{100}.}
 
-\item{alpha}{Significance level of test.}
+\item{boot_type}{"stationary" or "circular" bootstrap. Defaults to \code{stationary}.}
 
-\item{unbiased}{Whether to use the biased or unbiased estimate of dCov.}
-
-\item{type}{"circular" or "stationary" boostrap.}
-
-\item{block_size}{Block size or mean block size.}
+\item{block_size}{Block size or mean block size. Defaults to \code{sqrt(n)}.}
 }
 \value{
 A list containing the following:

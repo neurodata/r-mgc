@@ -3,11 +3,11 @@
 #'
 #' @param X Time series as n length vector.
 #' @param Y Time series as n length vector.
-#' @param M Maximum lag to consider for cross-distance covariance.
-#' @param num_boot Number of bootstrapped samples.
-#' @param unbiased Whether to use the biased or unbiased estimate of dCov.
-#' @param type "circular" or "stationary" boostrap.
-#' @param block_size Block size or mean block size.
+#' @param M Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.
+#' @param num_boot Number of bootstrapped samples. Defaults to \code{100}.
+#' @param unbiased Whether to use the biased or unbiased estimate of dCov. Defaults to \code{FALSE}.
+#' @param type "circular" or "stationary" bootstrap. Defaults to \code{"stationary"}.
+#' @param block_size Block size or mean block size. Defaults to \code{sqrt(n)}.
 #' @return A list containing the following:
 #' \item{\code{pCDCV}}{P-value of CDCV}
 #' \item{\code{statCDCV}}{test statistic value}
