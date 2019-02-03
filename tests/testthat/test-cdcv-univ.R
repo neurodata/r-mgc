@@ -49,7 +49,7 @@ test_that("All 0 inputs.", {
 
 test_that("Fully independent data, check size of test.", {
   set.seed(730)
-  num_sims <- 30
+  num_sims <- 5
   n <- 20
 
   pval <- function(t) {
@@ -67,7 +67,7 @@ test_that("Fully independent data, check size of test.", {
 
 test_that("Highly dependent data.", {
   set.seed(730)
-  num_sims <- 30
+  num_sims <- 5
   n <- 20
 
   Phis <- list(matrix(c(0,0.5,-0.5,0), 2, 2))
