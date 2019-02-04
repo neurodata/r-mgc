@@ -73,7 +73,7 @@ which should install in about 20 seconds.
 Users should install the following packages prior to installing `mgc`, from an `R` terminal:
 
 ```
-install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools', 'testthat', 'knitr', 'rmarkdown', 'latex2exp', 'MASS'))
+install.packages(c('ggplot2', 'reshape2', 'Rmisc', 'devtools', 'testthat', 'knitr', 'rmarkdown', 'latex2exp', 'MASS', 'boot', 'energy'))
 ```
 
 which will install in about 80 seconds on a recommended machine.
