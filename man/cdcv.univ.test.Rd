@@ -13,7 +13,7 @@ cdcv.univ.test(X, Y, M = NA, num_boot = 100, unbiased = FALSE,
 
 \item{Y}{Time series as n length vector.}
 
-\item{M}{Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.}
+\item{M}{Maximum lag to consider for cross-distance covariance. Defaults to \code{log(n)}.}
 
 \item{num_boot}{Number of bootstrapped samples. Defaults to \code{100}.}
 

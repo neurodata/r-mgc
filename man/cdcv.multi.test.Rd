@@ -14,7 +14,7 @@ cdcv.multi.test(X, Y, M = NA, num_boot = 100, boot_type = "stationary",
 
 \item{Y}{Time series as n x d_Y matrix.}
 
-\item{M}{Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.}
+\item{M}{Maximum lag to consider for cross-distance covariance. Defaults to \code{log(n)}.}
 
 \item{num_boot}{Number of bootstrapped samples. Defaults to \code{100}.}
 
