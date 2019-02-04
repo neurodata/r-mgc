@@ -3,7 +3,7 @@
 #'
 #' @param X Time series as n length vector.
 #' @param Y Time series as n length vector.
-#' @param M Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.
+#' @param M Maximum lag to consider for cross-distance covariance. Defaults to \code{log(n)}.
 #' @param num_boot Number of bootstrapped samples. Defaults to \code{100}.
 #' @param unbiased Whether to use the biased or unbiased estimate of dCov. Defaults to \code{FALSE}.
 #' @param type "circular" or "stationary" bootstrap. Defaults to \code{"stationary"}.
@@ -19,7 +19,7 @@ cdcv.univ.test <- function(X, Y, M = NA, num_boot = 100, unbiased = FALSE, type 
 
   # Default block size is sqrt(n).
   n <- length(X)
-  if (is.na(M)) M <- ceiling(sqrt(n))
+  if (is.na(M)) M <- ceiling(log(n))
   if (is.na(block_size)) block_size <- floor(sqrt(n))
 
   # Test statistic computation - a function of X holding Y fixed.
@@ -45,7 +45,7 @@ cdcv.univ.test <- function(X, Y, M = NA, num_boot = 100, unbiased = FALSE, type 
     result
   }
 
-  # Block boostrap.
+  # Block bootstrap.
   if (type == "circular") sim <- "fixed" else sim <- "geom"
   boot_sample <- boot::tsboot(tseries = X,
                               statistic = test_stat,

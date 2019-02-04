@@ -44,7 +44,7 @@ test_that("All 0 inputs.", {
   result <- cdcv.multi.test(X,Y)
   expect_equal(result$pCDCV, 1)
   expect_equal(result$statCDCV, 0)
-  expect_equal(result$max_lag, 5)
+  expect_equal(result$max_lag, 3)
 })
 
 test_that("Fully independent data, check size of test.", {

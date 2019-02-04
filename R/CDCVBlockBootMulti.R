@@ -4,7 +4,7 @@
 #'
 #' @param X Time series as n x d_X matrix.
 #' @param Y Time series as n x d_Y matrix.
-#' @param M Maximum lag to consider for cross-distance covariance. Defaults to \code{sqrt(n)}.
+#' @param M Maximum lag to consider for cross-distance covariance. Defaults to \code{log(n)}.
 #' @param num_boot Number of bootstrapped samples. Defaults to \code{100}.
 #' @param boot_type "stationary" or "circular" bootstrap. Defaults to \code{stationary}.
 #' @param block_size Block size or mean block size. Defaults to \code{sqrt(n)}.
@@ -22,12 +22,12 @@ cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, boot_type = "stationar
     X <- matrix(X, nrow = length(X))
   }
   if (class(Y) == "numeric") {
-    Y <- matrix(Y, nrow = length(X))
+    Y <- matrix(Y, nrow = length(Y))
   }
 
   # Default block size is sqrt(n).
   n <- nrow(X)
-  if (is.na(M)) M <- ceiling(sqrt(n))
+  if (is.na(M)) M <- ceiling(log(n))
   if (is.na(block_size)) block_size <- floor(sqrt(n))
 
   # Test statistic computation - a function of X holding Y fixed.
@@ -40,11 +40,11 @@ cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, boot_type = "stationar
     if (M) {
       for (j in 1:M) {
         if (class(X) == "numeric") {
-          x_lead <- X[(1+j):n]
-          x_lag <- X[(1+j):n]
+          x_lead <- matrix(X[(1+j):n], ncol = 1)
+          x_lag <- matrix(X[1:(n-j)], ncol = 1)
         } else {
           x_lead <- X[(1+j):n,]
-          x_lag <- X[(1+j):n,]
+          x_lag <- X[1:(n-j),]
         }
         if (class(Y) == "numeric") {
           y_lag <- Y[1:(n-j)]
@@ -61,7 +61,7 @@ cdcv.multi.test <- function(X, Y, M = NA, num_boot = 100, boot_type = "stationar
     return(result)
   }
 
-  # Block boostrap.
+  # Block bootstrap.
   if (boot_type == "circular") sim <- "fixed" else sim <- "geom"
   boot_sample <- boot::tsboot(tseries = X,
                               statistic = test_stat,

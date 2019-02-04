@@ -32,7 +32,6 @@ varma <- function(n, Phis, Thetas, Sigma) {
     # Innovation.
     Z[t,] <- Z[t,] + innov[t,]
   }
-  colnames(Z) <- c("X", "Y")
   Z
 }
 
@@ -44,7 +43,7 @@ test_that("All 0 inputs.", {
   expect_equal(result$pCDCV, 1)
   expect_equal(result$statCDCV, 0)
   expect_false(result$unbiased)
-  expect_equal(result$max_lag, 5)
+  expect_equal(result$max_lag, 3)
 })
 
 test_that("Fully independent data, check size of test.", {
@@ -77,8 +76,8 @@ test_that("Highly dependent data.", {
   pval <- function(t) {
 
     Z <- varma(n, Phis, Thetas, Sigma)
-    X <- Z[,"X"]
-    Y <- Z[,"Y"]
+    X <- Z[,1]
+    Y <- Z[,2]
     result <- cdcv.univ.test(X,Y)
     return(result$pCDCV)
   }
