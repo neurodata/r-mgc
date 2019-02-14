@@ -270,8 +270,8 @@ sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
 anova.ts <- function(x, y, z) {
   data <- data.frame(x=x, y=y, z=z)
   fit <- anova(aov(x ~ y*z, data=data))
-  f = fit[["F value"]][3]
-  p = fit[["Pr(>F)"]][3]
+  f = fit["y:z", "F value"]
+  p = fit["y:z", "Pr(>F)"]
   return(list(f=f, p=p))
 }
 
