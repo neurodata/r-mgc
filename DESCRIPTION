@@ -19,7 +19,9 @@ Imports:
   stats,
   SDMTools,
   MASS,
-  abind
+  abind,
+  boot,
+  energy
 URL: https://github.com/neurodata/mgc
 Suggests: testthat,
   ggplot2,
