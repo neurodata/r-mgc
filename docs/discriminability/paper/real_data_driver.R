@@ -98,16 +98,35 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
               sessions=sessions))
 }
 
-reg_opts <- c("ANTs", "FSL")
+nofn <- function(x) {
+  return(x)
+}
+
+ptr <- function(x) {
+  nz <- x[x != 0]
+  r <- rank(nz)*2/(length(nz) + 1)
+  x[x != 0] <- r
+  x <- (x - min(x))/(max(x) - min(x))
+  return(x)
+}
+
+log.xfm <- function(x) {
+  return(log(x + min(x)/exp(2)))
+}
+
+reg_opts <- c("A", "F")
 names(reg_opts) <- c("ANT", "FSL")
-freq_opts <- c(TRUE, FALSE)
+freq_opts <- c("F", "N")
 names(freq_opts) <- c("frf", "nff")
-scrub_opts <- c(TRUE, FALSE)
+scrub_opts <- c("S", "N")
 names(scrub_opts) <- c("scr", "nsc")
-gsr_opts <- c(TRUE, FALSE)
+gsr_opts <- c("G", "N")
 names(gsr_opts) <- c("gsr", "ngs")
-atlas_opts <- c("AAL", "CC200", "Desikan", "HO")
+atlas_opts <- c("A", "C", "D", "H")
 names(atlas_opts) <- c("aal", "cc2", "des", "hox")
+
+graph.xfm <- list(nofn, ptr, log.xfm)
+names(graph.xfm) <- c("N", "P", "L")
 
 dsets <- list.dirs(path=ipath, recursive=FALSE)
 
@@ -130,13 +149,27 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
 }))
 
 results <- mclapply(experiments, function(exp) {
-  graphs <- cpac.open_graphs(exp$path, rtype="array", flatten = TRUE)
-  res <- discr.stat(graphs$graphs, graphs$subjects)
-  return(data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                    Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$parcellation, nsub=length(unique(graphs$subjects)),
-                    nses=length(unique(graphs$sessions)), nscans=dim(graphs$graphs)[1], nroi=dim(graphs$graphs)[2],
-                    discr=res$discr))
-}, mc.cores=no.cores)
+  graphs <- cpac.open_graphs(exp$path, rtype="array", dataset_id=exp$Dataset, atlas_id=exp$Parcellation, flatten = TRUE)
+  do.call(rbind, lapply(names(graph.xfm), function(xfm) {
+    tryCatch({
+      test <- graphs
+      test$graphs <- t(do.call(apply, list(test$graphs, 1, graph.xfm[[xfm]])))
+      res <- discr.stat(test$graphs, test$subjects)
+      return(data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
+                        Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
+                        xfm=xfm, nsub=length(unique(test$subjects)),
+                        nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1], nroi=sqrt(dim(test$graphs)[2]),
+                        discr=res$discr))
+    }, error=function(e) {
+      data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
+                 Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
+                 xfm=xfm, nsub=length(unique(test$subjects)),
+                 nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1], nroi=sqrt(dim(test$graphs)[2]),
+                 discr=NaN)
+      })
+    }))
+  }, mc.cores=no_cores)
+
 results.fmri <- do.call(rbind, results)
 saveRDS(results.fmri, file.path(opath, paste('discr_fmri_results', '.rds', sep="")))
 
@@ -197,25 +230,26 @@ fmriu.io.open_graphs <- function(fnames, dataset_id="", atlas_id="",
     }
   }
 
-  vertices <- sort(vertices)
+  vertices <- vertices[ordered(as.numeric(vertices))]
   counter <- 1
   for (i in 1:length(fnames)) {
     basename <- basename(fnames[i])     # the base name of the file
     if (verbose) {
       print(paste('Loading', basename, '...'))
     }
-    tgr <- tryCatch({
+    igr <- tryCatch({
       igraph::read_graph(fnames[i], format=fmt, predef=vertices) # read the graph from the filename, ordering by the vertices we found previously
     }, error = function(e) {
       return(NaN)
     })
 
-    if (is.igraph(tgr)) {
-      tgr <- get.adjacency(tgr, type="both", attr="weight", sparse=FALSE) # convert graph to adjacency matrix
+    if (is.igraph(igr)) {
+      tgr <- get.adjacency(igr, type="both", attr="weight", sparse=FALSE) # convert graph to adjacency matrix
       tgr[is.nan(tgr)] <- 0  # missing entries substituted with 0s
       if (rem.diag) {
         diag(tgr) <- 0
       }
+      colnames(tgr) <- V(igr); rownames(tgr) <- V(igr)
       gr[[basename]] <-t(tgr)
       subjects[counter] <- str_extract(basename, 'sub(.?)+?(?=_)')
       sessions[counter] <- str_extract(basename, 'ses(.?)+?(?=_)')
@@ -245,6 +279,27 @@ fmriu.io.open_graphs <- function(fnames, dataset_id="", atlas_id="",
 
 dsets <- list.dirs(path=ipath, recursive=FALSE)
 
+
+nofn <- function(x) {
+  return(x)
+}
+
+ptr <- function(x) {
+  nz <- x[x != 0]
+  r <- rank(nz)*2/(length(nz) + 1)
+  x[x != 0] <- r
+  x <- (x - min(x))/(max(x) - min(x))
+  return(x)
+}
+
+log.xfm <- function(x) {
+  return(log(x + min(x)/exp(2)))
+}
+
+graph.xfm <- list(nofn, ptr, log.xfm)
+names(graph.xfm) <- c("N", "P", "L")
+
+
 experiments <- do.call(c, lapply(dsets, function(dset) {
   dset_name <- basename(dset)
   at_dirs <- list.dirs(file.path(ipath, dset_name, "ndmg_0-0-48", "graphs"))
@@ -265,10 +320,24 @@ experiments[sapply(experiments, is.null)] <- NULL
 results <- mclapply(experiments, function(exp) {
   graphs <- fmriu.io.open_graphs(exp$path, rtype="array", dataset_id = exp$Dataset, atlas_id = exp$Parcellation,
                                  flatten = TRUE, rem.diag=TRUE)
-  res <- discr.stat(graphs$graphs, graphs$subjects)
-  return(data.frame(Dataset=dset_name, Parcellation=exp$Parcellation,
-                    nsub=length(unique(graphs$subjects)), nses=length(unique(graphs$sessions)),
-                    nscans=dim(graphs$graphs)[1], nroi=dim(graphs$graphs)[2], discr=res$discr))
-}, mc.cores=no_cores)
+  do.call(rbind, lapply(names(graph.xfm), function(xfm) {
+    tryCatch({
+      test <- graphs
+      test$graphs <- t(do.call(apply, list(test$graphs, 1, graph.xfm[[exp$xfm]])))
+      res <- discr.stat(test$graphs, test$subjects)
+      op <- data.frame(Dataset=exp$Dataset, Parcellation=exp$Parcellation,
+                       xfm=exp$xfm,
+                       nsub=length(unique(graphs$subjects)), nses=length(unique(graphs$sessions)),
+                       nscans=dim(graphs$graphs)[1], nroi=sqrt(dim(graphs$graphs))[2], discr=res$discr)
+      saveRDS(op, file.path(exp$path, "discr_result.rds"))
+      return(op)
+    }
+    , error=function(e) {print(e); return(data.frame(Dataset=exp$Dataset, Parcellation=exp$Parcellation,
+                                                     xfm=exp$xfm,
+                                                     nsub=length(unique(graphs$subjects)), nses=length(unique(graphs$sessions)),
+                                                     nscans=dim(graphs$graphs)[1], nroi=sqrt(dim(graphs$graphs))[2], discr=res$discr)
+    )})}))
+  }, mc.cores=no_cores)
+
 results.dmri <- do.call(rbind, results)
 saveRDS(results.dmri, file.path(opath, paste('discr_dmri_results', '.rds', sep="")))
