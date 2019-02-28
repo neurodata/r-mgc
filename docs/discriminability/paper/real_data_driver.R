@@ -133,6 +133,7 @@ names(graph.xfm) <- c("N", "P", "L")
 dsets <- list.dirs(path=ipath, recursive=FALSE)
 
 dsets <- dsets[!(dsets %in% c(".//MPG1", ".//BNU3"))]
+dsets <- dsets[dsets %in% c(".//NKI24_mx1400", ".//NKI24_mx645", ".//NKI24_std2500", ".//KKI2009")]
 experiments <- do.call(c, lapply(dsets, function(dset) {
   dset_name = basename(dset)
   do.call(c, lapply(names(reg_opts), function(reg) {
@@ -152,15 +153,17 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
 }))
 
 results <- mclapply(experiments, function(exp) {
-  if ("KKI" %in% exp$path) {
+  if (grepl("NKI", exp$path)) {
     sub.pos <- 3
+  } else if (grepl("KKI", exp$path)) {
+    sub.pos <- 1
   } else {
     sub.pos <- 2
   }
-  if (file.exists(file.path(exp$path, "discr_results.rds"))) {
+  if (FALSE) {#file.exists(file.path(exp$path, "discr_results.rds"))) {
     res <- readRDS(file.path(exp$path, "discr_results.rds"))
-  }
-  else {  graphs <- cpac.open_graphs(exp$path, rtype="array", dataset_id=exp$Dataset, atlas_id=exp$Parcellation,
+  } else {
+    graphs <- cpac.open_graphs(exp$path, rtype="array", dataset_id=exp$Dataset, atlas_id=exp$Parcellation,
                                      sub_pos=sub.pos, flatten = TRUE)
     res <- lapply(names(graph.xfm), function(xfm) {
       tryCatch({
