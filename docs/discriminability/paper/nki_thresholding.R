@@ -10,7 +10,7 @@ require(caret)
 require(stringr)
 
 fmri.path <- '/data/nkienh/fmri/desikan/'
-pheno.path <- '/data/all_mr/phenotypic/NKI1_phenotypic_data.csv'
+pheno.path <- '/data/all_mr/'
 opath <- '~/Documents/research/Rpackages/mgc/docs/discriminability/paper/data/real/'
 
 no_cores = detectCores()/2
@@ -140,10 +140,44 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
               sessions=sessions))
 }
 
+dsets <- list.dirs(path=ipath, recursive=FALSE)
+
+atlas_opts <- c("A", "C", "D", "H")
+names(atlas_opts) <- c("aal", "cc2", "des", "hox")
+
+# run all datasets at all parcel resolutions
+dsets <- dsets[!(dsets %in% c(".//MPG1", ".//BNU3"))]
+experiments <- do.call(c, lapply(dsets, function(dset) {
+  dset_name = basename(dset)
+  if (grepl("NKI24", dset_name)) {
+    if (!grepl("std2500", dset_name)) {
+      return(NULL)
+    }
+    dset.key <- "NKI1"
+  } else {
+    dset.key <- dset_name
+  }
+
+  pheno.dat <- read.csv(file.path(pheno.path, paste(dset.key, "_phenotypic_data.csv", sep="")))
+  pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
+  # Class 1 if they have a current drug addiction or mental illness diagnosis; 0 otherwise
+  pheno.dat$Sex <- pheno.dat$SEX
+  if (dset.key == "KKI2009") {
+    # note for CoRR, 1 is male; 2 is female
+    pheno.dat$Sex <- if (pheno.dat$SEX == "F") 1 else 2
+  }
+  pheno.linked$Age <- pheno.dat$AGE_AT_SCAN_1
+
+  lapply(names(atlas_opts), function(atlas) {
+    list(Dataset=dset_key, Parcellation=atlas_opts[atlas],
+         dat.path=file.path(ipath, dset_name, "graphs", sprintf("FSL_nff_nsc_gsr_%s", atlas)),
+         pheno.path=file.path(pheno.path, dset_name))
+  })
+}))
+
 
 nthresh <- 100
 
-pheno.dat <- read.csv(pheno.path)
 
 stats <- list(discr.os, anova.os, icc.os, i2c2.os)
 names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
@@ -154,17 +188,19 @@ names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
 #
 #================
 # open the graphs
+mclapply(experiments, function(exp) {
+  if (grepl("NKI", exp$path)) {
+    sub.pos <- 3
+  } else if (grepl("KKI", exp$path)) {
+    sub.pos <- 1
+  } else {
+    sub.pos <- 2
+  }
+  graphs <- cpac.open_graphs(fmri.path, rtype="array", dataset_id=exp$Dataset, atlas_id=exp$atlas, sub_pos = 3, flatten = TRUE)
+})
 graphs <- cpac.open_graphs(fmri.path, rtype="array", dataset_id="NKI24", atlas_id="Desikan", sub_pos = 3, flatten = TRUE)
 # qet the 0 -> 1 quantiles in .01 increments
 trng <- seq(0, 1, .01)
-pheno.linked <- pheno.dat
-pheno.linked <- pheno.linked[!duplicated(pheno.dat$SUBID),]
-# Class 1 if they have a current drug addiction or mental illness diagnosis; 0 otherwise
-pheno.linked$Lifestyle <- as.numeric(pheno.linked$LIFETIME_DX_1 != "#" | pheno.linked$LIFETIME_DX_2 != "#" |
-                                       pheno.linked$LIFETIME_DX_3 != "#" | pheno.linked$LIFETIME_DX_4 != "#" |
-                                       pheno.linked$LIFETIME_DX_5 != "#")
-pheno.linked$Mental <- pheno.linked$CURRENT_DIAGNOSIS
-pheno.linked$Age <- pheno.linked$AGE_AT_SCAN_1
 
 # mclapply over it
 fmri.results <- mclapply(trng, function(thr) {
