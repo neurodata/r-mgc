@@ -6,14 +6,14 @@ require(ICC)
 require(igraph)
 require(fmriutils)
 require(reshape2)
-require(caret)
 require(stringr)
+require(FNN)
+require(Metrics)
 
-fmri.path <- '/data/nkienh/fmri/desikan/'
-pheno.path <- '/data/all_mr/'
-opath <- '~/Documents/research/Rpackages/mgc/docs/discriminability/paper/data/real/'
+fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
+pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+opath <- '.data/real/'
 
-no_cores = detectCores()/2
 
 # one-way anova
 anova.os <- function(X, y) {
@@ -140,44 +140,43 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
               sessions=sessions))
 }
 
-dsets <- list.dirs(path=ipath, recursive=FALSE)
+dsets <- list.dirs(path=fmri.path, recursive=FALSE)
 
-atlas_opts <- c("A", "C", "D", "H")
-names(atlas_opts) <- c("aal", "cc2", "des", "hox")
+# atlas_opts <- c("C", "D")
+# names(atlas_opts) <- c("cc2", "des")
+atlas_opts <- c("D")
+names(atlas_opts) <- c("des")
 
 # run all datasets at all parcel resolutions
-dsets <- dsets[!(dsets %in% c(".//MPG1", ".//BNU3"))]
 experiments <- do.call(c, lapply(dsets, function(dset) {
   dset_name = basename(dset)
+  if (dset_name %in% c("MPG1", "BNU3")) {
+    return(NULL)
+  }
   if (grepl("NKI24", dset_name)) {
     if (!grepl("std2500", dset_name)) {
       return(NULL)
     }
     dset.key <- "NKI1"
+    sub.pos <- 3
+  } else if (grepl("KKI", dset_name)) {
+    dset.key <- dset_name
+    sub.pos <- 1
   } else {
     dset.key <- dset_name
+    sub.pos <- 2
   }
-
-  pheno.dat <- read.csv(file.path(pheno.path, paste(dset.key, "_phenotypic_data.csv", sep="")))
-  pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
-  # Class 1 if they have a current drug addiction or mental illness diagnosis; 0 otherwise
-  pheno.dat$Sex <- pheno.dat$SEX
-  if (dset.key == "KKI2009") {
-    # note for CoRR, 1 is male; 2 is female
-    pheno.dat$Sex <- if (pheno.dat$SEX == "F") 1 else 2
-  }
-  pheno.linked$Age <- pheno.dat$AGE_AT_SCAN_1
 
   lapply(names(atlas_opts), function(atlas) {
-    list(Dataset=dset_key, Parcellation=atlas_opts[atlas],
-         dat.path=file.path(ipath, dset_name, "graphs", sprintf("FSL_nff_nsc_gsr_%s", atlas)),
-         pheno.path=file.path(pheno.path, dset_name))
+    list(Dataset=dset.key, Parcellation=atlas_opts[atlas],
+         dat.path=file.path(fmri.path, dset_name, "graphs", sprintf("FSL_nff_nsc_gsr_%s", atlas)),
+         pheno.path=file.path(pheno.path, paste(dset.key, "_phenotypic_data.csv", sep="")),
+         sub.pos = sub.pos)
   })
 }))
 
 
-nthresh <- 100
-
+trng <- seq(0, 1, .01)
 
 stats <- list(discr.os, anova.os, icc.os, i2c2.os)
 names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
@@ -187,77 +186,80 @@ names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
 # fMRI Driver
 #
 #================
-# open the graphs
+
+# range of thresholds to try
+# multicore apply over dataset
 mclapply(experiments, function(exp) {
-  if (grepl("NKI", exp$path)) {
-    sub.pos <- 3
-  } else if (grepl("KKI", exp$path)) {
-    sub.pos <- 1
-  } else {
-    sub.pos <- 2
-  }
-  graphs <- cpac.open_graphs(fmri.path, rtype="array", dataset_id=exp$Dataset, atlas_id=exp$atlas, sub_pos = 3, flatten = TRUE)
-})
-graphs <- cpac.open_graphs(fmri.path, rtype="array", dataset_id="NKI24", atlas_id="Desikan", sub_pos = 3, flatten = TRUE)
-# qet the 0 -> 1 quantiles in .01 increments
-trng <- seq(0, 1, .01)
+  graphs <- cpac.open_graphs(exp$dat.path, rtype="array", dataset_id=exp$Dataset,
+                             atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten = TRUE)
+  res.thresh <- lapply(trng, function(thr) {
+    test <- graphs
+    # threshold the graphs
+    test$graphs[test$graphs < thr] <- 0
+    test$graphs[test$graphs >= thr] <- 1
+    # run statistics
+    res <- do.call(rbind, lapply(names(stats), function(stat) {
+      tryCatch({
+        return(data.frame(Dataset=exp$Dataset, thresh=thr, alg=stat,
+                          nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
+                          nroi=sqrt(dim(test$graphs)[2]), nsub=length(unique(test$subjects)),
+                          stat=do.call(stats[[stat]], list(test$graphs, test$subjects))))
+      }, error=function(e) {return(NULL)})
+    }))
 
-# mclapply over it
-fmri.results <- mclapply(trng, function(thr) {
-  test <- graphs
-  # threshold the graphs
-  test$graphs[test$graphs < thr] <- 0
-  test$graphs[test$graphs >= thr] <- 1
-  # run statistics
-  res <- do.call(rbind, lapply(names(stats), function(stat) {
-    tryCatch({
-      return(data.frame(thresh=thr, alg=stat, stat=do.call(stats[[stat]], list(test$graphs, test$subjects))))
-    }, error=function(e) {return(NULL)})
-  }))
-  print(res)
+    pheno.dat <- read.csv(exp$pheno.path)
+    pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
+    pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
+    pheno.dat <- pheno.dat[, c("SUBID", "AGE_AT_SCAN_1", "SEX")]
+    pheno.scans <- pheno.dat[sapply(as.numeric(test$subjects), function(x) which(x == pheno.dat$SUBID)),]
+    if (exp$Dataset == "KKI2009") {
+      pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
+    }
+    problems <- lapply(1:10, function(r) {
+      # aggregate results across all subjects; report RMSE at current r
+      age.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
+        training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
+        testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
+        # predict for held-out subject
+        age.preds <- knn.reg(test$graphs[training.set,], test$graphs[testing.set,],
+                         as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]), k=r)
+        return(data.frame(k=r, true=pheno.scans$AGE_AT_SCAN_1[testing.set],
+                          pred=age.preds$pred))
+      }))
+      # compute rmse between predicted and actual after holdout procedure
+      age.sum <- data.frame(k=r, Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
+                            nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
+                            nroi=sqrt(dim(test$graphs)[2]), task="Age", thresh=thr,
+                            stat=rmse(age.res$true, age.res$pred), null=NaN)
 
-  pheno.dat <- pheno.linked[sapply(as.numeric(test$subjects), function(x) which(x == pheno.linked$SUBID)),]
+      sex.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
+        training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
+        testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
+        sex.preds <- knn(test$graphs[training.set,], test$graphs[testing.set,],
+                         as.factor(pheno.scans$SEX[training.set]), k=r)
+        return(data.frame(k=r, true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
+                          pred=as.numeric(as.character(sex.preds))))
+      }))
 
-  fit.age <- train(V1~.,
-               method="knn",
-               tuneGrid=expand.grid(k=1:10),
-               trControl=trainControl(method  = "LOOCV"),
-               metric="RMSE",
-               data=data.frame(cbind(V1=as.numeric(pheno.dat$Age), test$graphs))
-  )
-  dat <- data.frame(cbind(V1=pheno.dat$Mental, test$graphs))
-  dat$V1 <- as.factor(make.names(as.factor(dat$V1)))
-  fit.mental <- train(V1~.,
-                      method="knn",
-                      tuneGrid=expand.grid(k=1:10),
-                      trControl=trainControl(method="LOOCV", classProbs=TRUE),
-                      metric="Accuracy",
-                      data=dat
-  )
-  dat <- data.frame(cbind(V1=pheno.dat$Lifestyle, test$graphs))
-  dat$V1 <- as.factor(make.names(as.factor(dat$V1)))
-  fit.lifestyle <- train(V1 ~ .,
-                      method="knn",
-                      tuneGrid=expand.grid(k=1:10),
-                      trControl=trainControl(method="LOOCV", classProbs=TRUE),
-                      metric="Accuracy",
-                      data=dat
-  )
-  fit.age$results <- melt(fit.age$results, id="k")
-  names(fit.age$results) <- c("k", "Metric", "value"); fit.age$results$task = "Age"
+      sex.sum <- data.frame(k=r, Metric="MR", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
+                            nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
+                            nroi=sqrt(dim(test$graphs)[2]), task="Sex", thresh=thr,
+                            stat=mean(sex.res$true != sex.res$pred),
+                            null=mean(pheno.scans$SEX == 1))
+      return(list(age=age.sum, sex=sex.sum))
+    })
+    age.agg <- do.call(rbind, lapply(problems, function(problem) problem$age))
+    sex.agg <- do.call(rbind, lapply(problems, function(problem) problem$sex))
 
-  fit.mental$results <- fit.mental$results[, c("k", "Accuracy")]
-  fit.mental$results <- melt(fit.mental$results, id="k")
-  names(fit.mental$results) <- c("k", "Metric", "value"); fit.mental$results$task = "Mental"
+    return(list(statistics=res, problem=rbind(age.agg, sex.agg)))
+  })
 
-  fit.lifestyle$results <- fit.lifestyle$results[, c("k", "Accuracy")]
-  fit.lifestyle$results <- melt(fit.lifestyle$results, id="k")
-  names(fit.lifestyle$results) <- c("k", "Metric", "value"); fit.lifestyle$results$task = "Lifestyle"
+  robj <- list(statistics=do.call(rbind, lapply(res.thresh, function(r) r$statistics)),
+               problem=do.call(rbind, lapply(res.thresh, function(r) r$problem)))
 
-  results <- rbind(fit.age$results, fit.mental$results, fit.lifestyle$results)
-  results$thresh <- thr
-  return(list(statistics=res, problem=results))
-}, mc.cores=no_cores/2)
+  saveRDS(robj, file.path(exp$dat.path, "knn_results.rds"))
+  return(robj)
+}, mc.cores=no_cores)
 
 results <- list(statistics=do.call(rbind, lapply(fmri.results, function(res) res$statistics)),
                 problem=do.call(rbind, lapply(fmri.results, function(res) res$problem)))
