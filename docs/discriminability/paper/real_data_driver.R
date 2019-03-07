@@ -348,12 +348,14 @@ results <- mclapply(experiments, function(exp) {
       return(list(D=D, data=data.frame(Dataset=exp$Dataset, Parcellation=exp$Parcellation,
                        xfm=xfm,
                        nsub=length(unique(graphs$subjects)), nses=length(unique(graphs$sessions)),
-                       nscans=dim(graphs$graphs)[1], nroi=sqrt(dim(graphs$graphs))[2], discr=res$discr)))
+                       nscans=dim(graphs$graphs)[1], nroi=sqrt(dim(graphs$graphs))[2], discr=res$discr),
+                  subjects=graphs$subjects))
     }
     , error=function(e) {print(e); return(list(D=D, data=data.frame(Dataset=exp$Dataset, Parcellation=exp$Parcellation,
                                                      xfm=xfm,
                                                      nsub=length(unique(graphs$subjects)), nses=length(unique(graphs$sessions)),
-                                                     nscans=dim(graphs$graphs)[1], nroi=sqrt(dim(graphs$graphs))[2], discr=res$discr))
+                                                     nscans=dim(graphs$graphs)[1], nroi=sqrt(dim(graphs$graphs))[2], discr=res$discr),
+                                               subjects=graphs$subjects)
     )})
     })
   saveRDS(res, file.path(exp$path, "discr_results.rds"))
