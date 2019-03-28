@@ -24,11 +24,13 @@ require(grid)
 require(gridExtra)
 require(stringr)
 require(data.table)
+require(abind)
 ```
 
 
 ```{r}
 fmri.results <- readRDS('./data/real/discr_fmri_results.rds')
+fmri.pvals <- readRDS('./data/real/fmri_pval_results.rds')
 ```
 
 # fMRI Multiplot
@@ -48,23 +50,40 @@ dsets <- unique(fmri.results$Dataset)
 
 fmri.results <- do.call(rbind, lapply(1:dim(fmri.results)[1], function(i) {
   dat <- fmri.results[i,]
-  name <- paste(reg_opts[as.character(dat$Reg)], 
-                freq_opts[abs(as.numeric(dat$FF) - 1) + 1],
-                scrub_opts[abs(as.numeric(dat$Scr) - 1) + 1],
-                gsr_opts[abs(as.numeric(dat$GSR) - 1) + 1],
-                atlas_opts[as.character(dat$Parcellation)], sep="")
+  name <- paste(dat$Reg, dat$FF, dat$Scr, dat$GSR, dat$Parcellation,
+                dat$xfm, sep="")
   return(cbind(data.frame(Name=name), dat))
 }))
 ```
+
 
 ```{r}
 nan.mean <- function(x) {
   mean(x, na.rm=TRUE)
 }
-fmri.summarized <- aggregate(list(me.discr=fmri.results$discr), 
-                             by=list(Name=fmri.results$Name), FUN=nan.mean)
+
+fmri.results$wt.discr <- fmri.results$discr*fmri.results$nsub
+fmri.summarized <- aggregate(cbind(discr, nsub) ~ Name, data=fmri.results[1:200,], function(x) {
+  #1/sum(x$nsub)*nan.mean(x$nsub*x$discr, na.rm=TRUE)
+  print(x[1])
+})
+
+test <- data.frame(Name=c("A", "B", "A", "B"), discr=c(0.5, 0.3, 0.6, 0.25), nsub=c(1, 4, 1, 4))
+```
+
+```{r}
+fmri.best.pipe <- as.character(fmri.summarized[which.max(fmri.summarized$me.discr),]$Name)
+pv.mtx <- lapply(fmri.pvals, function(fm.dset) fm.dset$pvals)
+dset.pvals <- abind(pv.mtx, along=3)
+pvals.best <- apply(dset.pvals[fmri.best.pipe,,], c(1), function(x) median(x, na.rm=TRUE))
+pvals.best.dat <- data.frame(Name=names(pvals.best), pval=as.numeric(pvals.best))
+fmri.pvals <- merge(fmri.summarized, pvals.best.dat, by="Name")
+```
+
+
+```{r}
 fmri.results$Name <- factor(fmri.results$Name, 
-                                levels=as.character(fmri.summarized$Name[order(fmri.summarized$me.discr, decreasing = TRUE)]),
+                                levels=as.character(fmri.pvals$Name[order(fmri.pvals$pval, decreasing = TRUE)]),
                                 ordered=TRUE)
 ```
 

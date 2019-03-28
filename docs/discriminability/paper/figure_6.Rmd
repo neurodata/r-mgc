@@ -1,0 +1,47 @@
+---
+title: "Figure 6 dMRI/fMRI/multiplot"
+author: "Eric Bridgeford"
+date: "2/28/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# fMRI plots
+
+```{r}
+
+```
+
+# dMRI plots
+
+```{r}
+dmri.results <- readRDS('./data/real/discr_dmri_results.rds')
+dmri.datasets <- data.frame()
+```
+
+```{r}
+ggplot(subset(dmri.results, Dataset == "SWU4"), aes(x=log(nroi), y=discr, color=xfm, group=xfm)) +
+  geom_point() +
+  xlab("")
+```
+
+```{r}
+xfm.dm.sum <- aggregate(list(discr=dmri.results$discr), 
+                     by=list(Dataset=dmri.results$Dataset, Parcellation=dmri.results$Parcellation), FUN=function(x) {NaN})
+xfm.dm.result <- do.call(rbind, lapply(1:dim(xfm.dm.sum)[1], function(i) {
+  rows <- subset(dmri.results, Dataset==xfm.dm.sum$Dataset[i] & Parcellation==xfm.dm.sum$Parcellation[i])
+  reslt <- xfm.dm.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$xfm == "L"] - max(rows$discr[rows$xfm != "L"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+```
+
+# Multi-Modal Inquiries
