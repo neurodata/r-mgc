@@ -63,22 +63,22 @@ fmri.results <- lapply(experiments, function(dset.exp) {
                       length(exp.sets), 100*idx/length(exp.sets)))
       }
       ex=exp.sets[[idx]]
-      pval <- discr.test.two_sample(dset.exp[[ex$i]]$D, dset.exp[[ex$j]]$D, 
+      pval <- discr.test.two_sample(dset.exp[[ex$i]]$D, dset.exp[[ex$j]]$D,
                                     ids=dset.exp[[ex$i]]$subjects, nperm=1000)
       return(list(i=ex$i, j=ex$j, pval=pval$pval))
     }, error=function(e) return(list(i=ex$i, j=ex$j, pval=NaN)))
   }, mc.cores=no_cores)
-  
+
   pval.mtx <- array(NaN, dim=c(length(dset.exp), length(dset.exp)))
-  
+
   for (res in exp.res) {
     pval.mtx[res$i, res$j] <- res$pval
   }
-  
+
   pipes <- do.call(rbind, lapply(dset.exp, function(dset.pipe) {
     return(dset.pipe$data)
   }))
-  pipes$Names <- as.character(apply(pipes[, c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm")], 
+  pipes$Names <- as.character(apply(pipes[, c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm")],
                                     c(1), function(x) {paste(x, collapse="")}))
   rownames(pval.mtx) <- pipes$Names
   colnames(pval.mtx) <- pipes$Names
@@ -90,7 +90,7 @@ names(fmri.results) <- dsets
 saveRDS(fmri.results, file.path(opath, "fmri_pval_results.rds"))
 
 # ==============================
-# fMRI Driver
+# dMRI Driver
 # ==============================
 
 require(lolR)
@@ -120,10 +120,12 @@ experiments <- lapply(dsets, function(dset) {
   dset_name <- basename(dset)
   at_dirs <- list.dirs(file.path(dmri.path, dset_name, "ndmg_0-0-48", "graphs"))[-c(1)]
   do.call(c, lapply(at_dirs, function(atlas) {
-    dat=readRDS(file.path(atlas, "discr_results.rds"))
-    lapply(dat, function(d) {
-      list(D=d$D, data=d$dat, subjects=d$subjects, opath=file.path(atlas, "pval_results.rds"))
-    })
+    tryCatch({
+      dat=readRDS(file.path(atlas, "discr_results.rds"))
+      lapply(dat, function(d) {
+        list(D=d$D, data=d$dat, subjects=d$subjects, opath=file.path(atlas, "pval_results.rds"))
+      })
+    }, error=function(e) return(NULL))
   }))
 })
 
@@ -142,22 +144,22 @@ dmri.results <- lapply(experiments, function(dset.exp) {
                       length(exp.sets), 100*idx/length(exp.sets)))
       }
       ex=exp.sets[[idx]]
-      pval <- discr.test.two_sample(dset.exp[[ex$i]]$D, dset.exp[[ex$j]]$D, 
+      pval <- discr.test.two_sample(dset.exp[[ex$i]]$D, dset.exp[[ex$j]]$D,
                                     ids=dset.exp[[ex$i]]$subjects, nperm=1000)
       return(list(i=ex$i, j=ex$j, pval=pval$pval))
     }, error=function(e) return(list(i=ex$i, j=ex$j, pval=NaN)))
   }, mc.cores=no_cores)
-  
+
   pval.mtx <- array(NaN, dim=c(length(dset.exp), length(dset.exp)))
-  
+
   for (res in exp.res) {
     pval.mtx[res$i, res$j] <- res$pval
   }
-  
+
   pipes <- do.call(rbind, lapply(dset.exp, function(dset.pipe) {
     return(dset.pipe$data)
   }))
-  pipes$Names <- as.character(apply(pipes[, c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm")], 
+  pipes$Names <- as.character(apply(pipes[, c("Parcellation", "xfm")],
                                     c(1), function(x) {paste(x, collapse="")}))
   rownames(pval.mtx) <- pipes$Names
   colnames(pval.mtx) <- pipes$Names
