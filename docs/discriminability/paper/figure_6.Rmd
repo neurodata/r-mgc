@@ -322,3 +322,9 @@ grid.arrange(f5.fmri, arrangeGrob(f5.dmri1, f5.dmri2, widths=c(0.5, 0.7), nrow=1
 ```
 
 # Multi-Modal Inquiries
+
+```{r}
+fmri.cov <- data.frame(Dataset=c(), 
+                       TR=c(),
+                       )
+```
