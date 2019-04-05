@@ -108,10 +108,12 @@ ggplot() +
   theme_bw() +
   ggtitle("Comparing Discriminability Across 64 Preprocessing Strategies") +
   theme(axis.text.x=element_text(angle=90, size=8), axis.title.x=element_text(size=14),
-        axis.title.y=element_text(size=14), plot.title=element_text(size=16)) +
+        axis.title.y=element_text(size=14), plot.title=element_text(size=16),
+        panel.grid.major.x = element_blank()) +
   geom_point(data=subset(fmri.pvals, xfm=="P"), aes(x=Name, y=wt.discr), shape="triangle", size=2) +
   guides(color=guide_legend(ncol=2)) +
   scale_size(range=c(0.5, 3), name="#Scans")
+# 9.5x5.5
 ```
 
 ```{r}
@@ -220,21 +222,25 @@ edge.result <- do.call(rbind, lapply(1:dim(edge.sum)[1], function(i) {
 }))
 
 result <- rbind(data.frame(discr=reg.result$discr, Option="FSL - ANTs"), 
-                data.frame(discr=freq.result$discr, Option="FF - NFF"), 
-                data.frame(discr=scr.result$discr, Option="SCR - NSC"), 
+                data.frame(discr=freq.result$discr, Option="NFF - FF"), 
+                data.frame(discr=scr.result$discr, Option="NSC - SCR"), 
                 data.frame(discr=gsr.result$discr, Option="GSR - NGS"), 
                 data.frame(discr=parcel.result$discr, Option="CC200 - max(others)"),
                 data.frame(discr=edge.result$discr, Option="PTR - max(others)"))
 ```
 
 ```{r}
+set.seed(1234)
 ggplot(result, aes(x=Option, y=discr, color=Option)) +
-  geom_jitter(alpha=0.3, size=0.2) +
-  geom_violin(color="black", aes(fill=Option)) +
+  geom_quasirandom(data=result[sample(dim(result)[1], 2000),],
+                   alpha=0.6, size=0.25, bandwidth=1) +
+  geom_violin(color="black", fill="transparent") +
+  stat_summary(fun.y="mean", geom="point", color="black", size=2) +
   theme_bw() +
   xlab("") +
-  geom_hline(yintercept = 0, linetype=4, size=1.5) +
+  geom_hline(yintercept = 0, linetype=1, size=0.8) +
   ylab(TeX("$\\hat{D}_{best} - max(\\hat{D}_{others})$")) +
   ggtitle("(A) Impact of fMRI Preprocessing Options on Discriminability") +
-  theme_bw()
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank()) +
+  guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
 ```
