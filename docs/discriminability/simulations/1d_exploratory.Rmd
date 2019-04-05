@@ -18,6 +18,7 @@ require(mgc)
 require(latex2exp)
 require(I2C2)
 require(ICC)
+require(scales)
 ```
 
 ```{r}
@@ -28,7 +29,8 @@ plot_sim <- function(X, Y, name="") {
     xlab(TeX("$x_1$")) +
     ylab(TeX("$x_2$")) +
     ggtitle(name) +
-    theme_bw()
+    theme_bw() +
+    theme(panel.grid.major=element_blank(), panel.grid.minor = element_blank())
 }
 
 plot_dist <- function(D, name="") {
@@ -43,7 +45,9 @@ plot_dist <- function(D, name="") {
     ggtitle(TeX(name)) +
     scale_fill_continuous(name=TeX("$||S_1 - S_2||^2$"), high="#3f007d",
                           low="#fcfbfd") +
-    theme_bw()
+    scale_y_reverse() +
+    theme_bw() +
+    theme(panel.grid.major=element_blank(), panel.grid.minor = element_blank())
 }
 
 plot_rdf <- function(rdfs, name="") {
@@ -53,7 +57,8 @@ plot_rdf <- function(rdfs, name="") {
     xlab(TeX("Reliability")) +
     ylab("Relative Frequency") +
     ggtitle(TeX(name)) +
-    theme_bw()
+    theme_bw() +
+    theme(panel.grid.minor = element_blank())
 }
 
 min.f1f2 <- function(x, mu1, mu2, sd1, sd2) {
@@ -72,18 +77,20 @@ theoretical_discr <- function(mus, Sigmas, d=1) {
 # Figure 1
 
 ```{r}
-sim_simp <- discr.sims.linear(1000, 2, 2, mean=2)
+sim_simp <- discr.sims.linear(200, 2, 2, signal.lshift=2)
 srt <- sort(as.numeric(sim_simp$Y), index.return=TRUE)$ix
 sim_simp$X <- sim_simp$X[srt,]; sim_simp$Y <- sim_simp$Y[srt]
-plot_sim_fig1 <- plot_sim(sim_simp$X, sim_simp$Y, name="Data")
+plot_sim_fig1 <- plot_sim(sim_simp$X, sim_simp$Y, name="(A) Data")
 
 Dmtx <- mgc:::discr.distance(sim_simp$X)
-plot_dist_fig1 <- plot_dist(Dmtx, name="Distance Matrix")
+plot_dist_fig1 <- plot_dist(Dmtx, name="(B) Distance Matrix")
 
 rdfs <- mgc:::discr.rdf(Dmtx, sim_simp$Y)
 discr <- mean(rdfs)
-plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("$\\hat{D} = %.3f$", discr))
+plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("(C) $\\hat{D} = %.3f$", discr))
+```
 
+```{r}
 # Convergence of Dhat to Truth
 niter <- 100
 n.min <- 20; n.max <- 1000
@@ -96,30 +103,36 @@ ns <- log.seq(from=n.min, to=n.max)
 result <- data.frame(dhat=c(), n=c(), i=c())
 for (n in ns) {
   for (i in 1:niter) {
-    sim_res <- discr.sims.linear(n, 2, 2, mean=2)
+    sim_res <- discr.sims.linear(n, 2, 2, signal.lshift=2)
     Dhat <- discr.stat(sim_res$X, sim_res$Y)$discr
     result <- rbind(result, data.frame(dhat=Dhat, n=n, i=i))
   }
 }
+```
 
-theoretical_d <- theoretical_discr(sim_simp$mus, sim_simp$Sigmas, d=1)
-theoretical_d <- 0.9319
+```{r}
+theoretical_d <- mean(result[result$n == max(result$n),]$dhat)
 result$diff <- result$dhat - theoretical_d
+agg <- abs(aggregate(diff ~ n, data=result, FUN=mean)$diff) + 
+  aggregate(diff ~ n, data=result, FUN=var)$diff
+l <- ceiling(100*max(agg))/100 + .01
 plot_conv <- ggplot(result, aes(x=n, y=diff)) +
   stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
-  stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=2) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=1) +
+  geom_hline(yintercept=0, linetype=1, size=1) +
   xlab("Number of Samples") +
   ylab(TeX("\\hat{D} - D")) +
-  ggtitle(TeX("Convergence of $\\hat{D}$ to $D$")) +
-  theme_bw()
+  coord_cartesian(ylim=c(-l, l)) +
+  scale_x_continuous(trans=log2_trans()) +
+  ggtitle(TeX("(D) Convergence of $\\hat{D}$ to $D$")) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank())
 ```
 
 ```{r, fig.width=10, fig.height=3}
-grid.arrange(arrangeGrob(grobs=list(plot_sim_fig1, plot_dist_fig1, plot_discr_fig1, plot_conv), widths=c(0.3, 0.4, 0.24, 0.3), nrow=1))
+grid.arrange(arrangeGrob(grobs=list(plot_sim_fig1, plot_dist_fig1, plot_discr_fig1, plot_conv), widths=c(0.3, 0.35, 0.24, 0.32), nrow=1))
+# 11x2.3
 ```
 
 # Figure 2
 
-```{r}
-
-```
