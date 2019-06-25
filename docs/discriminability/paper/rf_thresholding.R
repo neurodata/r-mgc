@@ -10,13 +10,19 @@ require(stringr)
 require(FNN)
 require(Metrics)
 require(randomForest)
+require(rARPACK)
+# load/source MASE code
+mase.path <- './mase/R/'
+mase.files <- list.files(mase.path)
+mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R")]
+sapply(mase.files, function(x) source(file.path(mase.path, x)))
 
-fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
-pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
-# fmri.path <- '/data/cpac_3-9-2/'
-# pheno.path <- '/data/all_mr/phenotypic/'
+#fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
+#pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+fmri.path <- '/data/cpac_3-9-2/'
+pheno.path <- '/data/all_mr/phenotypic/'
 opath <- '.data/real/'
-no_cores <- parallel::detectCores() - 1
+no_cores <- parallel::detectCores() - 10
 
 # one-way anova
 anova.os <- function(X, y) {
@@ -66,7 +72,7 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
   if (! (fmt %in% c('adj', 'elist', 'graphml'))) {
     stop('You have passed an invalid format type. Options are: [\'adj\', \'elist\', and \'graphml\'].')
   }
-  
+
   if (fmt == 'elist') {
     fmt = 'ncol'; ext = "ssv"
   } else if (fmt == "graphml") {
@@ -74,32 +80,32 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
   } else if (fmt == "adj") {
     fmt = "adj"; ext="adj"
   }
-  
+
   if (is.character(fnames)) {
     fnames <- list.files(fnames, pattern=paste('\\.', ext, sep=""), full.names=TRUE)
   }
-  
+
   if (! (rtype %in% c('list', 'array'))) {
     stop('You have passed an invalid return type. Options are: [\'list\', \'array\'].')
   }
-  
+
   print(sprintf("opening graphs for %s dataset and %s parcellation atlas...", dataset_id, atlas_id))
   subjects <- vector("character", length(fnames))
   sessions <- vector("character", length(fnames))
   tasks <- vector("character", length(fnames))
   gr <- list()
-  
+
   vertices <- c()
-  
+
   # so that we don't get any annoying errors if particular vertices are empty
   if (fmt != "adj") {
     for (i in 1:length(fnames)) {
       tgr <- igraph::read_graph(fnames[i], format=fmt) # read the graph from the filename
-      vertices <- union(vertices, V(tgr))
+      vertices <- base::union(vertices, as.numeric(V(tgr)$name))
     }
   }
-  
-  vertices <- order(vertices)
+
+  vertices <- sort(vertices)
   counter <- 1
   for (i in 1:length(fnames)) {
     basename <- basename(fnames[i])     # the base name of the file
@@ -111,7 +117,7 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
     }, error = function(e) {
       return(NaN)
     })
-    
+
     if (is.igraph(tgr)) {
       tgr <- get.adjacency(tgr, type="both", attr="weight", sparse=FALSE) # convert graph to adjacency matrix
       tgr[is.nan(tgr)] <- 0  # missing entries substituted with 0s
@@ -125,12 +131,12 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
       counter <- counter + 1
     }
   }
-  
+
   dataset <- rep(dataset_id, counter - 1)
   atlas <- rep(atlas_id, counter - 1)
   subjects <- subjects[1:counter - 1]
   sessions <- sessions[1:counter - 1]
-  
+
   if (rtype == 'array') {
     aro <- fmriu.list2array(gr, flatten=flatten)
     gr <- aro$array
@@ -143,12 +149,36 @@ cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
               sessions=sessions))
 }
 
+fmriu.list2array <- function(list_in, flatten=FALSE) {
+  nroi <- max(sapply(list_in, function(graph) dim(graph)[1]))
+  nsub <- length(list_in)
+  array_out <- array(NaN, dim=c(nsub, nroi, nroi))
+  subnames <- names(list_in)
+  incl_ar <- logical(nsub)
+  for (i in 1:nsub) {
+    if (isTRUE(all.equal(dim(list_in[[i]]), c(nroi, nroi)))) {
+      array_out[i,,] <-list_in[[i]]
+      incl_ar[i] <- TRUE
+    }
+  }
+  array_out <- array_out[incl_ar,,]
+  subnames <- subnames[incl_ar]
+  if (flatten) {
+    dimar <- dim(array_out)
+    dim(array_out) <- c(dimar[1], dimar[2]*dimar[3])
+  }
+  return(list(array=array_out, incl_ar=incl_ar, names=subnames))
+}
+
 dsets <- list.dirs(path=fmri.path, recursive=FALSE)
 
 # atlas_opts <- c("C", "D")
 # names(atlas_opts) <- c("cc2", "des")
 atlas_opts <- c("D")
 names(atlas_opts) <- c("des")
+
+
+trng <- seq(0.025, .975, by=0.025)
 
 # run all datasets at all parcel resolutions
 experiments <- do.call(c, lapply(dsets, function(dset) {
@@ -169,17 +199,15 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
     dset.key <- dset_name
     sub.pos <- 2
   }
-  
-  lapply(names(atlas_opts), function(atlas) {
-    list(Dataset=dset.key, Parcellation=atlas_opts[atlas],
-         dat.path=file.path(fmri.path, dset_name, "graphs", sprintf("FSL_nff_nsc_gsr_%s", atlas)),
-         pheno.path=file.path(pheno.path, paste(dset.key, "_phenotypic_data.csv", sep="")),
-         sub.pos = sub.pos)
-  })
+  do.call(c, res.thresh <- lapply(trng, function(thr) {
+    lapply(names(atlas_opts), function(atlas) {
+      list(Dataset=dset.key, Parcellation=atlas_opts[atlas],
+           dat.path=file.path(fmri.path, dset_name, "graphs", sprintf("FSL_nff_nsc_gsr_%s", atlas)),
+           pheno.path=file.path(pheno.path, paste(dset.key, "_phenotypic_data.csv", sep="")),
+           sub.pos = sub.pos, thr=thr)
+    })
+  }))
 }))
-
-
-trng <- seq(0, 1, .01)
 
 stats <- list(discr.os, anova.os, icc.os, i2c2.os)
 names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
@@ -192,73 +220,88 @@ names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
 
 # range of thresholds to try
 # multicore apply over dataset
-mclapply(experiments, function(exp) {
-  graphs <- cpac.open_graphs(exp$dat.path, rtype="array", dataset_id=exp$Dataset,
-                             atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten = TRUE)
-  res.thresh <- lapply(trng, function(thr) {
-    test <- graphs
-    # threshold the graphs
-    test$graphs[test$graphs < thr] <- 0
-    test$graphs[test$graphs >= thr] <- 1
-    # run statistics
-    res <- do.call(rbind, lapply(names(stats), function(stat) {
-      tryCatch({
-        return(data.frame(Dataset=exp$Dataset, thresh=thr, alg=stat,
-                          nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
-                          nroi=sqrt(dim(test$graphs)[2]), nsub=length(unique(test$subjects)),
-                          stat=do.call(stats[[stat]], list(test$graphs, test$subjects))))
-      }, error=function(e) {return(NULL)})
-    }))
-    
-    pheno.dat <- read.csv(exp$pheno.path)
-    pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
-    pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
-    pheno.dat <- pheno.dat[, c("SUBID", "AGE_AT_SCAN_1", "SEX")]
-    pheno.scans <- pheno.dat[sapply(as.numeric(test$subjects), function(x) which(x == pheno.dat$SUBID)),]
-    if (exp$Dataset == "KKI2009") {
-      pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
-    }
-    # aggregate results across all subjects; report RMSE at current r
-    age.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
-      training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
-      testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
-      # predict for held-out subject
-      trained.age.rf <- randomForest(test$graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
-      preds.age.rf <- predict(trained.age.rf, test$graphs[testing.set,])
-      return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
-                        pred=preds.age.rf))
-    }))
-    # compute rmse between predicted and actual after holdout procedure
-    age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
-                          nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
-                          nroi=sqrt(dim(test$graphs)[2]), task="Age", thresh=thr,
-                          stat=rmse(age.res$true, age.res$pred), null=NaN)
-    
-    sex.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
-      training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
-      testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
-      trained.sex.rf <- randomForest(test$graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
-      preds.sex.rf <- predict(trained.sex.rf, test$graphs[testing.set,])
-      return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
-                        pred=as.numeric(as.character(preds.sex.rf))))
-    }))
-    
-    sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
-                          nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
-                          nroi=sqrt(dim(test$graphs)[2]), task="Sex", thresh=thr,
-                          stat=mean(sex.res$true != sex.res$pred),
-                          null=mean(pheno.scans$SEX == 1))
-    
-    return(list(statistics=res, problem=rbind(age.agg, sex.agg)))
+rf.results <- mclapply(experiments, function(exp) {
+  graphs <- cpac.open_graphs(exp$dat.path, dataset_id=exp$Dataset,
+                             atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten=FALSE)
+
+  print(sprintf("Dataset: %s, thr=%.3f", exp$Dataset, exp$thr))
+  graphs.bin <- lapply(graphs$graphs, function(graph) {
+    tmp <- graph
+    tmp[tmp < exp$thr] <- 0
+    tmp[tmp >= exp$thr] <- 1
+    return(tmp)
   })
-  
-  robj <- list(statistics=do.call(rbind, lapply(res.thresh, function(r) r$statistics)),
-               problem=do.call(rbind, lapply(res.thresh, function(r) r$problem)))
-  
-  saveRDS(robj, file.path(exp$dat.path, paste(exp$Dataset, "_", "rf_results.rds", sep="")))
-  return(robj)
+
+  flat.gr <- fmriu.list2array(graphs.bin)
+
+  # threshold the graphs
+
+  # run statistics
+  res <- do.call(rbind, lapply(names(stats), function(stat) {
+    tryCatch({
+      return(data.frame(Dataset=exp$Dataset, thresh=thr, alg=stat,
+                        nses=length(unique(graphs$sessions)), nscans=dim(graphs$graphs)[1],
+                        nroi=sqrt(dim(graphs$graphs)[2]), nsub=length(unique(graphs$subjects)),
+                        stat=do.call(stats[[stat]], list(flat.gr$array, graphs$subjects))))
+    }, error=function(e) {return(NULL)})
+  }))
+
+  graphs.embedded <- list(
+    omni=OMNI_matrix(graphs.bin),
+    mase=mase(graphs.bin)
+  )
+
+  pheno.dat <- read.csv(exp$pheno.path)
+  pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
+  pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
+  pheno.dat <- pheno.dat[, c("SUBID", "AGE_AT_SCAN_1", "SEX")]
+  pheno.scans <- pheno.dat[sapply(as.numeric(test$subjects), function(x) which(x == pheno.dat$SUBID)),]
+  if (exp$Dataset == "KKI2009") {
+    pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
+  }
+  # aggregate results across all subjects; report RMSE at current r
+  age.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
+    training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
+    testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
+    # predict for held-out subject
+    trained.age.rf <- randomForest(test$graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
+    preds.age.rf <- predict(trained.age.rf, test$graphs[testing.set,])
+    return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
+                      pred=preds.age.rf))
+  }))
+  # compute rmse between predicted and actual after holdout procedure
+  age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
+                        nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
+                        nroi=sqrt(dim(test$graphs)[2]), task="Age", thresh=thr,
+                        stat=rmse(age.res$true, age.res$pred), null=NaN)
+
+  sex.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
+    training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
+    testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
+    trained.sex.rf <- randomForest(test$graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
+    preds.sex.rf <- predict(trained.sex.rf, test$graphs[testing.set,])
+    return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
+                      pred=as.numeric(as.character(preds.sex.rf))))
+  }))
+
+  sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
+                        nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
+                        nroi=sqrt(dim(test$graphs)[2]), task="Sex", thresh=thr,
+                        stat=mean(sex.res$true != sex.res$pred),
+                        null=mean(pheno.scans$SEX == 1))
+
+  return(list(statistics=res, problem=rbind(age.agg, sex.agg)))
 }, mc.cores=no_cores)
 
+saveRDS(rf.results, file.path(opath, "rf_fmri_results.rds"))
+
+
+
+robj <- list(statistics=do.call(rbind, lapply(res.thresh, function(r) r$statistics)),
+             problem=do.call(rbind, lapply(res.thresh, function(r) r$problem)))
+
+saveRDS(robj, file.path(exp$dat.path, paste(exp$Dataset, "_", "rf_results.rds", sep="")))
+return(robj)
 results <- list(statistics=do.call(rbind, lapply(fmri.results, function(res) res$statistics)),
                 problem=do.call(rbind, lapply(fmri.results, function(res) res$problem)))
 saveRDS(results, file.path(opath, "rf_fmri_results.rds"))
