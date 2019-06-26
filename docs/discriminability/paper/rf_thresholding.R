@@ -14,8 +14,13 @@ require(rARPACK)
 # load/source MASE code
 mase.path <- './mase/R/'
 mase.files <- list.files(mase.path)
-mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R")]
+mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "")]
 sapply(mase.files, function(x) source(file.path(mase.path, x)))
+
+# read getElbows function from github
+library(RCurl)
+script <- getURL("https://raw.githubusercontent.com/youngser/gmmase/master/R/getElbows.R", ssl.verifypeer = FALSE)
+eval(parse(text = script))
 
 #fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
 #pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
@@ -225,72 +230,76 @@ rf.results <- mclapply(experiments, function(exp) {
                              atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten=FALSE)
 
   print(sprintf("Dataset: %s, thr=%.3f", exp$Dataset, exp$thr))
+
+  # threshold the graphs
   graphs.bin <- lapply(graphs$graphs, function(graph) {
     tmp <- graph
     tmp[tmp < exp$thr] <- 0
     tmp[tmp >= exp$thr] <- 1
     return(tmp)
   })
-
-  flat.gr <- fmriu.list2array(graphs.bin)
-
-  # threshold the graphs
+  # flatten for statistics
+  flat.gr <- fmriu.list2array(graphs.bin, flatten=TRUE)
 
   # run statistics
   res <- do.call(rbind, lapply(names(stats), function(stat) {
     tryCatch({
-      return(data.frame(Dataset=exp$Dataset, thresh=thr, alg=stat,
-                        nses=length(unique(graphs$sessions)), nscans=dim(graphs$graphs)[1],
-                        nroi=sqrt(dim(graphs$graphs)[2]), nsub=length(unique(graphs$subjects)),
+      return(data.frame(Dataset=exp$Dataset, thresh=exp$thr, alg=stat,
+                        nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
+                        nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)),
                         stat=do.call(stats[[stat]], list(flat.gr$array, graphs$subjects))))
     }, error=function(e) {return(NULL)})
   }))
 
   graphs.embedded <- list(
-    omni=OMNI_matrix(graphs.bin),
-    mase=mase(graphs.bin)
+    omni=t(simplify2array(lapply(OMNI_matrix(graphs.bin), function(x) as.vector(x$X))))
   )
 
   pheno.dat <- read.csv(exp$pheno.path)
   pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
   pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
   pheno.dat <- pheno.dat[, c("SUBID", "AGE_AT_SCAN_1", "SEX")]
-  pheno.scans <- pheno.dat[sapply(as.numeric(test$subjects), function(x) which(x == pheno.dat$SUBID)),]
+  pheno.scans <- pheno.dat[sapply(as.numeric(graphs$subjects), function(x) which(x == pheno.dat$SUBID)),]
   if (exp$Dataset == "KKI2009") {
     pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
   }
-  # aggregate results across all subjects; report RMSE at current r
-  age.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
-    training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
-    testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
-    # predict for held-out subject
-    trained.age.rf <- randomForest(test$graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
-    preds.age.rf <- predict(trained.age.rf, test$graphs[testing.set,])
-    return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
-                      pred=preds.age.rf))
+
+  result <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
+    embed.graphs <- graphs.embedded[[embed]]
+    # aggregate results across all subjects; report RMSE at current r
+    age.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
+      training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
+      testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
+      # predict for held-out subject
+      trained.age.rf <- randomForest(embed.graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
+      preds.age.rf <- predict(trained.age.rf, embed.graphs[testing.set,])
+      return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
+                        pred=preds.age.rf))
+    }))
+    # compute rmse between predicted and actual after holdout procedure
+    age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
+                          nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
+                          nroi=sqrt(dim(flat.gr$array)[2]), task="Age", thresh=exp$thr,
+                          stat=rmse(age.res$true, age.res$pred), embed=embed, null=NaN)
+
+    sex.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
+      training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
+      testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
+      trained.sex.rf <- randomForest(embed.graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
+      preds.sex.rf <- predict(trained.sex.rf, embed.graphs[testing.set,])
+      return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
+                        pred=as.numeric(as.character(preds.sex.rf))))
+    }))
+
+    sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
+                          nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
+                          nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", thresh=exp$thr,
+                          stat=mean(sex.res$true != sex.res$pred), embed=embed,
+                          null=mean(pheno.scans$SEX == 1))
   }))
-  # compute rmse between predicted and actual after holdout procedure
-  age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
-                        nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
-                        nroi=sqrt(dim(test$graphs)[2]), task="Age", thresh=thr,
-                        stat=rmse(age.res$true, age.res$pred), null=NaN)
 
-  sex.res <- do.call(rbind, lapply(unique(test$subjects), function(sub) {
-    training.set <- which(test$subjects != sub)  # hold out same-subjects from training set
-    testing.set <- which(test$subjects == sub)  # validate over all scans for this subject
-    trained.sex.rf <- randomForest(test$graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
-    preds.sex.rf <- predict(trained.sex.rf, test$graphs[testing.set,])
-    return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
-                      pred=as.numeric(as.character(preds.sex.rf))))
-  }))
 
-  sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, nsub=length(unique(test$subjects)),
-                        nses=length(unique(test$sessions)), nscans=dim(test$graphs)[1],
-                        nroi=sqrt(dim(test$graphs)[2]), task="Sex", thresh=thr,
-                        stat=mean(sex.res$true != sex.res$pred),
-                        null=mean(pheno.scans$SEX == 1))
-
-  return(list(statistics=res, problem=rbind(age.agg, sex.agg)))
+  return(list(statistics=res, problem=result))
 }, mc.cores=no_cores)
 
 saveRDS(rf.results, file.path(opath, "rf_fmri_results.rds"))
