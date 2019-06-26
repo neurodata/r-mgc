@@ -22,10 +22,10 @@ library(RCurl)
 script <- getURL("https://raw.githubusercontent.com/youngser/gmmase/master/R/getElbows.R", ssl.verifypeer = FALSE)
 eval(parse(text = script))
 
-#fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
-#pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
-fmri.path <- '/data/cpac_3-9-2/'
-pheno.path <- '/data/all_mr/phenotypic/'
+fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
+pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+#fmri.path <- '/data/cpac_3-9-2/'
+#pheno.path <- '/data/all_mr/phenotypic/'
 opath <- '.data/real/'
 no_cores <- parallel::detectCores() - 10
 
@@ -252,8 +252,10 @@ rf.results <- mclapply(experiments, function(exp) {
   }))
 
   graphs.embedded <- list(
+    raw=t(simplify2array(lapply(graphs.bin, function(x) as.vector(x)))),
     omni=t(simplify2array(lapply(OMNI_matrix(graphs.bin), function(x) as.vector(x$X))))
   )
+  graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$omni)))$X
 
   pheno.dat <- read.csv(exp$pheno.path)
   pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
@@ -274,13 +276,13 @@ rf.results <- mclapply(experiments, function(exp) {
       trained.age.rf <- randomForest(embed.graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
       preds.age.rf <- predict(trained.age.rf, embed.graphs[testing.set,])
       return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
-                        pred=preds.age.rf))
+                        pred=preds.age.rf, subject=sub))
     }))
     # compute rmse between predicted and actual after holdout procedure
     age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
                           nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                           nroi=sqrt(dim(flat.gr$array)[2]), task="Age", thresh=exp$thr,
-                          stat=rmse(age.res$true, age.res$pred), embed=embed, null=NaN)
+                          stat=rmse(age.res$true, age.res$pred), embed=embed, null=var(age.res$true))
 
     sex.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
       training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
@@ -296,6 +298,8 @@ rf.results <- mclapply(experiments, function(exp) {
                           nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", thresh=exp$thr,
                           stat=mean(sex.res$true != sex.res$pred), embed=embed,
                           null=mean(pheno.scans$SEX == 1))
+
+    return(rbind(age.sum, sex.sum))
   }))
 
 
