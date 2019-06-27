@@ -14,20 +14,15 @@ require(rARPACK)
 # load/source MASE code
 mase.path <- './mase/R/'
 mase.files <- list.files(mase.path)
-mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "")]
+mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "getElbows.R")]
 sapply(mase.files, function(x) source(file.path(mase.path, x)))
-
-# read getElbows function from github
-library(RCurl)
-script <- getURL("https://raw.githubusercontent.com/youngser/gmmase/master/R/getElbows.R", ssl.verifypeer = FALSE)
-eval(parse(text = script))
 
 fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
 pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
 #fmri.path <- '/data/cpac_3-9-2/'
 #pheno.path <- '/data/all_mr/phenotypic/'
-opath <- '.data/real/'
-no_cores <- parallel::detectCores() - 10
+opath <- './data/real/'
+no_cores <- parallel::detectCores() - 30
 
 # one-way anova
 anova.os <- function(X, y) {
@@ -217,6 +212,10 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
 stats <- list(discr.os, anova.os, icc.os, i2c2.os)
 names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
 
+rf.res.path <- file.path(opath, 'rf_results')
+dir.create(opath)
+dir.create(rf.res.path)
+
 #================
 #
 # fMRI Driver
@@ -266,7 +265,7 @@ rf.results <- mclapply(experiments, function(exp) {
     pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
   }
 
-  result <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
+  task.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
     embed.graphs <- graphs.embedded[[embed]]
     # aggregate results across all subjects; report RMSE at current r
     age.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
@@ -302,19 +301,16 @@ rf.results <- mclapply(experiments, function(exp) {
     return(rbind(age.sum, sex.sum))
   }))
 
+  result <- list(statistics=res, problem=task.res)
+  saveRDS(result, file.path(rf.res.path, paste0("rf_dset-", exp$Dataset, "_thr-", exp$thr*1000, ".rds")))
 
-  return(list(statistics=res, problem=result))
+  return(result)
 }, mc.cores=no_cores)
 
-saveRDS(rf.results, file.path(opath, "rf_fmri_results.rds"))
+robj <- list(statistics=do.call(rbind, lapply(rf.results, function(r) r$statistics)),
+             problem=do.call(rbind, lapply(rf.results, function(r) r$problem)))
+
+saveRDS(robj, file.path(opath, "rf_fmri_results.rds"))
+saveRDS(rf.results, file.path(opath, "rf_fmri_results_raw.rds"))
 
 
-
-robj <- list(statistics=do.call(rbind, lapply(res.thresh, function(r) r$statistics)),
-             problem=do.call(rbind, lapply(res.thresh, function(r) r$problem)))
-
-saveRDS(robj, file.path(exp$dat.path, paste(exp$Dataset, "_", "rf_results.rds", sep="")))
-return(robj)
-results <- list(statistics=do.call(rbind, lapply(fmri.results, function(res) res$statistics)),
-                problem=do.call(rbind, lapply(fmri.results, function(res) res$problem)))
-saveRDS(results, file.path(opath, "rf_fmri_results.rds"))
