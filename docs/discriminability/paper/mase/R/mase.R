@@ -39,7 +39,7 @@ mase <- function(Adj_list, d = NA, d_vec = NA,
     if(scaled.ASE) {
       latpos.list <- lapply(1:length(Adj_list), function(i)
         ase(Adj_list[[i]], d = d_vec[i], diag.augment = diag.augment))
-    }else{
+    } else{
       latpos.list <- lapply(1:length(Adj_list), function(i)
         eig_embedding(Adj_list[[i]], d = d_vec[i], diag.augment = diag.augment))
     }
@@ -160,7 +160,7 @@ eig_embedding <- function(A, d = NULL, d.max = ncol(A), diag.augment = FALSE) {
     n = ncol(A)
     diag(A) = deg / (n-1)
   }
-  if(is.null(d)) {
+  if(is.null(d) || is.na(d)) {
     eig <- eigs(as(A, "dgeMatrix"), d.max)
     vals <- sort(x =  abs(eig$values), decreasing = TRUE)#[1:sqrt(n)]
     #d = getElbow_GMM(vals)
