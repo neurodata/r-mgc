@@ -31,7 +31,7 @@ names(atlas_opts) <- c("aal", "cc2", "des", "hox")
 dsets <- list.dirs(path=fmri.path, recursive=FALSE)
 
 dsets <- dsets[!sapply(dsets, function(dset) {grepl("BNU3", dset) | grepl("MPG1", dset)})]
-experiments <- lapply(dsets, function(dset) {
+experiments <- do.call(c, lapply(dsets, function(dset) {
   dset_name = basename(dset)
   do.call(c, lapply(names(reg_opts), function(reg) {
     do.call(c, lapply(names(freq_opts), function(freq) {
@@ -47,7 +47,7 @@ experiments <- lapply(dsets, function(dset) {
       }))
     }))
   }))
-})
+}))
 
 fmri.results <- lapply(experiments, function(dset.exp) {
   print(print(sprintf("%s Dataset...", as.character(dset.exp[[1]]$data$Dataset))))

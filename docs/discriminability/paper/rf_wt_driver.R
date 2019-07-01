@@ -17,10 +17,10 @@ mase.files <- list.files(mase.path)
 mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "getElbows.R")]
 sapply(mase.files, function(x) source(file.path(mase.path, x)))
 
-#fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
-#pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
-fmri.path <- '/data/cpac_3-9-2/'
-pheno.path <- '/data/all_mr/phenotypic/'
+fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
+pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+#fmri.path <- '/data/cpac_3-9-2/'
+#pheno.path <- '/data/all_mr/phenotypic/'
 opath <- './data/real/'
 no_cores <- parallel::detectCores() - 10
 
@@ -333,7 +333,7 @@ rf.results <- mclapply(experiments, function(exp) {
                            nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                            nroi=sqrt(dim(flat.gr$array)[2]), task="Sex",
                            stat=mean(sex.res$true != sex.res$pred), embed=embed,
-                           null=mean(pheno.scans$SEX == 1))
+                           null=min(sapply(unique(pheno.scans$SEX), function(sex) mean(pheno.scans$SEX == sex))))
 
      return(rbind(age.sum, sex.sum))
    }))
