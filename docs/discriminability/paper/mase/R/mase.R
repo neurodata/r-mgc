@@ -121,6 +121,9 @@ g.ase <- function(A, d = NULL, d.max = ncol(A), diag.augment = T) {
     #d = getElbow_GMM(vals)
     d = getElbows(vals, plot = F)[2]
     selected.eigs <- which(abs(eigv$values) >= vals[d])
+    if (all(abs(eigv$values) >= vals[d])) {
+      return(list(X=as.matrix(1, nrow=ncol(A), ncol=1), D=c(0)))
+    }
     X <- eigv$vectors[,selected.eigs] %*% diag(sqrt(abs(eigv$values[selected.eigs])), nrow = d)
     D <- sign(eigv$values[selected.eigs])
   } else{
