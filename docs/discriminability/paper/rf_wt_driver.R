@@ -22,7 +22,7 @@ sapply(mase.files, function(x) source(file.path(mase.path, x)))
 fmri.path <- '/data/cpac_3-9-2/'
 pheno.path <- '/data/all_mr/phenotypic/'
 opath <- './data/real/'
-no_cores <- parallel::detectCores() - 30
+no_cores <- parallel::detectCores() - 10
 
 # one-way anova
 anova.os <- function(X, y) {
@@ -247,7 +247,7 @@ names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
 graph.xfms <- list(nofn, ptr, log.xfm)
 names(graph.xfms) <- c("N", "P", "L")
 
-rf.res.path <- file.path(opath, 'rf_results')
+rf.res.path <- file.path(opath, 'rf_results_wt')
 dir.create(opath)
 dir.create(rf.res.path)
 
@@ -267,7 +267,7 @@ rf.results <- mclapply(experiments, function(exp) {
                 Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation))
 
   # flatten for statistics
-  result <- do.call(c, lapply(names(graph.xfms), function(graph.xfm) {
+  result <- lapply(names(graph.xfms), function(graph.xfm) {
    test <- graphs
    min.gr <- min(sapply(test$graphs, function(gr) min(gr[gr != 0])))
    test$graphs <- lapply(test$graphs, function(gr) do.call(graph.xfms[[graph.xfm]], list(gr, min.gr)))
@@ -312,10 +312,10 @@ rf.results <- mclapply(experiments, function(exp) {
      }))
      # compute rmse between predicted and actual after holdout procedure
      age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                           Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
+                           Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                            nsub=length(unique(graphs$subjects)),
                            nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                           nroi=sqrt(dim(flat.gr$array)[2]), task="Age", thresh=exp$thr,
+                           nroi=sqrt(dim(flat.gr$array)[2]), task="Age",
                            stat=rmse(age.res$true, age.res$pred), embed=embed, null=var(age.res$true))
 
      sex.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
@@ -328,27 +328,29 @@ rf.results <- mclapply(experiments, function(exp) {
      }))
 
      sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                           Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
+                           Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                            nsub=length(unique(graphs$subjects)),
                            nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                           nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", thresh=exp$thr,
+                           nroi=sqrt(dim(flat.gr$array)[2]), task="Sex",
                            stat=mean(sex.res$true != sex.res$pred), embed=embed,
                            null=mean(pheno.scans$SEX == 1))
 
      return(rbind(age.sum, sex.sum))
    }))
-  }))
 
-
-  result <- list(statistics=res, problem=task.res)
-  saveRDS(result, file.path(rf.res.path, paste0("rf_dset-", exp$Dataset, "_thr-", exp$thr*1000, ".rds")))
+   return(list(statistics=stat.res, problem=task.res))
+  })
+  stat.result <- do.call(rbind, lapply(result, function(res) res$statistics))
+  task.result <- do.call(rbind, lapply(result, function(res) res$problem))
+  result <- list(statistics=stat.result, problem=task.result)
+  saveRDS(result, file.path(rf.res.path, paste0("rf_dset-", exp$Dataset, "_",
+                                                paste0(exp$Reg, exp$FF, exp$Scr, exp$GSR, exp$Parcellation), ".rds")))
   return(result)
 }, mc.cores=no_cores)
 
-robj <- list(statistics=do.call(rbind, lapply(rf.results, function(r) r$statistics)),
-             problem=do.call(rbind, lapply(rf.results, function(r) r$problem)))
+robj <- list(statistics=do.call(rbind, lapply(rf.results, function(res) res$statistics)),
+             problem=do.call(rbind, lapply(rf.results, function(res) res$problem)))
 
 saveRDS(robj, file.path(opath, "rf_fmri_results.rds"))
-saveRDS(rf.results, file.path(opath, "rf_fmri_results_raw.rds"))
 
 
