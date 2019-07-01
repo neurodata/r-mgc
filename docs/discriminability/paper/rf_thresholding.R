@@ -17,12 +17,14 @@ mase.files <- list.files(mase.path)
 mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "getElbows.R")]
 sapply(mase.files, function(x) source(file.path(mase.path, x)))
 
-fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
-pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+#fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
+#pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+fmri.path <- '/cis/project/ndmg/eric/discriminability/cpac_3-9-2/'
+pheno.path <- '/cis/project/ndmg/eric/discriminability/phenotypic/'
 #fmri.path <- '/data/cpac_3-9-2/'
 #pheno.path <- '/data/all_mr/phenotypic/'
 opath <- './data/real/'
-no_cores <- parallel::detectCores() - 30
+no_cores <- parallel::detectCores() - 2
 
 # one-way anova
 anova.os <- function(X, y) {
@@ -178,7 +180,7 @@ atlas_opts <- c("D")
 names(atlas_opts) <- c("des")
 
 
-trng <- seq(0.025, .975, by=0.025)
+trng <- seq(0, 1, by=0.025)
 
 # run all datasets at all parcel resolutions
 experiments <- do.call(c, lapply(dsets, function(dset) {
@@ -252,9 +254,9 @@ rf.results <- mclapply(experiments, function(exp) {
 
   graphs.embedded <- list(
     raw=t(simplify2array(lapply(graphs.bin, function(x) as.vector(x)))),
-    omni=t(simplify2array(lapply(OMNI_matrix(graphs.bin), function(x) as.vector(x$X))))
+    mase=t(simplify2array(lapply(mase(graphs.bin)$R, function(x) as.vector(x))))
   )
-  graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$omni)))$X
+  graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
 
   pheno.dat <- read.csv(exp$pheno.path)
   pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
@@ -296,7 +298,7 @@ rf.results <- mclapply(experiments, function(exp) {
                           nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                           nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", thresh=exp$thr,
                           stat=mean(sex.res$true != sex.res$pred), embed=embed,
-                          null=mean(pheno.scans$SEX == 1))
+                          null=min(sapply(unique(pheno.scans$SEX), function(sex) mean(pheno.scans$SEX == sex))))
 
     return(rbind(age.sum, sex.sum))
   }))
@@ -311,6 +313,5 @@ robj <- list(statistics=do.call(rbind, lapply(rf.results, function(r) r$statisti
              problem=do.call(rbind, lapply(rf.results, function(r) r$problem)))
 
 saveRDS(robj, file.path(opath, "rf_fmri_results.rds"))
-saveRDS(rf.results, file.path(opath, "rf_fmri_results_raw.rds"))
 
 
