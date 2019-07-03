@@ -269,38 +269,41 @@ rf.results <- mclapply(experiments, function(exp) {
 
   task.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
     embed.graphs <- graphs.embedded[[embed]]
-    # aggregate results across all subjects; report RMSE at current r
-    age.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
-      training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
-      testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
-      # predict for held-out subject
-      trained.age.rf <- randomForest(embed.graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
-      preds.age.rf <- predict(trained.age.rf, embed.graphs[testing.set,])
-      return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
-                        pred=preds.age.rf, subject=sub))
-    }))
-    # compute rmse between predicted and actual after holdout procedure
-    age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
-                          nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                          nroi=sqrt(dim(flat.gr$array)[2]), task="Age", thresh=exp$thr,
-                          stat=rmse(age.res$true, age.res$pred), embed=embed, null=var(age.res$true))
+    tryCatch({
 
-    sex.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
-      training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
-      testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
-      trained.sex.rf <- randomForest(embed.graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
-      preds.sex.rf <- predict(trained.sex.rf, embed.graphs[testing.set,])
-      return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
-                        pred=as.numeric(as.character(preds.sex.rf))))
-    }))
+      # aggregate results across all subjects; report RMSE at current r
+      age.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
+        training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
+        testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
+        # predict for held-out subject
+        trained.age.rf <- randomForest(embed.graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
+        preds.age.rf <- predict(trained.age.rf, embed.graphs[testing.set,])
+        return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
+                          pred=preds.age.rf, subject=sub))
+      }))
+      # compute rmse between predicted and actual after holdout procedure
+      age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
+                            nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
+                            nroi=sqrt(dim(flat.gr$array)[2]), task="Age", thresh=exp$thr,
+                            stat=rmse(age.res$true, age.res$pred), embed=embed, null=var(age.res$true))
 
-    sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
-                          nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                          nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", thresh=exp$thr,
-                          stat=mean(sex.res$true != sex.res$pred), embed=embed,
-                          null=min(sapply(unique(pheno.scans$SEX), function(sex) mean(pheno.scans$SEX == sex))))
+      sex.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
+        training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
+        testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
+        trained.sex.rf <- randomForest(embed.graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
+        preds.sex.rf <- predict(trained.sex.rf, embed.graphs[testing.set,])
+        return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
+                          pred=as.numeric(as.character(preds.sex.rf))))
+      }))
 
-    return(rbind(age.sum, sex.sum))
+      sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, nsub=length(unique(graphs$subjects)),
+                            nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
+                            nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", thresh=exp$thr,
+                            stat=mean(sex.res$true != sex.res$pred), embed=embed,
+                            null=min(sapply(unique(pheno.scans$SEX), function(sex) mean(pheno.scans$SEX == sex))))
+
+      return(rbind(age.sum, sex.sum))
+    }, error=function(e) {return(NULL)})
   }))
 
   result <- list(statistics=res, problem=task.res)
