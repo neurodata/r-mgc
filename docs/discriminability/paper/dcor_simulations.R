@@ -15,10 +15,10 @@ mase.files <- list.files(mase.path)
 mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "getElbows.R")]
 sapply(mase.files, function(x) source(file.path(mase.path, x)))
 
-#fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
-#pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
-fmri.path <- '/cis/project/ndmg/eric/discriminability/cpac_3-9-2/'
-pheno.path <- '/cis/project/ndmg/eric/discriminability/phenotypic/'
+fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
+pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+#fmri.path <- '/cis/project/ndmg/eric/discriminability/cpac_3-9-2/'
+#pheno.path <- '/cis/project/ndmg/eric/discriminability/phenotypic/'
 #fmri.path <- '/data/cpac_3-9-2/'
 #pheno.path <- '/data/all_mr/phenotypic/'
 opath <- './data/real/'
@@ -227,13 +227,13 @@ dcor.res.path <- file.path(opath, 'dcor_results')
 dir.create(opath)
 dir.create(dcor.res.path)
 
-mgc.testt <- function(X, Y, R=1000) {
-  result <- mgc.test(X=X, Y=Y, rep=R)
+mgc.testt <- function(x, y, R=1000) {
+  result <- mgc.test(X=x, Y=y, rep=R)
   return(list(p.value=result$pMGC, statistic=result$statMGC))
 }
 
 # dependence test methods
-dep.tests <- list(mgc=mgc.testt, dcor.test)
+dep.tests <- list(mgc=mgc.testt, dcor=dcor.test)
 
 #================
 #
@@ -283,27 +283,28 @@ rf.results <- mclapply(experiments, function(exp) {
   if (exp$Dataset == "KKI2009") {
     pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
   }
+  graphs$subjects <- gsub("(?<![0-9])0+", "", graphs$subjects, perl = TRUE)
 
   task.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
     embed.graphs <- graphs.embedded[[embed]]
     # aggregate results across all subjects; report RMSE at current r
      return(do.call(rbind, lapply(names(dep.tests), function(dep) {
-      Y.age <- as.numeric(pheno.dat$AGE_AT_SCAN_1)
+      Y.age <- as.numeric(pheno.scans$AGE_AT_SCAN_1)
       valid.idx.age <- (!is.na(Y.age) & !is.null(Y.age) & !is.nan(Y.age))
-      Y.sex <- as.factor(pheno.dat$SEX)
+      Y.sex <- as.numeric(pheno.scans$SEX)
       valid.idx.sex <- (!is.na(Y.sex) & !is.null(Y.sex) & !is.nan(Y.sex))
       tryCatch({
-        dep.age <- do.call(dep.tests[[dep]], list(X=embed.graphs[valid.idx.age,], Y=Y.age[valid.idx.age], R=20))
-        dep.sex <- do.call(dep.tests[[dep]], list(X=embed.graphs[valid.idx.sex,], Y=Y.sex[valid.idx.sex], R=20))
+        dep.age <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.age,], y=Y.age[valid.idx.age], R=1000))
+        dep.sex <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.sex,], y=Y.sex[valid.idx.sex], R=1000))
         return(rbind(data.frame(Dataset=exp$Dataset, thresh=exp$thr,
                                 nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                                nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)),
-                                stat=dep.sex$statistic, pval=dep.sex$p.value, method=dep),
+                                nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)), task="Age",
+                                stat=dep.sex$statistic, pval=dep.sex$p.value, method=dep, embed=embed),
                      data.frame(Dataset=exp$Dataset, thresh=exp$thr,
                                 nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                                nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)),
-                                stat=dep.sex$statistic, pval=dep.sex$p.value, method=dep)))
-      }, error=function(e) {return(NULL)})
+                                nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)), task="Sex",
+                                stat=dep.age$statistic, pval=dep.age$p.value, method=dep, embed=embed)))
+      }, error=function(e) {return(e)})
      })))
     }))
 
@@ -316,5 +317,5 @@ rf.results <- mclapply(experiments, function(exp) {
 robj <- list(statistics=do.call(rbind, lapply(rf.results, function(r) r$statistics)),
              problem=do.call(rbind, lapply(rf.results, function(r) r$problem)))
 
-saveRDS(robj, file.path(opath, "rf_fmri_results.rds"))
+saveRDS(robj, file.path(opath, "dcor_thr_fmri_results.rds"))
 
