@@ -216,34 +216,34 @@ no_cores = detectCores() - 1
 
 # redefine simulations so that we can obtain the best/worst dimensions relatively
 # easily
-sim.linear.ts <- function(...) {
-  simout <- discr.sims.linear(...)
-  X.g2 <- simout$X + array(rnorm(prod(dim(simout$X))), dim=dim(simout$X))
-  simout$X <- rbind(simout$X, X.g2)
+sim.linear.ts <- function(opt1, opt2) {
+  s.g1 <- discr.sims.linear(opt1)
+  s.g2 <- discr.sims.linear(opt2)
+  simout$X <- rbind(s.g1$X, s.g2$X)
   simout$Z <- factor(c(rep(1, length(simout$Y)), rep(2, length(simout$Y))))
-  simout$Y <- c(simout$Y, simout$Y)
+  simout$Y <- c(s.g1$Y, s.g2$Y)
   simout$d.best <- simout$X[,1]  # first dimension has all signal
   simout$d.worst <- simout$X[,2]  # second has none
   return(simout)
 }
 
-sim.cross.ts <- function(...) {
-  simout <- discr.sims.cross(...)
-  X.g2 <- simout$X + array(rnorm(prod(dim(simout$X))), dim=dim(simout$X))
-  simout$X <- rbind(simout$X, X.g2)
+sim.cross.ts <- function(opt1, opt2) {
+  s.g1 <- discr.sims.cross(opt1)
+  s.g2 <- discr.sims.cross(opt2)
+  simout$X <- rbind(s.g1$X, s.g2$X)
   simout$Z <- factor(c(rep(1, length(simout$Y)), rep(2, length(simout$Y))))
-  simout$Y <- c(simout$Y, simout$Y)
+  simout$Y <- c(s.g1$Y, s.g2$Y)
   simout$d.best <- simout$X[,1]  # either first or second dimension are top signal wise
-  simout$d.worst <- simout$X %*% array(c(1, 1), dim=c(dim(simout$X)[2])) # worst dimension is the direction of maximal variance
+  simout$d.worst <- simout$X %*% array(c(1, 1), dim=c(dim(simout$X)[2])) # worst dimension is the direction of maximal variance which is the diagonal
   return(simout)
 }
 
-sim.radial.ts <- function(...) {
-  simout <- discr.sims.radial(...)
-  X.g2 <- simout$X + array(rnorm(prod(dim(simout$X))), dim=dim(simout$X))
-  simout$X <- rbind(simout$X, X.g2)
+sim.radial.ts <- function(opt1, opt2) {
+  s.g1 <- discr.sims.radial(opt1)
+  s.g2 <- discr.sims.radial(opt2)
+  simout$X <- rbind(s.g1$X, s.g2$X)
   simout$Z <- factor(c(rep(1, length(simout$Y)), rep(2, length(simout$Y))))
-  simout$Y <- c(simout$Y, simout$Y)
+  simout$Y <- c(s.g1$Y, s.g2$Y)
   simout$d.best <- apply(simout$X, c(1), dist)  # best dimension is the radius of the point
   # worst dimension is the angle of the point in radians relative 0 rad
   simout$d.worst <- apply(simout$X, c(1), function(x) {
@@ -255,9 +255,11 @@ sim.radial.ts <- function(...) {
 # simulations and options as a list
 sims <- list(sim.linear.ts, sim.linear.ts, #sim.linear,# discr.sims.exp,
              sim.cross.ts, sim.radial.ts)#, discr.sims.beta)
-sims.opts <- list(list(K=2, signal.lshift=0), list(K=2, signal.lshift=1),
+sims.opts <- list(list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=1)),
+                  list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=2)),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(K=2, signal.scale=20), list(K=2))#,
+                  list(opt1=list(K=2, signal.scale=10), opt2=list(K=2, signal.scale=20)),
+                  list(opt1=list(K=2), opt2=list(K=2, er.scale=0.2)))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
 
@@ -402,3 +404,5 @@ results <- mclapply(experiments, function(exp) {
 
 results <- do.call(rbind, results)
 saveRDS(results, file.path(opath, paste('discr_sims_ts', '.rds', sep="")))
+
+
