@@ -15,6 +15,9 @@ require(ICC)
 require(I2C2)
 require(cowplot)
 require(lolR)
+require(dplyr)
+require(tidyr)
+require(tidyverse)
 ```
 
 ```{r}
@@ -24,32 +27,36 @@ g_legend<-function(a.gplot){
   legend <- tmp$grobs[[leg]]
   return(legend)
 }
-acols <- c("#FF0000", "#BBBBBB", "#888888")
-names(acols) <- c("Discr", "ICC", "I2C2")
+acols <- c("#FF0000", "#BBBBBB", "#BBBBBB", "#9997c9", "#778899", "#778899", "#387DC3")
+linetypes <- c(1, 1, 2, 1, 1, 2, 1)
+names(linetypes) <- names(acols) <- c("Discr", "ICC, best", "ICC, worst", "I2C2", "ANOVA, best", "ANOVA, worst", "MANOVA")
 ```
 
 
 # One Sample Results
 
 ```{r}
-one.sample.results <- readRDS('data/sims/discr_sims_os.rds')
 alpha = 0.05
-one.sample.results$outcome <- as.numeric(one.sample.results$pval < alpha)
-one.sample.powers <- aggregate(outcome ~ stat + sim + n, one.sample.results, mean)
-one.sample.powers$power <- one.sample.powers$outcome
-sim.names <- unique(one.sample.powers$sim)
+one.sample.results <- readRDS('data/sims/discr_sims_os.rds') %>%
+  mutate(outcome = as.numeric(pval < alpha), n=as.numeric(n))
+
+one.sample.powers <- one.sample.results %>%
+  group_by(alg, n, sim.name) %>%
+  summarize(power=mean(outcome))
+sim.names <- unique(one.sample.powers$sim.name)
 abbr <- c("(A)", "(B)", "(C)", "(D)", "(E)")
-one.sample.powers$n <- as.numeric(one.sample.powers$n)
 ```
 
 ```{r}
 plots <- list()
 for (i in 1:length(sim.names)) {
-  plots[[i]] <- ggplot(subset(one.sample.powers, sim == sim.names[i] & stat != "I2C2"), aes(x=n, y=power, group=stat, color=stat)) +
+  plots[[i]] <- ggplot(subset(one.sample.powers, sim.name == sim.names[i]), 
+                       aes(x=n, y=power, linetype=alg, group=alg, color=alg)) +
     geom_line(size=1.2) +
     scale_x_continuous() +
     theme_bw() +
     scale_color_manual(name="Statistic", values=acols) +
+    scale_linetype_manual(name="Statistic", values=linetypes) +
     ggtitle(paste(abbr[i], sim.names[i])) +
     xlab("Number of Samples") +
     ylab("Statistical Power") +
@@ -77,24 +84,28 @@ grid.arrange(arrangeGrob(grobs=(plots), nrow=1), leg, top=textGrob("One Sample R
 # Two Sample Results
 
 ```{r}
-two.sample.results <- readRDS('data/sims/discr_sims_ts.rds')
 alpha = 0.05
-two.sample.results$outcome <- as.numeric(two.sample.results$pval < alpha)
-two.sample.powers <- aggregate(outcome ~ stat + sim + n, two.sample.results, mean)
-two.sample.powers$power <- two.sample.powers$outcome
-sim.names <- unique(two.sample.powers$sim)
+two.sample.results <- readRDS('data/sims/discr_sims_ts.rds') %>%
+  mutate(outcome = as.numeric(pval < alpha), n=as.numeric(n))
+
+two.sample.powers <- two.sample.results %>%
+  group_by(alg, n, sim.name) %>%
+  summarize(power=mean(outcome))
+
+sim.names <- unique(one.sample.powers$sim.name)
 abbr <- c("(A)", "(B)", "(C)", "(D)", "(E)")
-two.sample.powers$n <- as.numeric(two.sample.powers$n)
 ```
 
 ```{r}
 plots <- list()
 for (i in 1:length(sim.names)) {
-  plots[[i]] <- ggplot(subset(two.sample.powers, sim == sim.names[i] & stat != "I2C2"), aes(x=n, y=power, group=stat, color=stat)) +
+  plots[[i]] <- ggplot(subset(two.sample.powers, sim.name == sim.names[i]), 
+                       aes(x=n, y=power, linetype=alg, group=alg, color=alg)) +
     geom_line(size=1.2) +
     scale_x_continuous() +
     theme_bw() +
     scale_color_manual(name="Statistic", values=acols) +
+    scale_linetype_manual(name="Statistic", values=linetypes) +
     ggtitle(paste(abbr[i], sim.names[i])) +
     xlab("Number of Samples") +
     ylab("Statistical Power") +
