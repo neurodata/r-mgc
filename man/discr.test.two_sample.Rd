@@ -4,33 +4,48 @@
 \alias{discr.test.two_sample}
 \title{Discriminability Two Sample Permutation Test}
 \usage{
-discr.test.two_sample(D1, D2, ids, nperm = 100, verbose = FALSE)
+discr.test.two_sample(X1, X2, Y, dist.xfm = discr.distance,
+  dist.params = list(method = "euclidian"), dist.return = NULL,
+  remove.isolates = TRUE, nperm = 100, no_cores = 1)
 }
 \arguments{
-\item{D1}{is interpreted as:
+\item{X1}{is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.}
+
+\item{X2}{is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.}
+
+\item{Y}{\code{[n]} a vector containing the sample ids for our \code{n} samples. Should be matched such that \code{Y[i]} is the corresponding label for \code{X1[i,]} and \code{X2[i,]}.}
+
+\item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
+
+\item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
 \describe{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 }}
 
-\item{D2}{is interpreted as:
-\describe{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
-}}
+\item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
+one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.}
 
-\item{ids}{\code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.}
+\item{nperm}{the number of permutations for permutation test. Defualts to \code{100}.}
 
-\item{nperm}{the number of permutations to perform. Defaults to \code{100}.}
+\item{no_cores}{the number of cores to use for the permutations. Defaults to \code{1}.}
 
-\item{verbose}{whether to print the itereation numbers. Defaults to \code{FALSE}.}
+\item{alt}{the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
+or just non-equal (\code{alt = 'neq'}).}
 }
 \value{
-the pvalue associated with the permutation test.
+A list containing the following:
+\item{\code{stat}}{the observed test statistic.}
+\item{\code{p.value}}{The p-value associated with the test.}
 }
 \description{
 A function that takes two distance matrices and produces a p-value associated with whether or not the distance matrices differ significantly.
 }
 \author{
-Shangsi Wang and Eric Bridgeford
+Eric Bridgeford
 }

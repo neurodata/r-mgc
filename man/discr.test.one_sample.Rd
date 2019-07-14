@@ -4,20 +4,40 @@
 \alias{discr.test.one_sample}
 \title{Discriminability One Sample Permutation Test}
 \usage{
-discr.test.one_sample(D, ids, nperm = 100, verbose = FALSE)
+discr.test.one_sample(X, Y, is.dist = FALSE, dist.xfm = discr.distance,
+  dist.params = list(method = "euclidean"), dist.return = NULL,
+  remove.isolates = TRUE, nperm = 100, no_cores = 1)
 }
 \arguments{
-\item{D}{is interpreted as:
+\item{X}{is interpreted as:
 \describe{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}
+   \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
 }}
 
-\item{ids}{\code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.}
+\item{Y}{\code{[n]} a vector containing the sample ids for our \code{n} samples.}
+
+\item{is.dist}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
+
+\item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
+
+\item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
+\describe{
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
+}}
+
+\item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
+one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.}
 
 \item{nperm}{the number of permutations to perform. Defaults to \code{100}.}
 
-\item{verbose}{whether to print the itereation numbers. Defaults to \code{FALSE}.}
+\item{no_cores}{the number of cores to use for permutation test. Defaults to \code{1}.}
 }
 \value{
 A list containing the following:
@@ -29,5 +49,5 @@ A list containing the following:
 A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
 }
 \author{
-Shangsi Wang and Eric Bridgeford
+Eric Bridgeford
 }

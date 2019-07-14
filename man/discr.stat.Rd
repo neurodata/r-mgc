@@ -26,10 +26,10 @@ as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
 \item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
 Defaults to \code{list(method='euclidean')}.}
 
-\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{NULL}.
+\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
 \describe{
-    \item{\code{is.null(dist.return)}}{use the return directly from \code{dist.xfm} as the distance matrix.}
-    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix.}
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 }}
 
 \item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
@@ -37,8 +37,8 @@ one instance of their class appearing in the \code{Y} vector. Defaults to \code{
 }
 \value{
 A list containing the following:
-\item{\code{discr} the discriminability statistic.}
-\item{\code{rdf} the rdfs for each sample.}
+\item{\code{discr}}{the discriminability statistic.}
+\item{\code{rdf}}{the rdfs for each sample.}
 }
 \description{
 A function for computing the discriminability from a distance matrix and a set of associated labels.
