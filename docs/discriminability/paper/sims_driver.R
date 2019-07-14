@@ -208,7 +208,7 @@ library(parallel)
 require(mgc)
 require(ICC)
 require(I2C2)
-no_cores = detectCores() - 1
+no_cores = detectCores() - 5
 
 # -----------------------------
 # TS Simulations
@@ -216,34 +216,34 @@ no_cores = detectCores() - 1
 
 # redefine simulations so that we can obtain the best/worst dimensions relatively
 # easily
-sim.linear.ts <- function(opt1, opt2) {
-  s.g1 <- discr.sims.linear(opt1)
-  s.g2 <- discr.sims.linear(opt2)
-  simout$X <- rbind(s.g1$X, s.g2$X)
-  simout$Z <- factor(c(rep(1, length(simout$Y)), rep(2, length(simout$Y))))
-  simout$Y <- c(s.g1$Y, s.g2$Y)
+sim.linear.ts <- function(opt1, opt2, n, d) {
+  s.g1 <- do.call(discr.sims.linear, c(opt1, list(n=n, d=d)))
+  s.g2 <- do.call(discr.sims.linear, c(opt2, list(n=n, d=d)))
+  simout <- list(X=rbind(s.g1$X, s.g2$X),
+                 Z=factor(c(rep(1, n), rep(2, n))),
+                 Y=c(s.g1$Y, s.g2$Y))
   simout$d.best <- simout$X[,1]  # first dimension has all signal
   simout$d.worst <- simout$X[,2]  # second has none
   return(simout)
 }
 
-sim.cross.ts <- function(opt1, opt2) {
-  s.g1 <- discr.sims.cross(opt1)
-  s.g2 <- discr.sims.cross(opt2)
-  simout$X <- rbind(s.g1$X, s.g2$X)
-  simout$Z <- factor(c(rep(1, length(simout$Y)), rep(2, length(simout$Y))))
-  simout$Y <- c(s.g1$Y, s.g2$Y)
+sim.cross.ts <- function(opt1, opt2, n, d) {
+  s.g1 <- do.call(discr.sims.cross, c(opt1, list(n=n, d=d)))
+  s.g2 <- do.call(discr.sims.cross, c(opt2, list(n=n, d=d)))
+  simout <- list(X=rbind(s.g1$X, s.g2$X),
+                 Z=factor(c(rep(1, n), rep(2, n))),
+                 Y=c(s.g1$Y, s.g2$Y))
   simout$d.best <- simout$X[,1]  # either first or second dimension are top signal wise
   simout$d.worst <- simout$X %*% array(c(1, 1), dim=c(dim(simout$X)[2])) # worst dimension is the direction of maximal variance which is the diagonal
   return(simout)
 }
 
-sim.radial.ts <- function(opt1, opt2) {
-  s.g1 <- discr.sims.radial(opt1)
-  s.g2 <- discr.sims.radial(opt2)
-  simout$X <- rbind(s.g1$X, s.g2$X)
-  simout$Z <- factor(c(rep(1, length(simout$Y)), rep(2, length(simout$Y))))
-  simout$Y <- c(s.g1$Y, s.g2$Y)
+sim.radial.ts <- function(opt1, opt2, n, d) {
+  s.g1 <- do.call(discr.sims.radial, c(opt1, list(n=n, d=d)))
+  s.g2 <- do.call(discr.sims.radial, c(opt2, list(n=n, d=d)))
+  simout <- list(X=rbind(s.g1$X, s.g2$X),
+                 Z=factor(c(rep(1, n), rep(2, n))),
+                 Y=c(s.g1$Y, s.g2$Y))
   simout$d.best <- apply(simout$X, c(1), dist)  # best dimension is the radius of the point
   # worst dimension is the angle of the point in radians relative 0 rad
   simout$d.worst <- apply(simout$X, c(1), function(x) {
@@ -255,10 +255,10 @@ sim.radial.ts <- function(opt1, opt2) {
 # simulations and options as a list
 sims <- list(sim.linear.ts, sim.linear.ts, #sim.linear,# discr.sims.exp,
              sim.cross.ts, sim.radial.ts)#, discr.sims.beta)
-sims.opts <- list(list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=1)),
-                  list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=2)),
+sims.opts <- list(list(opt1=list(K=2, signal.lshift=0), opt2=list(K=2, signal.lshift=0)),
+                  list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=1, non.scale=2)),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(opt1=list(K=2, signal.scale=10), opt2=list(K=2, signal.scale=20)),
+                  list(opt1=list(K=2, signal.scale=10), opt2=list(K=2, signal.scale=10, non.scale=5)),
                   list(opt1=list(K=2), opt2=list(K=2, er.scale=0.2)))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
@@ -359,7 +359,7 @@ i2c2.twosample.driver <- function(sim, nperm=100, ...) {
 discr.twosample.driver <- function(sim, nperm=100, ...) {
   D1 <- discr.distance(sim$X[sim$Z == 1,])
   D2 <- discr.distance(sim$X[sim$Z == 2,])
-  res <- discr.test.two_sample(D1, D2, ids=sim$Y[sim$Z == 1])
+  res <- discr.test.two_sample(D1, D2, Y=sim$Y[sim$Z == 1])
   return(data.frame(alg="Discr", pval=res$pval))
 }
 
@@ -387,7 +387,7 @@ experiments <- do.call(c, lapply(seq_along(sims), function(sims, sims.names, sim
   sim <- sims[[i]]; sim.name <- sims.names[[i]]; sim.opts <- sims.opts[[i]]
   do.call(c, lapply(ns, function(n) {
     do.call(c, lapply(1:nrep, function(j) {
-      sim.out <- do.call(sim, c(sim.opts, n=n, d=d))
+      sim.out <- do.call(sim, list(opt1=sim.opts$opt1, opt2=sim.opts$opt2, n=n, d=d))
       lapply(algs, function(alg) {
         return(list(sim.name=sim.name, sim=sim.out, i=j, n=n, d=d, alg=alg))
       })
@@ -398,8 +398,10 @@ experiments <- do.call(c, lapply(seq_along(sims), function(sims, sims.names, sim
 ## Two Sample Results
 # mcapply over the number of repetitions
 results <- mclapply(experiments, function(exp) {
-  res <- do.call(exp$alg, list(exp$sim))
-  return(data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, pval=res$pval))
+  tryCatch({
+    res <- do.call(exp$alg, list(exp$sim))
+    return(data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, pval=res$pval))
+  }, error=function(e){return(NULL)})
 }, mc.cores=no_cores)
 
 results <- do.call(rbind, results)
