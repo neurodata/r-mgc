@@ -20,6 +20,8 @@ sapply(mase.files, function(x) source(file.path(mase.path, x)))
 
 fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
 pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+#fmri.path <- '/cis/project/ndmg/eric/discriminability/cpac_3-9-2/'
+#pheno.path <- '/cis/project/ndmg/eric/discriminability/phenotypic/'
 #fmri.path <- '/data/cpac_3-9-2/'
 #pheno.path <- '/data/all_mr/phenotypic/'
 opath <- './data/real/'
@@ -404,6 +406,6 @@ robj <- list(statistics=do.call(rbind, lapply(rf.results, function(res) res$stat
              problem=do.call(rbind, lapply(rf.results, function(res) res$problem)),
              dcor=do.call(rbind, lapply(rf.results, function(res) res$dcor)))
 
-saveRDS(robj, file.path(opath, "rf_fmri_results.rds"))
+saveRDS(robj, file.path(opath, "rf_wt_fmri_results.rds"))
 
 
