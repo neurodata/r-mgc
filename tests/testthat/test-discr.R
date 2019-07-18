@@ -18,14 +18,25 @@ test_that("Discriminability - 2 Class, d==1", {
   expect_equal(as.numeric(dstat$rdf), c(1, 1, 1, 1))
 })
 
-test_that("Discriminability - 2 Class, d > 1", {
+test_that("Discriminability - 2 Class, d > 1; large n", {
   n=100; d=10
   # large class difference
   sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10); X <- sim$X; Y <- sim$Y
   dstat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
   expect_equal(dstat$discr, 1)
 
-  # small class difference with distance matrix and data produces same result
+  # small class difference
+  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=1); X <- sim$X; Y <- sim$Y
+  dstat.dat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
+
+  # large class difference is more discriminable
+  expect_lt(dstat.dat$discr, dstat$discr)
+})
+
+test_that("Discriminability - using data and distance function manually produces same result", {
+  n=100; d=10
+
+  # small class difference with distance matrix vs data produces same result
   sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=1); X <- sim$X; Y <- sim$Y
   dstat.dat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
 
