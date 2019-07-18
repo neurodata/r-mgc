@@ -91,10 +91,11 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 #' @param alt the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
 #' or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.
 #' @return A list containing the following:
-#' \item{\code{stat}}{the observed test statistic.}
+#' \item{\code{stat}}{the observed test statistic. the test statistic is the difference in discriminability of X1 vs X2.}
 #' \item{\code{discr}}{the discriminabilities for each of the two data sets, as a list.}
 #' \item{\code{null}}{the null distribution of the test statistic, computed via permutation.}
 #' \item{\code{p.value}}{The p-value associated with the test.}
+#' \item{\code{alt}}{The alternative hypothesis for the test.}
 #' @author Eric Bridgeford
 #'
 #' @examples
@@ -143,12 +144,14 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
     # generate null dataset for X1
     idx1 <- t(sapply(1:N, function(j) sample(N, size=2)))
     lambda1 <- runif(N)
-    Xn1 <- lambda1*X1[idx1[,1],] + (1 - lambda1)*X1[idx1[,2],]
+    Xn1 <- lambda1*X1[idx1[,1],] + (1 - lambda1)*X1[idx1[,2],]  # convex combination of elements of X1
 
     # generate null dataset for X2
     idx2 <- t(sapply(1:N, function(j) sample(N, size=2)))
     lambda2 <- runif(N)
-    Xn2 <- lambda2*X2[idx2[,1],] + (1 - lambda2)*X2[idx2[,2],]
+    Xn2 <- lambda2*X2[idx2[,1],] + (1 - lambda2)*X2[idx2[,2],]  # convex combination of elements of X2
+
+    # compute discriminability under the null
     D1.null <- discr.stat(Xn1, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                           remove.isolates=remove.isolates)$discr
     D2.null <- discr.stat(Xn2, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
@@ -156,25 +159,27 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
     return(list(D1hat=D1.null, D2hat=D2.null))
   }, mc.cores=no_cores)
 
+  # compute null distribution of difference between discriminabilities
   null.diff <- do.call(c, sapply(1:(N-1), function(j) {
     as.vector(sapply((j+1):N, function(j.p) {
-      return(c(null.discrs[[j]]$D1hat - null.discrs[[j.p]]$D2hat, null.discrs[[j]]$D2hat - null.discrs[[j.p]]$D2hat))
+      return(c(null.discrs[[j]]$D1hat - null.discrs[[j.p]]$D2hat, null.discrs[[j]]$D2hat - null.discrs[[j.p]]$D1hat))
     }))
   }))
+  stat <- D1.hat - D2.hat
   if (alt == 'greater') {
-    stat <- D1.hat - D2.hat
-    # p-value is fraction of times observed statistic is greater
+    # p-value is fraction of times observed statistic is less
+    # than under null
     p.value <- mean(stat < null.diff)
   } else if (alt == 'less') {
-    stat <- D2.hat - D1.hat
-    # p-value is fraction of times observed statistic is lower
-    p.value <- mean(stat < null.diff)
+    # p-value is fraction of times observed statistic is greater
+    # than under null
+    p.value <- mean(stat > null.diff)
   } else if (alt == 'neq') {
-    stat <- abs(D1.hat - D2.hat)
-    # p-value is fraction of times observed statistic is more extreme
-    p.value <- mean(stat < null.diff || stat > null.diff)
+    # p-value is fraction of times observed statistic is less extreme
+    # than under null
+    p.value <- mean(abs(stat) < abs(null.diff))
   } else {
     stop("You have not entered a valid alternative.")
   }
-  return(list(p.value=p.value, stat=stat, discr=list(X1=D1.hat, X2=D2.hat), null=null.diff))
+  return(list(p.value=p.value, stat=stat, discr=list(X1=D1.hat, X2=D2.hat), null=null.diff, alt=alt))
 }
