@@ -144,7 +144,7 @@ i2c2.onesample.driver <- function(sim, nperm=100, ...) {
 
 discr.onesample.driver <- function(sim, nperm=100, ...) {
   res=discr.test.one_sample(sim$X, sim$Y)
-  return(data.frame(alg="Discr", tstat=res$, pval=res$p.value))
+  return(data.frame(alg="Discr", tstat=res$stat, pval=res$p.value))
 }
 
 algs <- list(discr.onesample.driver, anova.onesample.driver, icc.onesample.driver,
@@ -196,7 +196,7 @@ library(parallel)
 require(mgc)
 require(ICC)
 require(I2C2)
-no_cores = detectCores() - 5
+no_cores = detectCores() - 1
 
 # -----------------------------
 # TS Simulations
