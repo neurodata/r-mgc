@@ -218,10 +218,18 @@ no_cores = detectCores() - 5
 # easily
 sim.linear.ts <- function(opt1, opt2, n, d) {
   s.g1 <- do.call(discr.sims.linear, c(opt1, list(n=n, d=d)))
-  s.g2 <- do.call(discr.sims.linear, c(opt2, list(n=n, d=d)))
-  simout <- list(X=rbind(s.g1$X, s.g2$X),
+  s.g2 <- do.call(discr.sims.linear, c(opt2, list(n=n*3, d=d)))
+  g2.out <- list(X=NULL, Y=NULL)
+  for (y in unique(s.g1$Y)) {
+    idx.g2 <- which(s.g2$Y == y)
+    n.y <- sum(s.g1$Y == y)
+    g2.out$X <- rbind(g2.out$X, s.g2$X[idx.g2[1:n.y],])
+    g2.out$Y <- c(g2.out$Y, s.g2$Y[idx.g2[1:n.y]])
+  }
+  ord.g1 <- order(s.g1$Y)
+  simout <- list(X=rbind(s.g1$X[ord.g1,], g2.out$X),
                  Z=factor(c(rep(1, n), rep(2, n))),
-                 Y=c(s.g1$Y, s.g2$Y))
+                 Y=c(s.g1$Y[ord.g1], g2.out$Y))
   simout$d.best <- simout$X[,1]  # first dimension has all signal
   simout$d.worst <- simout$X[,2]  # second has none
   return(simout)
@@ -229,10 +237,18 @@ sim.linear.ts <- function(opt1, opt2, n, d) {
 
 sim.cross.ts <- function(opt1, opt2, n, d) {
   s.g1 <- do.call(discr.sims.cross, c(opt1, list(n=n, d=d)))
-  s.g2 <- do.call(discr.sims.cross, c(opt2, list(n=n, d=d)))
-  simout <- list(X=rbind(s.g1$X, s.g2$X),
+  s.g2 <- do.call(discr.sims.cross, c(opt2, list(n=n*3, d=d)))
+  g2.out <- list(X=NULL, Y=NULL)
+  for (y in unique(s.g1$Y)) {
+    idx.g2 <- which(s.g2$Y == y)
+    n.y <- sum(s.g1$Y == y)
+    g2.out$X <- rbind(g2.out$X, s.g2$X[idx.g2[1:n.y],])
+    g2.out$Y <- c(g2.out$Y, s.g2$Y[idx.g2[1:n.y]])
+  }
+  ord.g1 <- order(s.g1$Y)
+  simout <- list(X=rbind(s.g1$X[ord.g1,], g2.out$X),
                  Z=factor(c(rep(1, n), rep(2, n))),
-                 Y=c(s.g1$Y, s.g2$Y))
+                 Y=c(s.g1$Y[ord.g1], g2.out$Y))
   simout$d.best <- simout$X[,1]  # either first or second dimension are top signal wise
   simout$d.worst <- simout$X %*% array(c(1, 1), dim=c(dim(simout$X)[2])) # worst dimension is the direction of maximal variance which is the diagonal
   return(simout)
@@ -240,10 +256,18 @@ sim.cross.ts <- function(opt1, opt2, n, d) {
 
 sim.radial.ts <- function(opt1, opt2, n, d) {
   s.g1 <- do.call(discr.sims.radial, c(opt1, list(n=n, d=d)))
-  s.g2 <- do.call(discr.sims.radial, c(opt2, list(n=n, d=d)))
-  simout <- list(X=rbind(s.g1$X, s.g2$X),
+  s.g2 <- do.call(discr.sims.radial, c(opt2, list(n=n*3, d=d)))
+  g2.out <- list(X=NULL, Y=NULL)
+  for (y in unique(s.g1$Y)) {
+    idx.g2 <- which(s.g2$Y == y)
+    n.y <- sum(s.g1$Y == y)
+    g2.out$X <- rbind(g2.out$X, s.g2$X[idx.g2[1:n.y],])
+    g2.out$Y <- c(g2.out$Y, s.g2$Y[idx.g2[1:n.y]])
+  }
+  ord.g1 <- order(s.g1$Y)
+  simout <- list(X=rbind(s.g1$X[ord.g1,], g2.out$X),
                  Z=factor(c(rep(1, n), rep(2, n))),
-                 Y=c(s.g1$Y, s.g2$Y))
+                 Y=c(s.g1$Y[ord.g1], g2.out$Y))
   simout$d.best <- apply(simout$X, c(1), dist)  # best dimension is the radius of the point
   # worst dimension is the angle of the point in radians relative 0 rad
   simout$d.worst <- apply(simout$X, c(1), function(x) {
@@ -357,9 +381,9 @@ i2c2.twosample.driver <- function(sim, nperm=100, ...) {
 }
 
 discr.twosample.driver <- function(sim, nperm=100, ...) {
-  D1 <- discr.distance(sim$X[sim$Z == 1,])
-  D2 <- discr.distance(sim$X[sim$Z == 2,])
-  res <- discr.test.two_sample(D1, D2, Y=sim$Y[sim$Z == 1])
+  X1 <- discr.distance(sim$X[sim$Z == 1,])
+  X2 <- discr.distance(sim$X[sim$Z == 2,])
+  res <- discr.test.two_sample(X1, X2, Y=sim$Y[sim$Z == 1])
   return(data.frame(alg="Discr", pval=res$pval))
 }
 

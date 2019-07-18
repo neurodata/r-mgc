@@ -6,7 +6,8 @@
 \usage{
 discr.test.two_sample(X1, X2, Y, dist.xfm = discr.distance,
   dist.params = list(method = "euclidian"), dist.return = NULL,
-  remove.isolates = TRUE, nperm = 100, no_cores = 1)
+  remove.isolates = TRUE, nperm = 100, no_cores = 1,
+  alt = "greater")
 }
 \arguments{
 \item{X1}{is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.}
@@ -36,7 +37,7 @@ one instance of their class appearing in the \code{Y} vector. Defaults to \code{
 \item{no_cores}{the number of cores to use for the permutations. Defaults to \code{1}.}
 
 \item{alt}{the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
-or just non-equal (\code{alt = 'neq'}).}
+or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.}
 }
 \value{
 A list containing the following:

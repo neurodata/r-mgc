@@ -150,10 +150,15 @@ discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.p
   }
   # Distance transform if requested by the user.
   if (!is.dist) {
-    X <- do.call(dist.xfm, c(list(X), dist.params))
-    if (!is.null(dist.return)) {
-      X <- X[[dist.return]]
-    }
+    tryCatch({
+      X <- do.call(dist.xfm, c(list(X), dist.params))
+      if (!is.null(dist.return)) {
+        X <- X[[dist.return]]
+      }
+    }, error=function(e) {
+      print("Your distance function requested experienced an error.")
+      stop(e)
+    })
   }
   if (nrow(X) != ncol(X)) {
     stop(sprintf("Your distance function returned an invalid distance matrix. The return should be [n x n]; yours is [%d x %d].",
