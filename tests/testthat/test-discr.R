@@ -107,7 +107,7 @@ test_that("Two Sample Test Detects Relationship", {
   n = 100; d=3; nsim=10; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
-  expect_opts <- c(1, alpha, 1)
+  expect_opts <- c(1, 0, 1)
   alts <- c("greater", "less", "neq")
   # test all cases of alternatives that can be specified
   sapply(1:length(alts), function(j) {
