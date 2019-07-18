@@ -43,7 +43,7 @@ one instance of their class appearing in the \code{Y} vector. Defaults to \code{
 A list containing the following:
 \item{\code{srel}}{the relative, unpermuted discriminability you want to see is significant.}
 \item{\code{null}}{the discriminability scores of the permuted data.}
-\item{\code{pval}}{the pvalue associated with the permutation test.}
+\item{\code{p.value}}{the pvalue associated with the permutation test.}
 }
 \description{
 A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.

@@ -12,7 +12,7 @@
 #' @author Eric Bridgeford
 #' @export
 remove.isolates <- function(X, Y, is.dist=FALSE) {
-  discr.validator(X, Y, is.dist=is.dist)
+
   un.y <- as.character(unique(Y))
   id.count <- sapply(un.y, function(y) sum(Y == y))
   names(id.count) <- un.y

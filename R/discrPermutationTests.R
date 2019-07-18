@@ -27,7 +27,7 @@
 #' @return A list containing the following:
 #' \item{\code{srel}}{the relative, unpermuted discriminability you want to see is significant.}
 #' \item{\code{null}}{the discriminability scores of the permuted data.}
-#' \item{\code{pval}}{the pvalue associated with the permutation test.}
+#' \item{\code{p.value}}{the pvalue associated with the permutation test.}
 #' @author Eric Bridgeford
 #' @export
 discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.params=list(method='euclidean'),
@@ -39,14 +39,17 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
   D <- validated$D; Y <- validated$Y; N <- nrow(D)
   if (no_cores > detectCores()) {
     stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
+  } else if (no_cores >= 0.8*detectCores()) {
+    warning("You have requested a number of cores near your machine's core count. Expected decreased performance.")
   }
   tr <- discr.stat(D, Y, is.dist=TRUE)$discr
-  nr <- mclapply(1:nperm, function(i) discr.stat(D, Y[sample(N)], is.dist=TRUE)$discr,
-                 no_cores=no_cores)
+  nr <- unlist(mclapply(1:nperm, function(i) {
+    return(discr.stat(D, Y[sample(N)], is.dist=TRUE)$discr)
+    }, mc.cores=no_cores), use.names=FALSE)
   result <- list()
   result$srel <- tr
   result$null <- sort(nr)
-  result$pval <- (sum(nr>tr) + 1)/(nperm + 1)
+  result$p.value <- (sum(nr>tr) + 1)/(nperm + 1)
   return(result)
 }
 
@@ -73,7 +76,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 #' @param nperm the number of permutations for permutation test. Defualts to \code{100}.
 #' @param no_cores the number of cores to use for the permutations. Defaults to \code{1}.
 #' @param alt the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
-#' or just non-equal (\code{alt = 'neq'}).
+#' or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.
 #' @return A list containing the following:
 #' \item{\code{stat}}{the observed test statistic.}
 #' \item{\code{p.value}}{The p-value associated with the test.}
@@ -82,7 +85,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
                                   dist.params=list(method="euclidian"), dist.return=NULL,
                                   remove.isolates=TRUE, nperm=100,
-                                  no_cores=1) {
+                                  no_cores=1, alt="greater") {
 
   validated1 <- discr.validator(X1, Y, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                                 remove.isolates=remove.isolates)
@@ -97,6 +100,8 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
   }
   if (no_cores > detectCores()) {
     stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
+  } else if (no_cores >= 0.8*detectCores()) {
+    warning("You have requested a number of cores near your machine's core count. Expected decreased performance.")
   }
   # get observed D1.hat and D2.hat
   D1.hat <- discr.mnr(discr.rdf(D1, Y1)); D2.hat <- discr.mnr(discr.rdf(D2, Y1))
@@ -112,17 +117,17 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
     lambda2 <- runif(N)
     Xn2 <- lambda2*X2[idx2[,1],] + (1 - lambda2)*X2[idx2[,2],]
     D1.null <- discr.stat(Xn1, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
-                          remove.isolates=remove.isolates)
+                          remove.isolates=remove.isolates)$discr
     D2.null <- discr.stat(Xn2, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
-                          remove.isolates=remove.isolates)
+                          remove.isolates=remove.isolates)$discr
     return(list(D1hat=D1.null, D2hat=D2.null))
-  }, no_cores=no_cores)
+  }, mc.cores=no_cores)
 
-  null.diff <- sapply(1:N, function(j) {
-    sapply((j+1):N, function(j.p) {
+  null.diff <- do.call(c, sapply(1:(N-1), function(j) {
+    as.vector(sapply((j+1):N, function(j.p) {
       return(c(null.discrs[[j]]$D1hat - null.discrs[[j.p]]$D2hat, null.discrs[[j]]$D2hat - null.discrs[[j.p]]$D2hat))
-    })
-  })
+    }))
+  }))
   if (alt == 'greater') {
     stat <- D1.hat - D2.hat
     # p-value is fraction of times observed statistic is greater
