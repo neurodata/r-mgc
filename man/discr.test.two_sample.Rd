@@ -41,10 +41,11 @@ or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.}
 }
 \value{
 A list containing the following:
-\item{\code{stat}}{the observed test statistic.}
+\item{\code{stat}}{the observed test statistic. the test statistic is the difference in discriminability of X1 vs X2.}
 \item{\code{discr}}{the discriminabilities for each of the two data sets, as a list.}
 \item{\code{null}}{the null distribution of the test statistic, computed via permutation.}
 \item{\code{p.value}}{The p-value associated with the test.}
+\item{\code{alt}}{The alternative hypothesis for the test.}
 }
 \description{
 A function that takes two sets of paired data and produces a p-value associated with a test of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
