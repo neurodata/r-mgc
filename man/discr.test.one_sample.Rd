@@ -46,7 +46,20 @@ A list containing the following:
 \item{\code{p.value}}{the pvalue associated with the permutation test.}
 }
 \description{
-A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
+A function that performs a one-sample test for whether the discriminability differs from random chance.
+}
+\examples{
+
+n = 100; d=5
+
+# simulation with a large difference between the classes
+# meaning they are more discriminable
+sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10)
+X <- sim$X; Y <- sim$Y
+
+# p-value is small
+discr.test.one_sample(X, Y, nperm=100)$p.value
+
 }
 \author{
 Eric Bridgeford

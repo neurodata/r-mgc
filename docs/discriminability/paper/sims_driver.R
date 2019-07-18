@@ -384,7 +384,7 @@ discr.twosample.driver <- function(sim, nperm=100, ...) {
   X1 <- discr.distance(sim$X[sim$Z == 1,])
   X2 <- discr.distance(sim$X[sim$Z == 2,])
   res <- discr.test.two_sample(X1, X2, Y=sim$Y[sim$Z == 1])
-  return(data.frame(alg="Discr", pval=res$pval))
+  return(data.frame(alg="Discr", pval=res$p.value))
 }
 
 algs <- list(discr.twosample.driver, anova.twosample.driver, #icc.twosample.driver,

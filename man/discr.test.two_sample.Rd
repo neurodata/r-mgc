@@ -45,7 +45,25 @@ A list containing the following:
 \item{\code{p.value}}{The p-value associated with the test.}
 }
 \description{
-A function that takes two distance matrices and produces a p-value associated with whether or not the distance matrices differ significantly.
+A function that takes two sets of paired data and produces a p-value associated with a test of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
+}
+\examples{
+n = 100; d=5
+
+# generate two subjects truths; true difference btwn
+# subject 1 (column 1) and subject 2 (column 2)
+mus <- cbind(c(0, 0), c(1, 1))
+Sigma <- diag(2)  # dimensions are independent
+
+# first dataset X1 contains less noise than X2
+X1 <- do.call(rbind, lapply(1:dim(mus)[2],
+  function(k) {mvrnorm(n=50, mus[,k], 0.5*Sigma)}))
+X2 <- do.call(rbind, lapply(1:dim(mus)[2],
+  function(k) {mvrnorm(n=50, mus[,k], 2*Sigma)}))
+Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
+
+# X1 should be more discriminable, as less noise
+discr.test.two_sample(X1, X2, Y, alt="greater")
 }
 \author{
 Eric Bridgeford
