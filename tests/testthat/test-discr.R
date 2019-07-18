@@ -82,7 +82,7 @@ test_that("Two Sample Test is Valid", {
   # test all cases of alternatives that can be specified
   sapply(c("greater", "less", "neq"), function(alt) {
     res <- unlist(mclapply(1:nsim, function(i) {
-      # no true class difference
+      # no true class difference, both datasets equally discriminable
       set.seed(seed.idx[i])
       s.g1 <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=0)
       set.seed(seed.idx[i])
@@ -112,7 +112,7 @@ test_that("Two Sample Test Detects Relationship", {
   # test all cases of alternatives that can be specified
   sapply(1:length(alts), function(j) {
     res <- unlist(mclapply(1:nsim, function(i) {
-      # no true class difference
+      # true class difference, where dataset 1 more discriminable than dataset 2
       set.seed(seed.idx[i])
       s.g1 <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=2, signal.scale=1, non.scale=1)
       set.seed(seed.idx[i])
