@@ -41,8 +41,8 @@ one instance of their class appearing in the \code{Y} vector. Defaults to \code{
 }
 \value{
 A list containing the following:
-\item{\code{srel}}{the relative, unpermuted discriminability you want to see is significant.}
-\item{\code{null}}{the discriminability scores of the permuted data.}
+\item{\code{stat}}{the discriminability of the data.}
+\item{\code{null}}{the discriminability scores under the null, computed via permutation.}
 \item{\code{p.value}}{the pvalue associated with the permutation test.}
 }
 \description{

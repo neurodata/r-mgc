@@ -143,20 +143,8 @@ i2c2.onesample.driver <- function(sim, nperm=100, ...) {
 }
 
 discr.onesample.driver <- function(sim, nperm=100, ...) {
-  # relative statistic
-  N <- length(sim$Y)
-  D <- discr.distance(sim$X)
-  r <- discr.stat(D, sim$Y, is.dist=TRUE)$discr
-  # permutation approach for p-value
-  nr <- sapply(1:nperm, function(i) {
-    samplen <- sample(N)
-    # randomly permute labels
-    do.call(discr.stat, list(X=D, Y=sim$Y[samplen], is.dist=TRUE))$discr
-  })
-  # p-value is fraction of times statistic of permutations
-  # is more extreme than the relative statistic
-  p <- (sum(nr>r) + 1)/(nperm + 1)
-  return(data.frame(alg="Discr", tstat=r, pval=p))
+  res=discr.test.one_sample(sim$X, sim$Y)
+  return(data.frame(alg="Discr", tstat=res$, pval=res$p.value))
 }
 
 algs <- list(discr.onesample.driver, anova.onesample.driver, icc.onesample.driver,
