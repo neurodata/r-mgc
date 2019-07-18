@@ -1,6 +1,6 @@
 #' Discriminability One Sample Permutation Test
 #'
-#' A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
+#' A function that performs a one-sample test for whether the discriminability differs from random chance.
 #'
 #' @importFrom parallel mclapply detectCores
 #' @param X is interpreted as:
@@ -29,6 +29,19 @@
 #' \item{\code{null}}{the discriminability scores of the permuted data.}
 #' \item{\code{p.value}}{the pvalue associated with the permutation test.}
 #' @author Eric Bridgeford
+#'
+#' @examples
+#'
+#' n = 100; d=5
+#'
+#' # simulation with a large difference between the classes
+#' # meaning they are more discriminable
+#' sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10)
+#' X <- sim$X; Y <- sim$Y
+#'
+#' # p-value is small
+#' discr.test.one_sample(X, Y, nperm=100)$p.value
+#'
 #' @export
 discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.params=list(method='euclidean'),
                                   dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
@@ -55,7 +68,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 
 #' Discriminability Two Sample Permutation Test
 #'
-#' A function that takes two distance matrices and produces a p-value associated with whether or not the distance matrices differ significantly.
+#' A function that takes two sets of paired data and produces a p-value associated with a test of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
 #'
 #' @importFrom parallel mclapply detectCores
 #' @param X1 is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.
@@ -81,6 +94,24 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 #' \item{\code{stat}}{the observed test statistic.}
 #' \item{\code{p.value}}{The p-value associated with the test.}
 #' @author Eric Bridgeford
+#'
+#' @examples
+#' n = 100; d=5
+#'
+#' # generate two subjects truths; true difference btwn
+#' # subject 1 (column 1) and subject 2 (column 2)
+#' mus <- cbind(c(0, 0), c(1, 1))
+#' Sigma <- diag(2)  # dimensions are independent
+#'
+#' # first dataset X1 contains less noise than X2
+#' X1 <- do.call(rbind, lapply(1:dim(mus)[2],
+#'   function(k) {mvrnorm(n=50, mus[,k], 0.5*Sigma)}))
+#' X2 <- do.call(rbind, lapply(1:dim(mus)[2],
+#'   function(k) {mvrnorm(n=50, mus[,k], 2*Sigma)}))
+#' Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
+#'
+#' # X1 should be more discriminable, as less noise
+#' discr.test.two_sample(X1, X2, Y, alt="greater")
 #' @export
 discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
                                   dist.params=list(method="euclidian"), dist.return=NULL,
