@@ -42,6 +42,8 @@ or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.}
 \value{
 A list containing the following:
 \item{\code{stat}}{the observed test statistic.}
+\item{\code{discr}}{the discriminabilities for each of the two data sets, as a list.}
+\item{\code{null}}{the null distribution of the test statistic, computed via permutation.}
 \item{\code{p.value}}{The p-value associated with the test.}
 }
 \description{

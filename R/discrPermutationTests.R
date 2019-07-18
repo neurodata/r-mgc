@@ -25,8 +25,8 @@
 #' @param nperm the number of permutations to perform. Defaults to \code{100}.
 #' @param no_cores the number of cores to use for permutation test. Defaults to \code{1}.
 #' @return A list containing the following:
-#' \item{\code{srel}}{the relative, unpermuted discriminability you want to see is significant.}
-#' \item{\code{null}}{the discriminability scores of the permuted data.}
+#' \item{\code{stat}}{the discriminability of the data.}
+#' \item{\code{null}}{the discriminability scores under the null, computed via permutation.}
 #' \item{\code{p.value}}{the pvalue associated with the permutation test.}
 #' @author Eric Bridgeford
 #'
@@ -60,7 +60,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
     return(discr.stat(D, Y[sample(N)], is.dist=TRUE)$discr)
     }, mc.cores=no_cores), use.names=FALSE)
   result <- list()
-  result$srel <- tr
+  result$stat <- tr
   result$null <- sort(nr)
   result$p.value <- (sum(nr>tr) + 1)/(nperm + 1)
   return(result)
@@ -92,6 +92,8 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 #' or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.
 #' @return A list containing the following:
 #' \item{\code{stat}}{the observed test statistic.}
+#' \item{\code{discr}}{the discriminabilities for each of the two data sets, as a list.}
+#' \item{\code{null}}{the null distribution of the test statistic, computed via permutation.}
 #' \item{\code{p.value}}{The p-value associated with the test.}
 #' @author Eric Bridgeford
 #'
@@ -174,5 +176,5 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
   } else {
     stop("You have not entered a valid alternative.")
   }
-  return(list(p.value=p.value, stat=stat))
+  return(list(p.value=p.value, stat=stat, discr=list(X1=D1.hat, X2=D2.hat), null=null.diff))
 }
