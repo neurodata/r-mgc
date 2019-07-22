@@ -114,7 +114,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, 
 #' Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
 #'
 #' # X1 should be more discriminable, as less noise
-#' discr.test.two_sample(X1, X2, Y, alt="greater")
+#' discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
 #' @export
 discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
                                   dist.params=list(method="euclidian"), dist.return=NULL,
@@ -160,8 +160,8 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
   }, mc.cores=no_cores)
 
   # compute null distribution of difference between discriminabilities
-  null.diff <- do.call(c, sapply(1:(N-1), function(j) {
-    as.vector(sapply((j+1):N, function(j.p) {
+  null.diff <- do.call(c, sapply(1:(nperm-1), function(j) {
+    as.vector(sapply((j+1):nperm, function(j.p) {
       return(c(null.discrs[[j]]$D1hat - null.discrs[[j.p]]$D2hat, null.discrs[[j]]$D2hat - null.discrs[[j.p]]$D1hat))
     }))
   }))
