@@ -66,7 +66,7 @@ X2 <- do.call(rbind, lapply(1:dim(mus)[2],
 Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
 
 # X1 should be more discriminable, as less noise
-discr.test.two_sample(X1, X2, Y, alt="greater")
+discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
 }
 \author{
 Eric Bridgeford
