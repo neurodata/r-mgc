@@ -96,7 +96,7 @@ test_that("Two Sample Test is Valid", {
       }
       ord.g1 <- order(s.g1$Y)
       set.seed(seed.idx[i])
-      return(discr.test.two_sample(s.g1$X[ord.g1,], g2.out$X, s.g1$Y[ord.g1], alt=alt)$p.value < alpha)
+      return(discr.test.two_sample(s.g1$X[ord.g1,], g2.out$X, s.g1$Y[ord.g1], alt=alt, nperm=50)$p.value < alpha)
     }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
     # check power is near alpha
     expect_lte(abs(mean(res) - alpha), 0.1)
@@ -126,7 +126,7 @@ test_that("Two Sample Test Detects Relationship", {
       }
       ord.g1 <- order(s.g1$Y)
       set.seed(seed.idx[i])
-      return(discr.test.two_sample(s.g1$X[ord.g1,], g2.out$X, s.g1$Y[ord.g1], alt=alts[j])$p.value < alpha)
+      return(discr.test.two_sample(s.g1$X[ord.g1,], g2.out$X, s.g1$Y[ord.g1], alt=alts[j], nperm=50)$p.value < alpha)
     }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
     # check power accordingly
     expect_lte(abs(mean(res) - expect_opts[j]), 0.1)

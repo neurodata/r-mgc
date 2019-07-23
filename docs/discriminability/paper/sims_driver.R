@@ -412,13 +412,14 @@ dir.create(ts.sim.opath)
 ## Two Sample Results
 # mcapply over the number of repetitions
 results <- mclapply(experiments, function(exp) {
-  tryCatch({
+ #tryCatch({
     res <- do.call(exp$alg, list(exp$sim))
+    fout <- file.path(ts.sim.opath, sprintf("sim-%s_n-%s_i-%s_alg-%s.rds", substring(exp$sim.name, 1, 1),
+                                            exp$n, exp$i, substring(res$alg,1,1)))
     dat.out <- data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, pval=res$pval)
-    saveRDS(dat.out, file.path(ts.sim.opath, sprintf("sim-%s_n-%s_i-%s_alg-%s.rds", substring(exp$sim.name, 1, 1),
-                                                     exp$n, exp$i, substring(res$alg,1,1))))
+    saveRDS(dat.out, fout[1])
     return(dat.out)
-  }, error=function(e){print(e); return(NULL)})
+  #}, error=function(e){print(e); return(NULL)})
 }, mc.cores=no_cores)
 
 results <- do.call(rbind, results)
