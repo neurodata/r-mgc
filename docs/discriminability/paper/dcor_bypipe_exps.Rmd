@@ -1,0 +1,84 @@
+---
+title: "Explore Pipeline Results"
+author: "Eric Bridgeford"
+date: "July 25, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+require(ggplot2)
+require(scales)
+require(lme4)
+require(reshape2)
+require(plyr)
+require(dplyr)
+library(tidyr)
+require(ggbeeswarm)
+require(latex2exp)
+require(ggpubr)
+require(grid)
+require(gridExtra)
+require(stringr)
+require(data.table)
+require(abind)
+require(tidyverse)
+```
+
+
+```{r}
+results <- readRDS('./data/real/full_results_pipeline.rds')
+
+single.ds <- lapply(results, function(res) {
+  res %>%
+    subset(Dataset == "BNU1")
+  })
+
+```
+
+# Statistic vs Performance
+
+Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classification) task on the graphs embedded using the strategy indicated
+
+```{r}
+stat.vs.perf <- merge(results$stat, results$prob, by=c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm", "Dataset"))
+
+lapply(unique(stat.vs.perf$Dataset), function(ds) {
+  lapply(unique(stat.vs.perf$alg), function(al) {
+  stat.vs.perf %>%
+    subset(alg == al & Dataset == ds) %>%
+  ggplot(aes(x=stat.x, y=stat.y, color=xfm)) +
+  geom_point() +
+  facet_grid(task ~ embed, scales="free_y") +
+  theme_bw() +
+  xlab("Discriminability") +
+  ylab("Task Performance") +
+  ggtitle(sprintf("Alg=%s, Dataset=%s", as.character(al), as.character(ds)))
+})})
+```
+
+
+# Statistic vs MGC/Dcorr
+
+Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classification) task on the graphs
+
+```{r}
+stat.vs.perf <- merge(results$stat, results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm", "Dataset"))
+
+lapply(unique(stat.vs.perf$Dataset), function(ds) {
+  lapply(unique(stat.vs.perf$alg), function(al) {
+  stat.vs.perf %>%
+    subset(alg == al & Dataset == ds) %>%
+  ggplot(aes(x=stat.x, y=stat.y, color=xfm)) +
+  geom_point() +
+  facet_grid(task ~ method, scales="free_y") +
+  theme_bw() +
+  xlab("Discriminability") +
+  ylab("Task Performance") +
+  ggtitle(sprintf("Alg=%s, Dataset=%s", as.character(al), as.character(ds)))
+})})
+```
