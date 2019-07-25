@@ -6,8 +6,8 @@
 Uses cross-distance covariance and circular or stationary bootstrap.
 For univariate data, use cdcv.univ.test.}
 \usage{
-cdcv.multi.test(X, Y, M = NA, num_boot = 100, boot_type = "stationary",
-  block_size = NA)
+cdcv.multi.test(X, Y, M = NA, num_boot = 100,
+  boot_type = "stationary", block_size = NA)
 }
 \arguments{
 \item{X}{Time series as n x d_X matrix.}

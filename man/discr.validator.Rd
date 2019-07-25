@@ -4,7 +4,9 @@
 \alias{discr.validator}
 \title{Utility Validator}
 \usage{
-discr.validator(X, Y, is.dist)
+discr.validator(X, Y, is.dist = FALSE, dist.xfm = discr.distance,
+  dist.params = list(method = "euclidean"), dist.return = NULL,
+  remove.isolates = TRUE)
 }
 \arguments{
 \item{X}{is interpreted as:
@@ -15,8 +17,29 @@ discr.validator(X, Y, is.dist)
 
 \item{Y}{\code{[n]} a vector containing the sample ids for our \code{n} samples.}
 
-\item{is.dist}{a boolean indicating whether your \code{X} input is a distance matrix or not.}
+\item{is.dist}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
+
+\item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
+
+\item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
+\describe{
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
+}}
+
+\item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
+one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.}
+}
+\value{
+A list containing the following:
+\item{\code{D}}{The distance matrix, as a \code{[n x n]} matrix.}
+\item{\code{Y}}{the sample ids, as a \code{[n]} vector.}
 }
 \description{
-A script that validates that data inputs are correct.
+A script that validates that data inputs are correct, and returns a distance matrix and a ids vector.
 }

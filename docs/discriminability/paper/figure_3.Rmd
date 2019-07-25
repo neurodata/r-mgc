@@ -92,7 +92,7 @@ two.sample.powers <- two.sample.results %>%
   group_by(alg, n, sim.name) %>%
   summarize(power=mean(outcome))
 
-sim.names <- unique(one.sample.powers$sim.name)
+sim.names <- unique(two.sample.powers$sim.name)
 abbr <- c("(A)", "(B)", "(C)", "(D)", "(E)")
 ```
 
@@ -124,7 +124,7 @@ plots <- lapply(1:length(plots), function(i) {
             axis.text.y=element_text(color="#FFFFFF"))
     )
   } else {
-    return(plots[[i]] + theme(legend.position=NaN)) 
+    return(plots[[i]] + theme(legend.position=NaN))
   }
 })
 

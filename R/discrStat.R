@@ -14,16 +14,16 @@
 #' as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.
 #' @param dist.params a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
 #' Defaults to \code{list(method='euclidean')}.
-#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{NULL}.
+#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
 #' \describe{
-#'     \item{\code{is.null(dist.return)}}{use the return directly from \code{dist.xfm} as the distance matrix.}
-#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix.}
+#'     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 #' }
 #' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
 #' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
 #' @return A list containing the following:
-#' \item{\code{discr} the discriminability statistic.}
-#' \item{\code{rdf} the rdfs for each sample.}
+#' \item{\code{discr}}{the discriminability statistic.}
+#' \item{\code{rdf}}{the rdfs for each sample.}
 #'
 #' @section Details:
 #' For more details see the help vignette:
@@ -38,29 +38,13 @@
 #' @export
 discr.stat <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.params=list(method='euclidean'),
                        dist.return=NULL, remove.isolates=TRUE) {
-  if (!is.matrix(X)) {
-    tryCatch({
-      X <- as.matrix(X)
-    }, error=function(e) stop("You have not passed an object that can be coerced to a '[n x d] matrix'."))
-  }
-  # remove isolated subjects if requested.
-  if (remove.isolates) {
-    purged <- remove.isolates(X, Y, is.dist=is.dist)
-    X <- purged$X; Y <- purged$Y
-  }
-  # Distance transform if requested by the user.
-  if (!is.dist) {
-    X <- do.call(dist.xfm, c(list(X), dist.params))
-    if (!is.null(dist.return)) {
-      X <- X[[dist.return]]
-    }
-  }
-  if (length(unique(Y)) <= 1) {
-    stop("You have passed a vector containing only a single unique sample id.")
-  }
-  rdf <- discr.rdf(X, Y)
+  validated <- discr.validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                               remove.isolates=remove.isolates)
+  D <- validated$D; Y <- validated$Y
+  rdf <- discr.rdf(D, Y)
   return(list(discr=discr.mnr(rdf), rdf=rdf))
 }
+
 
 #' Reliability Density Function
 #'
@@ -115,7 +99,7 @@ discr.mnr <- function(rdf) {
 
 #' Utility Validator
 #'
-#' A script that validates that data inputs are correct.
+#' A script that validates that data inputs are correct, and returns a distance matrix and a ids vector.
 #'
 #' @param X is interpreted as:
 #' \describe{
@@ -123,8 +107,24 @@ discr.mnr <- function(rdf) {
 #'    \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
 #' }
 #' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples.
-#' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not.
-discr.validator <- function(X, Y, is.dist) {
+#' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.
+#' @param dist.xfm if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+#' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+#' as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.
+#' @param dist.params a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+#' Defaults to \code{list(method='euclidean')}.
+#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
+#' \describe{
+#'     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#' }
+#' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
+#' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
+#' @return A list containing the following:
+#' \item{\code{D}}{The distance matrix, as a \code{[n x n]} matrix.}
+#' \item{\code{Y}}{the sample ids, as a \code{[n]} vector.}
+discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.params=list(method='euclidean'),
+                            dist.return=NULL, remove.isolates=TRUE) {
   if (is.dist) {
     if (nrow(X) != ncol(X)) {
       stop("Your data is not a [n x n] distance matrix.")
@@ -133,4 +133,43 @@ discr.validator <- function(X, Y, is.dist) {
   if (nrow(X) != length(Y)) {
     stop("Your X and Y do not have the same number of samples. 'X' should be [n x d], and 'Y' should be [n].")
   }
+  if (!is.matrix(X)) {
+    tryCatch({
+      X <- as.matrix(X)
+    }, error=function(e) stop("You have not passed an object X that can be coerced to a [n x d] matrix."))
+  }
+  if (!is.vector(Y)) {
+    tryCatch({
+      Y <- as.vector(Y)
+    }, error=function(e) stop("You have not passed an object Y that can be coerced to a [n] vector."))
+  }
+  # remove isolated subjects if requested.
+  if (remove.isolates) {
+    purged <- remove.isolates(X, Y, is.dist=is.dist)
+    X <- purged$X; Y <- purged$Y
+  }
+  # Distance transform if requested by the user.
+  if (!is.dist) {
+    tryCatch({
+      X <- do.call(dist.xfm, c(list(X), dist.params))
+      if (!is.null(dist.return)) {
+        X <- X[[dist.return]]
+      }
+    }, error=function(e) {
+      print("Your distance function requested experienced an error.")
+      stop(e)
+    })
+  }
+  if (nrow(X) != ncol(X)) {
+    stop(sprintf("Your distance function returned an invalid distance matrix. The return should be [n x n]; yours is [%d x %d].",
+                 dim(X)[1], dim(X)[2]))
+  }
+  if (length(unique(Y)) <= 1) {
+    stop("You have passed a vector containing only a single unique sample id.")
+  }
+
+  if (nrow(X) != length(Y)) {
+    stop("Your distance matrix and your ids matrix do not have the same number of samples, after applying distance function.")
+  }
+  return(list(D=X, Y=Y))
 }
