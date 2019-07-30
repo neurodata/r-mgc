@@ -115,7 +115,7 @@ dset.cols <- c("#b20000", "#b26666", "#024b30", "#e5a983", "#7f5e49", "#e5b000",
 "#495280", "#542ce6", "#561880", "#ad57e6", "#e200e6", "#7f4980", 
 "#b3227d", "#e683c1", "#b2002d", "#e5577b")
 names(dset.cols) <- unique(c(as.character(fmri.results$Dataset), as.character(dmri.results$Dataset)))
-
+saveRDS(dset.cols, "dset_colors.rds")
 ```
 
 ```{r, fig.height=8, fig.width=12}

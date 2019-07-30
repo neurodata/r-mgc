@@ -47,18 +47,27 @@ Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classificat
 ```{r}
 stat.vs.perf <- merge(results$stat, results$prob, by=c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm", "Dataset"))
 
-lapply(unique(stat.vs.perf$Dataset), function(ds) {
-  lapply(unique(stat.vs.perf$alg), function(al) {
-  stat.vs.perf %>%
-    subset(alg == al & Dataset == ds) %>%
-  ggplot(aes(x=stat.x, y=stat.y, color=xfm)) +
-  geom_point() +
-  facet_grid(task ~ embed, scales="free_y") +
-  theme_bw() +
-  xlab("Discriminability") +
-  ylab("Task Performance") +
-  ggtitle(sprintf("Alg=%s, Dataset=%s", as.character(al), as.character(ds)))
-})})
+do.call(rbind, lapply(unique(stat.vs.perf$xfm), function(xf) {
+  do.call(rbind, lapply(unique(stat.vs.perf$alg), function(al) {
+    do.call(rbind, lapply(unique(stat.vs.perf$Dataset), function(ds) {
+      do.call(rbind, lapply(unique(stat.vs.perf$task), function(ta) {
+        do.call(rbind, lapply(unique(stat.vs.perf$embed), function(em) {
+          res.ds.al.ta.em <- stat.vs.perf %>%
+            filter(alg == as.character(al) & Dataset == as.character(ds) & 
+                     task == as.character(ta) & embed == as.character(em) & xfm == as.character(xf))
+          reg.fit <- lm(stat.y ~ stat.x, data=res.ds.al.ta.em)
+          return(data.frame(Dataset=ds, alg=al, task=ta, xfm=xf, embed=em, slope=reg.fit$coefficients["stat.x"],
+                            intercept=reg.fit$coefficients["(Intercept)"]))
+        }))
+      }))
+    })) %>%
+      ggplot() +
+        geom_abline(aes(slope=slope, intercept=intercept, group=Dataset)) +
+        facet_grid(task ~ embed, scales="free_y") +
+        theme_bw()
+  }))
+}))
+  
 ```
 
 
@@ -67,18 +76,42 @@ lapply(unique(stat.vs.perf$Dataset), function(ds) {
 Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classification) task on the graphs
 
 ```{r}
-stat.vs.perf <- merge(results$stat, results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm", "Dataset"))
+stat.vs.perf <- merge(results$stat, results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation", "xfm", "Dataset")) %>%
+  filter(method == "mgc")
 
-lapply(unique(stat.vs.perf$Dataset), function(ds) {
-  lapply(unique(stat.vs.perf$alg), function(al) {
-  stat.vs.perf %>%
-    subset(alg == al & Dataset == ds) %>%
-  ggplot(aes(x=stat.x, y=stat.y, color=xfm)) +
-  geom_point() +
-  facet_grid(task ~ method, scales="free_y") +
-  theme_bw() +
-  xlab("Discriminability") +
-  ylab("Task Performance") +
-  ggtitle(sprintf("Alg=%s, Dataset=%s", as.character(al), as.character(ds)))
-})})
+alg.titles <- c("Discriminability", "ANOVA", "ICC", "I2C2")
+fig.labs <- c("(A)", "(B)", "(C)", "(D)")
+
+dset.cols <- readRDS("./dset_colors.rds")
+lapply(unique(stat.vs.perf$xfm), function(xf) {
+  do.call(grid.arrange, lapply(1:length(unique(stat.vs.perf$alg)), function(i) {
+    al <- unique(stat.vs.perf$alg)[i]
+    do.call(rbind, lapply(unique(stat.vs.perf$task), function(ta) {
+      dat.task <- do.call(rbind, lapply(unique(stat.vs.perf$Dataset), function(ds) {
+        do.call(rbind, lapply(unique(stat.vs.perf$method), function(meth) {
+          res.ds.al.ta.meth <- stat.vs.perf %>%
+            filter(alg == as.character(al) & Dataset == as.character(ds) & 
+                     task == as.character(ta) & method == as.character(meth) & xfm == as.character(xf))
+          reg.fit <- lm(stat.y ~ stat.x, data=res.ds.al.ta.meth)
+          sum.fit <- summary(reg.fit)
+          pval.test <- pt(coef(sum.fit)[2,3], sum.fit$df[2], lower.tail=FALSE)
+          return(data.frame(Dataset=ds, alg=al, task=ta, xfm=xf, method=meth, slope=reg.fit$coefficients["stat.x"],
+                            intercept=reg.fit$coefficients["(Intercept)"], pval=pval.test))
+        }))
+      }))
+      sl.mean <- mean(dat.task$slope); pval.med <- median(dat.task$pval)
+      dat.task$task <- sprintf("%s, Mean(Slope)=%.3f, Med(pval)=%.3f", ta, sl.mean, pval.med)
+      return(dat.task)
+    })) %>%
+      ggplot() +
+        geom_abline(aes(slope=slope, intercept=intercept, color=Dataset, group=Dataset)) +
+        facet_grid(. ~ task, scales="free_y") +
+        theme_bw() +
+        ggtitle(sprintf("%s %s", fig.labs[i], alg.titles[i])) +
+        xlab(alg.titles[i]) +
+        ylab("Test Statistic") +
+        scale_color_manual(values=dset.cols) +
+        guides(color=FALSE)
+  }))
+})
 ```

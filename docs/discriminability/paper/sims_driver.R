@@ -270,7 +270,7 @@ sims <- list(sim.linear.ts, sim.linear.ts, #sim.linear,# discr.sims.exp,
 sims.opts <- list(list(opt1=list(K=2, signal.lshift=0), opt2=list(K=2, signal.lshift=0)),
                   list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=1, signal.scale=2)),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(opt1=list(K=2, signal.scale=10), opt2=list(K=2, signal.scale=20)),
+                  list(opt1=list(K=2, signal.scale=5), opt2=list(K=2, signal.scale=5, non.scale=5)),
                   list(opt1=list(K=2), opt2=list(K=2, er.scale=0.2)))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
