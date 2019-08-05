@@ -256,8 +256,8 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
 }))
 
 
-stats <- list(discr.os, anova.os, icc.os, i2c2.os, manova.os)
-names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2", "MANOVA")
+stats <- list(discr.os, anova.os, icc.os, i2c2.os)#, manova.os)
+names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")#, "MANOVA")
 
 graph.xfms <- list(nofn, ptr, log.xfm)
 names(graph.xfms) <- c("N", "P", "L")
@@ -278,9 +278,9 @@ dep.results <- mclapply(experiments, function(exp) {
   o.path <- file.path(dep.res.path, paste0("dep_dset-", exp$Dataset, "_",
                                           paste0(exp$Reg, exp$FF, exp$Scr, exp$GSR, exp$Parcellation), ".rds"))
   tryCatch({
-    #if (file.exists(o.path)) {
-    #  return(readRDS(o.path))
-    #} else {
+    if (file.exists(o.path)) {
+     return(readRDS(o.path))
+    } else {
       graphs <- cpac.open_graphs(exp$dat.path, dataset_id=exp$Dataset,
                                  atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten=FALSE)
 
@@ -304,12 +304,6 @@ dep.results <- mclapply(experiments, function(exp) {
           }, error=function(e) {return(NULL)})
         }))
 
-        graphs.embedded <- list(
-          raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x)))),
-          mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
-        )
-        graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
-
         pheno.dat <- read.csv(exp$pheno.path)
         pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
         pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
@@ -319,48 +313,11 @@ dep.results <- mclapply(experiments, function(exp) {
           pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
         }
 
-        # task.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
-        #   tryCatch({
-        #     embed.graphs <- graphs.embedded[[embed]]
-        #     # aggregate results across all subjects; report RMSE at current r
-        #     age.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
-        #       training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
-        #       testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
-        #       # predict for held-out subject
-        #       trained.age.rf <- randomForest(embed.graphs[training.set,], y=as.numeric(pheno.scans$AGE_AT_SCAN_1[training.set]))
-        #       preds.age.rf <- predict(trained.age.rf, embed.graphs[testing.set,])
-        #       return(data.frame(true=pheno.scans$AGE_AT_SCAN_1[testing.set],
-        #                         pred=preds.age.rf, subject=sub))
-        #     }))
-        #     # compute rmse between predicted and actual after holdout procedure
-        #     age.sum <- data.frame(Metric="RMSE", Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-        #                           Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
-        #                           nsub=length(unique(graphs$subjects)),
-        #                           nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-        #                           nroi=sqrt(dim(flat.gr$array)[2]), task="Age",
-        #                           stat=rmse(age.res$true, age.res$pred), embed=embed, null=var(age.res$true))
-        #
-        #     sex.res <- do.call(rbind, lapply(unique(graphs$subjects), function(sub) {
-        #       training.set <- which(graphs$subjects != sub)  # hold out same-subjects from training set
-        #       testing.set <- which(graphs$subjects == sub)  # validate over all scans for this subject
-        #       trained.sex.rf <- randomForest(embed.graphs[training.set,], y=factor(pheno.scans$SEX[training.set]))
-        #       preds.sex.rf <- predict(trained.sex.rf, embed.graphs[testing.set,])
-        #       return(data.frame(true=as.numeric(as.character(pheno.scans$SEX[testing.set])),
-        #                         pred=as.numeric(as.character(preds.sex.rf))))
-        #     }))
-        #
-        #     sex.sum <- data.frame(Metric="MR", Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-        #                           Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
-        #                           nsub=length(unique(graphs$subjects)),
-        #                           nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-        #                           nroi=sqrt(dim(flat.gr$array)[2]), task="Sex",
-        #                           stat=mean(sex.res$true != sex.res$pred), embed=embed,
-        #                           null=min(sapply(unique(pheno.scans$SEX), function(sex) mean(pheno.scans$SEX == sex))))
-        #
-        #     return(rbind(age.sum, sex.sum))
-        #   }, error=function(e) {return(NULL)})
-        # }))
-
+        graphs.embedded <- list(
+          raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x))))#,
+        #  mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
+        )
+        #graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
 
         dcor.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
           embed.graphs <- graphs.embedded[[embed]]
@@ -377,35 +334,32 @@ dep.results <- mclapply(experiments, function(exp) {
                                       Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
                                       nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                                      nroi=sqrt(dim(flat.gr$array)[2]), task="Age",
+                                      nroi=sqrt(dim(flat.gr$array)[2]), task="Age", embed=embed,
                                       stat=dep.age$statistic, pval=dep.age$p.value, method=dep),
                            data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
                                       Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
                                       nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
-                                      nroi=sqrt(dim(flat.gr$array)[2]), task="Sex",
+                                      nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", embed=embed,
                                       stat=dep.sex$statistic, pval=dep.sex$p.value, method=dep)))
             }, error=function(e) {return(e)})
           })))
         }))
 
-        return(list(statistics=stat.res, problem=task.res, dcor=dcor.res))
+        return(list(statistics=stat.res, dcor=dcor.res))
       })
       stat.result <- do.call(rbind, lapply(result, function(res) res$statistics))
-      #task.result <- do.call(rbind, lapply(result, function(res) res$problem))
       dcor.result <- do.call(rbind, lapply(result, function(res) res$dcor))
 
-      #result <- list(statistics=stat.result, problem=task.result, dcor=dcor.result)
       result <- list(statistics=stat.result, dcor=dcor.result)
 
       saveRDS(result, o.path)
       return(result)
-    #}
+    }
   }, error=function(e) {return(NULL)})
 }, mc.cores=no_cores)
 
 robj <- list(statistics=do.call(rbind, lapply(dep.results, function(res) res$statistics)),
-             #problem=do.call(rbind, lapply(dep.results, function(res) res$problem)),
              dcor=do.call(rbind, lapply(dep.results, function(res) res$dcor)))
 
 saveRDS(robj, file.path(opath, "dep_wt_fmri_results.rds"))

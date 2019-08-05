@@ -537,6 +537,8 @@ discr.sims.fat_tails <- function(n, d, K, signal.scale=1, rotate=FALSE, class.eq
 #' @param K the number of classes in the dataset.
 #' @param signal.scale the scaling for the signal dimension. Defaults to \code{10}.
 #' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
+#' @param mean.scale whether the magnitude of the difference in the means between the two classes.
+#' If a mean scale is requested, \code{d} should be at least > \code{K}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
@@ -546,7 +548,8 @@ discr.sims.fat_tails <- function(n, d, K, signal.scale=1, rotate=FALSE, class.eq
 #' sim <- discr.sims.spread(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-discr.sims.cross <- function(n, d, K, signal.scale=10, non.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+discr.sims.cross <- function(n, d, K, signal.scale=10, non.scale=1, mean.scale=0,
+                             rotate=FALSE, class.equal=TRUE, ind=FALSE) {
   priors <- gen.sample.labels(K, class.equal=class.equal)
   S <- diag(d)
   S <- abind(lapply(1:K, function(i) {
@@ -556,6 +559,12 @@ discr.sims.cross <- function(n, d, K, signal.scale=10, non.scale=1, rotate=FALSE
     S.class
   }), along=3)
   mus <- array(0, dim=c(d, K))
+  if (mean.scale > 0) {
+    if (d < K) {
+      stop("If a mean scale is requested, d should be >= K.")
+    }
+    diag(mus) <- mean.scale
+  }
 
   if (rotate) {
     res <- mgc.sims.random_rotate(mus, S)
