@@ -1,0 +1,98 @@
+---
+title: "Dcor Analysis"
+author: "Eric Bridgeford"
+date: "July 2, 2019"
+output: html_document
+---
+
+```{r setup, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(dplyr)
+require(tidyr)
+require(latex2exp)
+```
+
+# fMRI Figure
+
+```{r}
+base.dcor.path <- "/data/stat_discr_cmp/dcor_results/"
+results <- lapply(list.files(path=base.dcor.path, full.names = TRUE, pattern="*.rds"), function(fl) {
+  if (grepl("BNU1", fl)) {
+    return(readRDS(fl))
+  } else {
+    return(NULL)
+  }
+})
+discr.results <- do.call(rbind, lapply(results, function(res) res$statistics)) %>%
+  group_by(alg) %>%
+  mutate(stat.norm=(stat - min(stat))/(max(stat) - min(stat)))
+dcor.results <- do.call(rbind, lapply(results, function(res) res$problem)) %>%
+  group_by(method, embed, task) %>%
+  mutate(stat.norm=(stat-min(stat))/(max(stat) - min(stat)))
+
+max.stat <- discr.results %>%
+  group_by(alg) %>%
+  slice(which.max(stat))
+
+max.prob  <- dcor.results %>%
+  group_by(embed, task, method) %>%
+  slice(which.max(stat))
+```
+
+# Single Dataset
+
+```{r}
+ggplot(discr.results, aes(x=thresh, y=stat.norm)) +
+  geom_line(color="black") +
+  geom_point(data=max.stat, aes(x=thresh, y=stat.norm)) +
+  facet_grid(embed~alg) +
+  geom_line(data=dcor.results, aes(color=method, linetype=embed, x=thresh, 
+                                   y=stat.norm, shape=task, group=interaction(embed, method, task))) +
+  geom_point(data=max.prob, aes(color=method, linetype=embed, x=thresh, 
+                                    y=stat.norm, shape=task, group=interaction(embed, method, task))) +
+  theme_bw() +
+  ggtitle("BNU1 Results")
+```
+
+# All Datasets
+
+```{r}
+dset.results <- readRDS('../paper/data/real/dcor_thr_fmri_results.rds')
+rel.results <- dset.results$statistics
+dcor.results <- dset.results$problem
+
+
+max.rel <- rel.results %>%
+  group_by(alg, Dataset) %>%
+  slice(which.max(stat))
+
+max.dcor <- dcor.results %>%
+  group_by(method, embed, Dataset, task) %>%
+  slice(which.max(stat))
+```
+
+```{r}
+alg.plots <- lapply(as.character(unique(max.rel$alg)), function(algo) {
+  merge(subset(max.rel, alg == algo), max.dcor, by="Dataset") %>%
+    ggplot(aes(color=Dataset, x=thresh.x, y=thresh.y, shape=task)) +
+      geom_point() +
+      xlab(TeX("$\\hat{t}_{stat}$")) +
+      ylab(TeX("$\\hat{t}_{task}$")) +
+      facet_grid(method ~ embed) +
+      theme_bw() +
+      ggtitle(algo) +
+      guides(color=FALSE) +
+      # scale_x_continuous(limits = c(0, 1)) +
+      # scale_y_continuous(limits=c(0, 1)) +
+      geom_abline(linetype="dashed", slope=1, intercept=0, show.legend=FALSE)
+})
+
+grid.arrange(grobs=alg.plots)
+```
