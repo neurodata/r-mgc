@@ -280,7 +280,7 @@ dep.results <- mclapply(experiments, function(exp) {
   tryCatch({
     if (file.exists(o.path)) {
      return(readRDS(o.path))
-    } else {
+    } else if (file.exists(exp$pheno.path)) {
       graphs <- cpac.open_graphs(exp$dat.path, dataset_id=exp$Dataset,
                                  atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten=FALSE)
 
@@ -308,16 +308,27 @@ dep.results <- mclapply(experiments, function(exp) {
         pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
         pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
         pheno.dat <- pheno.dat[, c("SUBID", "AGE_AT_SCAN_1", "SEX")]
-        pheno.scans <- pheno.dat[sapply(as.numeric(graphs$subjects), function(x) which(x == pheno.dat$SUBID)),]
+        matched.idx <- lapply(as.numeric(graphs$subjects), function(x) {
+          match <- which(x == pheno.dat$SUBID)
+          if (length(match) > 0) {
+            return(match)
+          } else {
+            return(NULL)
+          }
+        })
+        retain.idx <- which(sapply(matched.idx, is.null))
+        matched.idx <- unlist(matched.idx[-retain.idx])
+        test$graphs <- test$graphs[-retain.idx]
+        pheno.scans <- pheno.dat[matched.idx,]
         if (exp$Dataset == "KKI2009") {
           pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
         }
 
         graphs.embedded <- list(
           raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x))))#,
-        #  mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
+          mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
         )
-        #graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
+        graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
 
         dcor.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
           embed.graphs <- graphs.embedded[[embed]]

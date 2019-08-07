@@ -43,7 +43,7 @@ sims <- list(sim.linear.os, sim.linear.os, #sim.linear,# discr.sims.exp,
              sim.cross.os, sim.radial.os)#, discr.sims.beta)
 sims.opts <- list(list(K=2, signal.lshift=0), list(K=2, signal.lshift=1),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(K=2, signal.scale=20), list(K=2))#,
+                  list(K=2, signal.scale=5, mean.scale=1), list(K=2))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
 
@@ -69,7 +69,7 @@ anova.onesample.driver <- function(sim, ...) {
   names(Xrs) <- c("ANOVA, best", "ANOVA, worst")
   result <- lapply(seq_along(Xrs), function(Xrs, algs, i) {
     res <- anova.os(Xrs[[i]], sim$Y)
-    return(data.frame(alg=algs[[i]], tstat=res$f, pval=res$p))
+    return(data.frame(alg=algs[[i]], tstat=res$f, p.value=res$p))
   }, Xrs=Xrs, algs=names(Xrs))
   res <- do.call(rbind, result)
   return(res)
@@ -107,7 +107,7 @@ icc.onesample.driver <- function(sim, nperm=100, ...) {
     # p-value is fraction of times statistic of permutations
     # is more extreme than the relative statistic
     p <- (sum(nr>r) + 1)/(nperm + 1)
-    return(data.frame(alg=algs[[i]], tstat=r, pval=p))
+    return(data.frame(alg=algs[[i]], tstat=r, p.value=p))
   }, Xrs=Xrs, algs=names(Xrs))
   res <- do.call(rbind, result)
   return(res)
@@ -117,7 +117,7 @@ icc.onesample.driver <- function(sim, nperm=100, ...) {
 manova.onesample.driver <- function(sim) {
   fit <- manova(sim$X ~ sim$Y)
   return(data.frame(alg="MANOVA", tstat=summary(fit)$stats["sim$Y", "approx F"],
-                    pval=summary(fit)$stats["sim$Y", "Pr(>F)"]))
+                    p.value=summary(fit)$stats["sim$Y", "Pr(>F)"]))
 }
 
 # I2C2 wrapper
@@ -139,12 +139,12 @@ i2c2.onesample.driver <- function(sim, nperm=100, ...) {
   # p-value is fraction of times statistic of permutations
   # is more extreme than the relative statistic
   p <- (sum(nr>r) + 1)/(nperm + 1)
-  return(data.frame(alg="I2C2", tstat=r, pval=p))
+  return(data.frame(alg="I2C2", tstat=r, p.value=p))
 }
 
 discr.onesample.driver <- function(sim, nperm=100, ...) {
   res=discr.test.one_sample(sim$X, sim$Y)
-  return(data.frame(alg="Discr", tstat=res$stat, pval=res$p.value))
+  return(data.frame(alg="Discr", tstat=res$stat, p.value=res$p.value))
 }
 
 algs <- list(discr.onesample.driver, anova.onesample.driver, icc.onesample.driver,
@@ -182,8 +182,10 @@ experiments <- do.call(c, lapply(seq_along(sims), function(sims, sims.names, sim
 ## One Sample Results
 # mcapply over the number of repetitions
 results <- mclapply(experiments, function(exp) {
-  res <- do.call(exp$alg, list(exp$sim))
-  return(data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, tstat=res$tstat, pval=res$pval))
+  tryCatch({
+    res <- do.call(exp$alg, list(exp$sim))
+    return(data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, tstat=res$tstat, p.value=res$p.value))
+  }, error=function(e) {return(NULL)})
 }, mc.cores=no_cores)
 
 results <- do.call(rbind, results)
@@ -270,7 +272,7 @@ sims <- list(sim.linear.ts, sim.linear.ts, #sim.linear,# discr.sims.exp,
 sims.opts <- list(list(opt1=list(K=2, signal.lshift=0), opt2=list(K=2, signal.lshift=0)),
                   list(opt1=list(K=2, signal.lshift=1), opt2=list(K=2, signal.lshift=1, signal.scale=2)),
                   #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
-                  list(opt1=list(K=2, signal.scale=5), opt2=list(K=2, signal.scale=5, non.scale=5)),
+                  list(opt1=list(K=2, signal.scale=5, mean.scale=1), opt2=list(K=2, signal.scale=5, non.scale=5, mean.scale=1)),
                   list(opt1=list(K=2), opt2=list(K=2, er.scale=0.2)))#,
 sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
                 "Cross", "Radial")
@@ -295,7 +297,7 @@ anova.twosample.driver <- function(sim, ...) {
   names(Xrs) <- c("ANOVA, best", "ANOVA, worst")
   result <- lapply(seq_along(Xrs), function(Xrs, algs, i) {
     res <- anova.ts(Xrs[[i]], sim$Y, sim$Z)
-    return(data.frame(alg=algs[[i]], tstat=res$f, pval=res$p))
+    return(data.frame(alg=algs[[i]], tstat=res$f, p.value=res$p))
   }, Xrs=Xrs, algs=names(Xrs))
   res <- do.call(rbind, result)
   return(res)
@@ -333,7 +335,7 @@ icc.twosample.driver <- function(sim, nperm=100, ...) {
     # p-value is fraction of times statistic of permutations
     # is more extreme than the relative statistic
     p <- (sum(nr>r) + 1)/(nperm + 1)
-    return(data.frame(alg=algs[[i]], tstat=r, pval=p))
+    return(data.frame(alg=algs[[i]], tstat=r, p.value=p))
   }, Xrs=Xrs, algs=names(Xrs))
   res <- do.call(rbind, result)
   return(res)
@@ -343,7 +345,7 @@ icc.twosample.driver <- function(sim, nperm=100, ...) {
 manova.twosample.driver <- function(sim) {
   fit <- manova(sim$X ~ sim$Y*sim$Z)
   return(data.frame(alg="MANOVA", tstat=summary(fit)$stats["sim$Y:sim$Z", "approx F"],
-                    pval=summary(fit)$stats["sim$Y:sim$Z", "Pr(>F)"]))
+                    p.value=summary(fit)$stats["sim$Y:sim$Z", "Pr(>F)"]))
 }
 
 # I2C2 wrapper
@@ -365,14 +367,14 @@ i2c2.twosample.driver <- function(sim, nperm=100, ...) {
   # p-value is fraction of times statistic of permutations
   # is more extreme than the relative statistic
   p <- (sum(nr>r) + 1)/(nperm + 1)
-  return(data.frame(alg="I2C2", tstat=r, pval=p))
+  return(data.frame(alg="I2C2", tstat=r, p.value=p))
 }
 
 discr.twosample.driver <- function(sim, nperm=100, ...) {
   X1 <- discr.distance(sim$X[sim$Z == 1,])
   X2 <- discr.distance(sim$X[sim$Z == 2,])
   res <- discr.test.two_sample(X1, X2, Y=sim$Y[sim$Z == 1])
-  return(data.frame(alg="Discr", pval=res$p.value))
+  return(data.frame(alg="Discr", p.value=res$p.value))
 }
 
 algs <- list(discr.twosample.driver, anova.twosample.driver, #icc.twosample.driver,
@@ -412,14 +414,10 @@ dir.create(ts.sim.opath)
 ## Two Sample Results
 # mcapply over the number of repetitions
 results <- mclapply(experiments, function(exp) {
- #tryCatch({
+ tryCatch({
     res <- do.call(exp$alg, list(exp$sim))
-    fout <- file.path(ts.sim.opath, sprintf("sim-%s_n-%s_i-%s_alg-%s.rds", substring(exp$sim.name, 1, 1),
-                                            exp$n, exp$i, substring(res$alg,1,1)))
-    dat.out <- data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, pval=res$pval)
-    saveRDS(dat.out, fout[1])
-    return(dat.out)
-  #}, error=function(e){print(e); return(NULL)})
+    return(data.frame(sim.name=exp$sim.name, n=exp$n, i=exp$i, alg=res$alg, p.value=res$p.value))
+  }, error=function(e){return(NULL)})
 }, mc.cores=no_cores)
 
 results <- do.call(rbind, results)

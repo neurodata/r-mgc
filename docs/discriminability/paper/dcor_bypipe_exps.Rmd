@@ -31,7 +31,7 @@ require(tidyverse)
 
 
 ```{r}
-results <- readRDS('./data/real/full_results_pipeline.rds')
+results <- readRDS('./data/real/dep_wt_fmri_results.rds')
 
 dset.cols <- readRDS("./dset_colors.rds")
 
@@ -51,7 +51,7 @@ Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classificat
 ```{r}
 stat.vs.perf <- merge(results$stat, results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation",
                                                        "xfm", "Dataset", "nsub", "nses", "nroi", "nscans")) %>%
-  filter(method == "mgc") %>%
+  filter(method == "mgc" & xfm == "N" & embed == "raw") %>%
   mutate(alg=recode_factor(alg, "Discr" = "(i) Discr", "ANOVA" = "(ii) ANOVA o PCA", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2")) %>%
   subset(Dataset != "IPCAS6")
 
