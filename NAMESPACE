@@ -3,7 +3,6 @@
 export(cdcv.multi.test)
 export(cdcv.univ.test)
 export(discr.distance)
-export(discr.sims.beta)
 export(discr.sims.cross)
 export(discr.sims.exp)
 export(discr.sims.fat_tails)

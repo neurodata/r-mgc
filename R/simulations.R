@@ -631,44 +631,6 @@ discr.sims.radial <- function(n, d, K, er.scale=0.1, r=1, class.equal=TRUE, ind=
                           ind=ind)))
 }
 
-#' Discriminability Beta Simulation
-#'
-#' Signal Dimension is beta-distributed; remainder are Uniform 0, 1
-#'
-#' @import abind
-#' @param n the number of samples.
-#' @param d the number of dimensions.
-#' @param class.equal whether the number of samples/class should be equal, with each
-#' class having a prior of 1/K, or inequal, in which each class obtains a prior
-#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
-#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
-#' @author Eric Bridgeford
-#' @export
-discr.sims.beta <- function(n, d, class.equal=TRUE, ind=FALSE) {
-  K <- 5
-  priors <- gen.sample.labels(K, class.equal=class.equal)
-  class <- 1:K
-  # sample n points from 1:K for assignment of class label
-  Y <- sample(class, size=n, replace=TRUE, prob=priors)
-  # initialize X
-  X <- array(NaN, dim=c(n, d))
-  alpha <-c(5, 5, 5, 2, 1)
-  beta <- c(1, 2, 5, 5, 5)
-  for (i in 1:K) {
-    # fill the top dimension with beta distributed data
-    X[Y == i,1] <- rbeta(sum(Y == i), alpha[i], beta[i])
-  }
-  if (d > 1) {
-    X[, 2:d] <- runif(n*(d - 1))  # fill the rest with uniforms
-  }
-  if (ind) {
-    Y <- sample(class, size=n, replace=TRUE, prob=priors)
-  }
-  return(list(X=X, Y=factor(Y), priors=priors, simtype="Beta",
-              params=list(alpha=alpha, beta=beta)))
-}
-
-
 #' A helper function for simulating sample labels
 #' @param K the number of classes
 #' @param class.equal whether the number of samples/class should be equal, with each

@@ -37,22 +37,29 @@ plot_sim <- function(X, Y, name) {
 # Linear
 
 ```{r}
-sim <- discr.sims.linear(n, d, K, mean=3)
+sim <- discr.sims.linear(n, d, K, signal.lshift=3)
 plot_sim(sim$X, sim$Y, "Linear")
-```
-
-# Logarithmic
-
-```{r}
-sim <- discr.sims.log(n, d, K, mean=8)
-plot_sim(sim$X, sim$Y, "Logarithmic")
 ```
 
 # Spread
 
 ```{r}
-sim <- discr.sims.spread(n, d, K)
-plot_sim(sim$X, sim$Y, "Spread")
+sim <- discr.sims.fat_tails(n, d, K)
+plot_sim(sim$X, sim$Y, "Fat Tails")
+```
+
+# Cross
+
+```{r}
+sim <- discr.sims.cross(n, d, 2)
+plot_sim(sim$X, sim$Y, "Cross")
+```
+
+#
+
+```{r}
+sim <- discr.sims.beta(n, d)
+plot_sim(sim$X, sim$Y, "Beta")
 ```
 
 # Radial
