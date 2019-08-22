@@ -229,6 +229,21 @@ result <- rbind(data.frame(discr=reg.result$discr, Option="FSL - ANTs"),
                 data.frame(discr=edge.result$discr, Option="PTR - max(others)"))
 ```
 
+# Significance Analysis
+
+```{r}
+sig.test <- lapply(as.character(unique(result$Option)), function(opt) {
+  res.opt <- subset(result, Option == as.character(opt))
+  # wilcox signed-rank paired test on the difference btwn best and second best option
+  test.res <- wilcox.test(res.opt$discr, rep(0, length(res.opt$discr)), alternative = "two.sided")
+  # multiple hypothesis correction
+  test.res$p.value <- test.res$p.value * length(as.character(unique(result$Option)))
+  return(test.res)
+})
+names(sig.test) <- as.character(unique(result$Option))
+print(sig.test)
+```
+
 ```{r}
 set.seed(1234)
 ggplot(result, aes(x=Option, y=discr, color=Option)) +

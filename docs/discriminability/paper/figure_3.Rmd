@@ -29,7 +29,8 @@ g_legend<-function(a.gplot){
 }
 acols <- c("#FF0000", "#BBBBBB", "#BBBBBB", "#9997c9", "#778899", "#778899", "#387DC3")
 linetypes <- c(1, 1, 2, 1, 1, 2, 1)
-names(linetypes) <- names(acols) <- c("Discr", "ICC, best", "ICC, worst", "I2C2", "ANOVA, best", "ANOVA, worst", "MANOVA")
+names(linetypes) <- names(acols) <- c("Discr", "ICC, best", "ICC, worst", "I2C2", "ANOVA, best",
+                                      "ANOVA, worst", "MANOVA")
 ```
 
 
@@ -38,7 +39,7 @@ names(linetypes) <- names(acols) <- c("Discr", "ICC, best", "ICC, worst", "I2C2"
 ```{r}
 alpha = 0.05
 one.sample.results <- readRDS('data/sims/discr_sims_os.rds') %>%
-  mutate(outcome = as.numeric(pval < alpha), n=as.numeric(n))
+  dplyr::mutate(outcome = as.numeric(p.value < alpha), n=as.numeric(n))
 
 one.sample.powers <- one.sample.results %>%
   group_by(alg, n, sim.name) %>%
@@ -86,7 +87,7 @@ grid.arrange(arrangeGrob(grobs=(plots), nrow=1), leg, top=textGrob("One Sample R
 ```{r}
 alpha = 0.05
 two.sample.results <- readRDS('data/sims/discr_sims_ts.rds') %>%
-  mutate(outcome = as.numeric(pval < alpha), n=as.numeric(n))
+  mutate(outcome = as.numeric(p.value < alpha), n=as.numeric(n))
 
 two.sample.powers <- two.sample.results %>%
   group_by(alg, n, sim.name) %>%

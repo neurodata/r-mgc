@@ -31,15 +31,9 @@ require(tidyverse)
 
 
 ```{r}
-results <- readRDS('./data/real/dep_wt_fmri_results.rds')
+results <- readRDS('../data/real/dep_wt_fmri_results.rds')
 
-dset.cols <- readRDS("./dset_colors.rds")
-
-single.ds <- lapply(results, function(res) {
-  res %>%
-    subset(Dataset == "BNU1")
-  })
-
+dset.cols <- readRDS("../dset_colors.rds")
 ```
 
 # Statistic vs MGC/Dcorr
@@ -48,12 +42,13 @@ Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classificat
 
 output figure should be 7 x 4.5 and then edited in illustrator
 
+
 ```{r}
 stat.vs.perf <- merge(results$stat, results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation",
                                                        "xfm", "Dataset", "nsub", "nses", "nroi", "nscans")) %>%
   filter(method == "mgc" & xfm == "N" & embed == "raw") %>%
   subset(Dataset != "IPCAS6" & alg != "ANOVA") %>%
-  mutate(alg=recode_factor(alg, "Discr" = "(i) Discr", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2"))# , "ANOVA" = "(ii) ANOVA o PCA", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2"))
+  mutate(alg=recode_factor(alg, "Discr" = "(i) Discr", "ICC" = "(ii) ICC o PCA", "I2C2" = "(iii) I2C2"))# , "ANOVA" = "(ii) ANOVA o PCA", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2"))
 
 task.titles <- c("(A)", "(B)")
 task.names <- c("Sex"="Sex (Classification)", "Age"="Age (Regression)")
@@ -63,7 +58,8 @@ lapply(unique(stat.vs.perf$xfm), function(xf) {
   tasks <- sort(unique(stat.vs.perf$task))
   do.call(grid.arrange, c(lapply(1:length(tasks), function(i) {
     ta <- as.character(tasks[i])
-    do.call(rbind, lapply(unique(stat.vs.perf$alg), function(al) {
+    res.task <- lapply(unique(stat.vs.perf$alg), function(al) {
+      # obtain the min/max over datasets so that we can normalize the statistics
       minmax.dat <- stat.vs.perf %>%
         filter(alg == as.character(al)& task == as.character(ta) & 
                xfm == as.character(xf)) %>%
@@ -72,29 +68,44 @@ lapply(unique(stat.vs.perf$xfm), function(xf) {
         summarise(min.x=min(stat.x), max.x=max(stat.x), min.y=min(stat.y), max.y=max(stat.y))
       dat.task <- do.call(rbind, lapply(unique(stat.vs.perf$Dataset), function(ds) {
         do.call(rbind, lapply(unique(stat.vs.perf$method), function(meth) {
+          # normalize data to 0-1 to facilitate between statistic comparisons
           res.ds.al.ta.meth <- stat.vs.perf %>%
             filter(alg == as.character(al) & Dataset == as.character(ds) & 
                      task == as.character(ta) & method == as.character(meth) & xfm == as.character(xf)) %>%
             mutate(stat.x=(stat.x - minmax.dat$min.x)/(minmax.dat$max.x - minmax.dat$min.x), 
                    stat.y=(stat.y - minmax.dat$min.y)/(minmax.dat$max.y - minmax.dat$min.y))
+          # regress the effect size onto the observed statistic of interest
           reg.fit <- lm(stat.y ~ stat.x, data=res.ds.al.ta.meth)
+          # compute the p-value for the test that B > 0
           sum.fit <- summary(reg.fit)
           fit.sl <- reg.fit$coefficients["stat.x"]; fit.in <- reg.fit$coefficients["(Intercept)"]
           pval.test <- pt(coef(sum.fit)[2,3], sum.fit$df[2], lower.tail=FALSE)
+          # compute the reference statistic min/max observed after normalization so that
+          # we can plot chords instead of full lines
           min.x <- min(res.ds.al.ta.meth$stat.x); max.x <- max(res.ds.al.ta.meth$stat.x)
+          # compute the predicted effect sizes at the reference statistic min/max
           do.call(rbind, lapply(c(min.x, max.x), function(xval) {
-            return(data.frame(Dataset=ds, alg=al, task=ta, xfm=xf, method=meth, 
+            return(data.frame(Dataset=ds, alg=al, task=ta, xfm=xf, method=meth, intercept=fit.in,
                             size=unique(res.ds.al.ta.meth$nsub)[1], x.pos=xval, slope=fit.sl,
                             y.pos=fit.sl*xval + fit.in, pval=pval.test))
           }))
         }))
       }))
-      sl.mean <- mean(dat.task$slope); pval.med <- median(dat.task$pval)
+      # weighted mean slope by #subjects and fisher-corrected p-value
+      sl.mean <- weighted.mean(dat.task$slope, dat.task$size); pval.med <- median(dat.task$pval)
+      int.mean <- weighted.mean(dat.task$intercept, dat.task$size)
       dat.task$alg <- sprintf("%s, Mean(Slope)=%.3f, pval=%.3f", al, sl.mean, pval.med)
-      return(dat.task)
-    })) %>%
+      return(list(task.dat=dat.task, task.sum=data.frame(slope=sl.mean, intercept=int.mean, alg=dat.task$alg)))
+    })
+    
+    task.dat <- do.call(rbind, lapply(res.task, function(x) x$task.dat))
+    task.sum <- do.call(rbind, lapply(res.task, function(x) x$task.sum))
+    
+    task.dat %>%
       ggplot(aes(x=x.pos, y=y.pos, color=Dataset, group=Dataset, size=log(size))) +
-        geom_line() +
+        geom_line(alpha=0.5) +
+        geom_abline(data=task.sum, aes(intercept=intercept, slope=slope), size=1.2,
+                    linetype="solid") +
         facet_grid(. ~ alg) +
         theme_bw() +
         ggtitle(sprintf("%s %s", task.titles[i], task.names[ta])) +
@@ -103,7 +114,9 @@ lapply(unique(stat.vs.perf$xfm), function(xf) {
         scale_color_manual(values=dset.cols) +
         guides(color=FALSE) +
         scale_size(range=c(0.5, 3)) +
+        scale_y_continuous(limits=c(-.1, 1), breaks=c(0.00, 0.25, 0.50, 0.75, 1.00)) +
         guides(size=FALSE, color=FALSE)
   }), list(nrow=2)))
 })
 ```
+
