@@ -1,0 +1,125 @@
+---
+title: "Figure 1"
+author: "Eric Bridgeford"
+date: "November 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(lolR)
+```
+
+```{r}
+w=.8
+h=.2
+mcols <- c("#FF8C00", "#0e3ec1","#469990", "#FF0000", "#8A2BE2") #"#8B4513")
+names(mcols) <- c("1", "2", "3", "4", "5")
+sim_twod_scatter <- function(X, Y, title="", xlab="", ylab="", nbreaks=4, d=c(1, 2)) {
+  reorder <- c()
+  for (y in unique(Y)) {
+    reorder <- c(reorder, sample(1:dim(X[Y == y,])[1], size=dim(X[Y==y,])[1], replace=FALSE))
+  }
+  
+  df.dat <- data.frame(d1=X[, d[1]], d2=X[, d[2]], class=as.factor(Y))
+  plot_sims <- ggplot(df.dat, aes(x=d1, y=d2, color=class)) +
+    geom_point(alpha=0.7) +
+    #xlab(paste("Dimension", d[1])) +
+    #ylab(paste("Dimension", d[2])) +
+    xlab(xlab) +
+    ylab(ylab) +
+    ggtitle(title) +
+    theme_bw() +
+    #xlim(xlims) +
+    #ylim(ylims) +
+    theme() +
+    theme(plot.margin = unit(c(h,w,h,h), "cm")) +
+    scale_color_manual(values=mcols)#, guide=guide_legend(title.position="top", title.hjust = .5))
+  return(plot_sims)
+}
+
+sim_dmtx <- function(X, Y, title="", xlab="", ylab="") {
+  reorder <- sort.int(Y, index.return=TRUE)$ix
+  X <- X[reorder,]; Y <- Y[reorder]
+  D <- log(as.matrix(mgc:::discr.distance(X)))
+  D.df <- melt(D)
+  names(D.df) <- c("Sample1", "Sample2", "Distance")
+  fvals <- c(min(D.df$Distance), max(D.df$Distance))
+  names(fvals) <- c( "#CCCCCC", "#111111")
+  ggplot(D.df, aes(x=Sample1, y=Sample2, fill=Distance)) +
+    geom_tile() +
+    xlab(xlab) +
+    ylab(ylab) +
+    ggtitle(title) +
+    scale_y_reverse(expand=c(0,0)) +
+    scale_x_continuous(expand=c(0,0)) +
+    scale_fill_continuous(name="log(d)", low="#cccccc", high="#111111") +
+    theme_bw()
+}
+```
+
+# Panel 1
+
+```{r}
+n <- 300
+d <- 2
+K <- 2
+mean.scale=2
+sim <- discr.sims.linear(n, d, K, mean.scale=2, cov.scale=10)
+X <- sim$X; Y <- sim$Y
+simplot <- sim_twod_scatter(X, Y, title="(A) 2 Class Simulation", xlab="Magnitude", ylab="Magnitude")
+```
+
+# Panel 2
+
+```{r}
+dplot <- sim_dmtx(X, Y, title="Distance Matrix", xlab="Sample", ylab="Sample")
+```
+
+# Panel 3
+```{r}
+discr <- discr.stat(X, Y)
+rdf <- melt(discr$rdf)
+hplot <- ggplot(rdf, aes(x=value, y=..ncount..)) +
+  geom_histogram(fill='black', color='black') +
+  xlab("Reliability Density") +
+  ylab("Relative Bincount") +
+  ggtitle("(C) Reliability Density Histogram") +
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0,1)) +
+  theme_bw()
+  
+
+# subpanel bar plot
+# icc on top PC
+icc <- ICCbare(Y, lol.project.pca(X, r=1)$Xr)
+# i2c2
+i2c <- I2C2::i2c2(X, Y, visit=rep(1, length(Y)))$lambda
+
+bar.df <- data.frame(Statistic=c("Discr", "ICC", "I2C2"), Value=c(discr$discr, icc, i2c))
+acols <- c("#FF0000", "#BBBBBB", "#888888")
+names(acols) <- c("Discr", "ICC", "I2C2")
+bplot <- ggplot(bar.df, aes(x=Statistic, y=Value, fill=Statistic)) +
+  geom_col() +
+  scale_fill_manual(values=acols, guide='none') +
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0,1)) +
+  theme_bw() +
+  ggtitle("(D) Comparison of Test Statistics")
+```
+
+# Make Multipanel
+
+```{r, fig.width=15, fig.height=3.5}
+grid.arrange(grobs=list(simplot, dplot, hplot, bplot), nrow=1)
+```
