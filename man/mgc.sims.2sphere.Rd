@@ -4,17 +4,20 @@
 \alias{mgc.sims.2sphere}
 \title{Sample from Unit 2-Sphere}
 \usage{
-mgc.sims.2sphere(n, r, d, cov.scale = 0)
+mgc.sims.2sphere(n, d, r, cov.scale = 0)
 }
 \arguments{
 \item{n}{the number of samples.}
 
-\item{r}{the radius of the 2-ball. Defaults to \code{1}.}
-
 \item{d}{the number of dimensions.}
+
+\item{r}{the radius of the 2-ball. Defaults to \code{1}.}
 
 \item{cov.scale}{if desired, sample from 2-ball with error sigma. Defaults to \code{0},
 which has no noise.}
+}
+\value{
+the points sampled from the sphere, as a \code{[n, d]} array.
 }
 \description{
 Sample from the 2-sphere in d-dimensions.

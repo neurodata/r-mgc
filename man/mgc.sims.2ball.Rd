@@ -16,6 +16,9 @@ mgc.sims.2ball(n, d, r = 1, cov.scale = 0)
 \item{cov.scale}{if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
 which has no noise.}
 }
+\value{
+the points sampled from the ball, as a \code{[n, d]} array.
+}
 \description{
 Sample from the 2-ball in d-dimensions.
 }

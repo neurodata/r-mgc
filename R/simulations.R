@@ -744,6 +744,7 @@ mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
 #' @param r the radius of the 2-ball. Defaults to \code{1}.
 #' @param cov.scale if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
 #' which has no noise.
+#' @return the points sampled from the ball, as a \code{[n, d]} array.
 #' @examples
 #' library(mgc)
 #' # sample 100 points from 3-d 2-ball with radius 2
@@ -755,6 +756,7 @@ mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
   u <- runif(n)
   r <- r * u^(1/d)
   X <- r * Y/sqrt(apply(Y^2, 1, sum)) + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d))
+  return(X)
 }
 
 #' Sample from Unit 2-Sphere
@@ -767,15 +769,17 @@ mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
 #' @param r the radius of the 2-ball. Defaults to \code{1}.
 #' @param cov.scale if desired, sample from 2-ball with error sigma. Defaults to \code{0},
 #' which has no noise.
+#' @return the points sampled from the sphere, as a \code{[n, d]} array.
 #' @examples
 #' library(mgc)
 #' # sample 100 points from 3-d 2-ball with radius 2
 #' X <- mgc.sims.rball(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
-mgc.sims.2sphere <- function(n, r, d, cov.scale=0) {
+mgc.sims.2sphere <- function(n, d, r, cov.scale=0) {
   u <- mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=diag(d))
   unorm <- diag(sqrt(apply(u^2, 1, sum)))
   pts <- r*(ginv(unorm) %*% u)
   pts <- pts + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d))
+  return(pts)
 }
