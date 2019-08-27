@@ -48,13 +48,18 @@ A list containing the following:
 \item{\code{alt}}{The alternative hypothesis for the test.}
 }
 \description{
-A function that takes two sets of paired data and produces a p-value associated with a test of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
+A function that takes two sets of paired data and tests of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
 }
-\details{
-A function that performs a two-sample test for whether the discriminability is different for that of one dataset vs another. With \eqn{\hat D_{X_1}} the discriminability of one approach, and \eqn{\hat D_{X_2}} the discriminability of another approach:
+\section{Details}{
 
-\deqn{H_0: D_{X_1} = D_{X_2}} and:\deqn{H_A: D_{X_1} > D_{X_2}}. Also implemented are tests of \eqn{<} and \eqn{\neq}.
+
+A function that performs a two-sample test for whether the discriminability is different for that of
+one dataset vs another, as described in Bridgeford et al. (2019). With \eqn{\hat D_{X_1}}{Dhatx1} the sample discriminability of one approach, and \eqn{\hat D_{X_2}}{Dhatx2} the sample discriminability of another approach:
+
+\deqn{H_0: D_{X_1} = D_{X_2}}{H0: Dx1 = Dx2} and:\deqn{H_A: D_{X_1} > D_{X_2}}{Ha: Dx1 > Dx2}.
+Also implemented are tests of \eqn{<}{<} and \eqn{\neq}{!=}.
 }
+
 \examples{
 n = 100; d=5
 

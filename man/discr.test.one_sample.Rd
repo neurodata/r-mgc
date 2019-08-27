@@ -46,9 +46,17 @@ A list containing the following:
 \item{\code{p.value}}{the pvalue associated with the permutation test.}
 }
 \description{
-A function that performs a one-sample test for whether the discriminability differs from random chance. With \eqn{\hat D_X} the discriminability of \eqn{X}:
-\deqn{H_0: D_X = D_0} and:\deqn{H_A: D_X > D_0} where \eqn{D_0} is the discriminability that would be observed by random chance.
+A function that performs a one-sample test for whether the discriminability differs from random chance.
 }
+\section{Details}{
+
+
+Performs a test of whether an observed discriminability is significantly different from chance, as described in Bridgeford et al. (2019).
+With \eqn{\hat D_X}{Dhatx} the sample discriminability of \eqn{X}{X}:
+\deqn{H_0: D_X = D_0}{H0: Dx = D0} and:\deqn{H_A: D_X > D_0}{Ha: Dx > D0} where \eqn{D_0}{D0}
+is the discriminability that would be observed by random chance.
+}
+
 \examples{
 
 n = 100; d=5

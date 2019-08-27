@@ -1,9 +1,8 @@
 #' MGC Permutation Test
 #'
-#' Test of Dependence using MGC Approach, where, for \eqn{X \sim F_X}, \eqn{Y \sim F_Y}:
+#' Test of Dependence using MGC Approach.
 #'
-#' \deqn{H_0: F_X \neq F_Y} and: \deqn{H_A: F_X = F_Y}
-#'
+#' @references Joshua T. Vogelstein, et al. "Discovering and deciphering relationships across disparate data modalities." eLife (2019).
 #' @param X is interpreted as:
 #' \describe{
 #'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist.X=FALSE}.}
@@ -52,14 +51,22 @@
 #' \item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
 #' \item{\code{localCorr}}{the local correlations}
 #' \item{\code{optimalScale}}{the optimal scale identified by MGC}
+#' \item{\code{option}}{specifies which global correlation was used}
 #'
-#' Note that one should avoid report positive discovery via minimizing individual p-values of local correlations,
-#' unless corrected for multiple hypotheses.
 #' @author Eric Bridgeford and C. Shen
 #'
 #' @section Details:
-#' For more details see the help vignette:
+#'
+#' A test of independence using the MGC approach, described in Vogelstein et al. (2019). For \eqn{X \sim F_X}{X ~ Fx}, \eqn{Y \sim F_Y}{Y ~ Fy}:
+#'
+#' \deqn{H_0: F_X \neq F_Y}{H0: Fx != Fy} and: \deqn{H_A: F_X = F_Y}{Ha: Fx = Fy}
+#'
+#' Note that one should avoid report positive discovery via minimizing individual p-values of local correlations,
+#' unless corrected for multiple hypotheses.
+#'
+#' For details on usage see the help vignette:
 #' \code{vignette("mgc", package = "mgc")}
+#'
 #'
 #' @examples
 #'
@@ -105,6 +112,7 @@ mgc.test <-function(X, Y, dist.xfm.X=mgc.distance, dist.params.X=list(method='eu
   pLocalCorr <- (Reduce("+", pLocalCorrs) + 1)/(nperm + 1)
 
   return(list(p.value=pMGC,stat=result$stat, pLocalCorr=pLocalCorr,
-              localCorr=result$localCorr, optimalScale=result$optimalScale))
+              localCorr=result$localCorr, optimalScale=result$optimalScale,
+              option=option))
 }
 

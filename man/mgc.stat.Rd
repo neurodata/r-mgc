@@ -60,6 +60,13 @@ Defaults to \code{list(method='euclidean')}.}
 
 \item{is.dist.Y}{a boolean indicating whether your \code{Y} input is a distance matrix or not. Defaults to \code{FALSE}.}
 }
+\value{
+A list containing the following:
+\item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
+\item{\code{localCorr}}{the local correlations}
+\item{\code{optimalScale}}{the optimal scale identified by MGC}
+\item{\code{option}}{specifies which global correlation was used}
+}
 \description{
 The main function that computes the MGC measure between two datasets:
 It first computes all local correlations, then use the maximal statistic

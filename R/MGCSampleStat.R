@@ -44,6 +44,13 @@
 #'    \item{\code{'mantel'}}{use the mantel global correlation.}
 #'    \item{\code{'rank'}}{use the rank global correlation.}
 #' }
+#'
+#' @return A list containing the following:
+#' \item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
+#' \item{\code{localCorr}}{the local correlations}
+#' \item{\code{optimalScale}}{the optimal scale identified by MGC}
+#' \item{\code{option}}{specifies which global correlation was used}
+#'
 #' @author C. Shen and Eric Bridgeford
 #'
 #' @examples
@@ -85,7 +92,7 @@ mgc.stat.driver <- function(DX, DY, option='mgc') {
     res <- Smoothing(localCorr,m, n, R) # find the maximal within the significant region
   }
 
-  result=list(stat=res$stat, localCorr=localCorr, optimalScale=res$optimalScale)
+  return(list(stat=res$stat, localCorr=localCorr, optimalScale=res$optimalScale, option=option))
 }
 
 #' An auxiliary function that finds a region of significance in the local correlation map by thresholding.

@@ -1,7 +1,6 @@
 #' Discriminability One Sample Permutation Test
 #'
-#' A function that performs a one-sample test for whether the discriminability differs from random chance. With \eqn{\hat D_X} the discriminability of \eqn{X}:
-#' \deqn{H_0: D_X = D_0} and:\deqn{H_A: D_X > D_0} where \eqn{D_0} is the discriminability that would be observed by random chance.
+#' A function that performs a one-sample test for whether the discriminability differs from random chance.
 #'
 #' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
 #' @importFrom parallel mclapply detectCores
@@ -31,6 +30,14 @@
 #' \item{\code{null}}{the discriminability scores under the null, computed via permutation.}
 #' \item{\code{p.value}}{the pvalue associated with the permutation test.}
 #' @author Eric Bridgeford
+#'
+#' @section Details:
+#'
+#' Performs a test of whether an observed discriminability is significantly different from chance, as described in Bridgeford et al. (2019).
+#' With \eqn{\hat D_X}{Dhatx} the sample discriminability of \eqn{X}{X}:
+#' \deqn{H_0: D_X = D_0}{H0: Dx = D0} and:\deqn{H_A: D_X > D_0}{Ha: Dx > D0} where \eqn{D_0}{D0}
+#' is the discriminability that would be observed by random chance.
+#'
 #'
 #' @examples
 #'
@@ -70,11 +77,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 
 #' Discriminability Two Sample Permutation Test
 #'
-#' A function that takes two sets of paired data and produces a p-value associated with a test of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
-#'
-#' A function that performs a two-sample test for whether the discriminability is different for that of one dataset vs another. With \eqn{\hat D_{X_1}} the discriminability of one approach, and \eqn{\hat D_{X_2}} the discriminability of another approach:
-#'
-#' \deqn{H_0: D_{X_1} = D_{X_2}} and:\deqn{H_A: D_{X_1} > D_{X_2}}. Also implemented are tests of \eqn{<} and \eqn{\neq}.
+#' A function that takes two sets of paired data and tests of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
 #'
 #' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
 #' @importFrom parallel mclapply detectCores
@@ -104,6 +107,15 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #' \item{\code{p.value}}{The p-value associated with the test.}
 #' \item{\code{alt}}{The alternative hypothesis for the test.}
 #' @author Eric Bridgeford
+#'
+#' @section Details:
+#'
+#' A function that performs a two-sample test for whether the discriminability is different for that of
+#' one dataset vs another, as described in Bridgeford et al. (2019). With \eqn{\hat D_{X_1}}{Dhatx1} the sample discriminability of one approach, and \eqn{\hat D_{X_2}}{Dhatx2} the sample discriminability of another approach:
+#'
+#' \deqn{H_0: D_{X_1} = D_{X_2}}{H0: Dx1 = Dx2} and:\deqn{H_A: D_{X_1} > D_{X_2}}{Ha: Dx1 > Dx2}.
+#' Also implemented are tests of \eqn{<}{<} and \eqn{\neq}{!=}.
+#'
 #'
 #' @examples
 #' n = 100; d=5

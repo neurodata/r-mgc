@@ -71,19 +71,22 @@ A list containing the following:
 \item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
 \item{\code{localCorr}}{the local correlations}
 \item{\code{optimalScale}}{the optimal scale identified by MGC}
-
-Note that one should avoid report positive discovery via minimizing individual p-values of local correlations,
-unless corrected for multiple hypotheses.
+\item{\code{option}}{specifies which global correlation was used}
 }
 \description{
-Test of Dependence using MGC Approach, where, for \eqn{X \sim F_X}, \eqn{Y \sim F_Y}:
-}
-\details{
-\deqn{H_0: F_X \neq F_Y} and: \deqn{H_A: F_X = F_Y}
+Test of Dependence using MGC Approach.
 }
 \section{Details}{
 
-For more details see the help vignette:
+
+A test of independence using the MGC approach, described in Vogelstein et al. (2019). For \eqn{X \sim F_X}{X ~ Fx}, \eqn{Y \sim F_Y}{Y ~ Fy}:
+
+\deqn{H_0: F_X \neq F_Y}{H0: Fx != Fy} and: \deqn{H_A: F_X = F_Y}{Ha: Fx = Fy}
+
+Note that one should avoid report positive discovery via minimizing individual p-values of local correlations,
+unless corrected for multiple hypotheses.
+
+For details on usage see the help vignette:
 \code{vignette("mgc", package = "mgc")}
 }
 
@@ -95,6 +98,9 @@ n = 100; d = 2
 data <- mgc.sims.linear(n, d)
 result <- mgc.test(data$X, data$Y, nperm=10)
 
+}
+\references{
+Joshua T. Vogelstein, et al. "Discovering and deciphering relationships across disparate data modalities." eLife (2019).
 }
 \author{
 Eric Bridgeford and C. Shen
