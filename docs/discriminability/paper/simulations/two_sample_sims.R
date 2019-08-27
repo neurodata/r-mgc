@@ -7,6 +7,8 @@ library(parallel)
 require(mgc)
 require(ICC)
 require(I2C2)
+require(lolR)
+require(abind)
 no_cores = detectCores() - 1
 
 # one-way ICC
@@ -91,7 +93,7 @@ test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
     data.frame(stat.name=stat.name, stat=tr[[stat.name]],
-               pval=mean(null.diff[[stat.name]] > tr[[stat.name]])*(nperm - 1)/nperm + 1/nperm)
+               p.value=mean(null.diff[[stat.name]] > tr[[stat.name]])*(nperm - 1)/nperm + 1/nperm)
     }))
   )
 }
@@ -126,11 +128,11 @@ sim.no_signal <- function(n, d, sigma=1) {
 # a simulation where classes are linearly distinguishable, and pipeline 1 is more discriminable
 # than pipeline 2
 # 2 classes
-sim.linear_sig <- function(n, d, sigma=1) {
+sim.linear_sig <- function(n, d, sigma=2) {
   S <- diag(d)
-  S[1, 1] <- sigma
+  S[1, 1] <- 2
   S[-c(1), -c(1)] <- 1
-  S2 <- S; S2[1,1] <- sigma*2  # sample 2 has greater covariance in signal dimension
+  S2 <- S; S2[1,1] <- sigma  # sample 2 has greater covariance in signal dimension
   mus=cbind(rep(0, d), c(1, rep(0, d-1))) # with the same mean signal shift between the classes
   # sample 1 should be more discriminable than sample 2
   samp1 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n)
@@ -143,15 +145,16 @@ sim.linear_sig <- function(n, d, sigma=1) {
 # than pipeline 2
 # also contains correlation btwn dimensions
 # 2 classes
-sim.crossed_sig <- function(n, d, sigma=5) {
+sim.crossed_sig <- function(n, d, sigma=1) {
   S1s <- diag(d); S <- abind(S1s, S1s, along=3)
   # crossed signal
   S1 <- S; S1[1,1,1] <- S1[2,2,2] <- 5
-  S2 <- S; S2[2,2,2] <- S2[1,1,1] <- sigma  # pipeline 2 is less discriminable than pipeline 1
+  S2 <- S; S2[2,2,2] <- S2[1,1,1] <- 5; S[1,1,2] <- S[2,2,1] <- sigma
   # add correlation
   S1[1,2,1] <- S1[2,1,1] <- sqrt(5)/2; S1[1,2,2] <- S1[2,1,2] <- -sqrt(5)/2
-  S2[1,2,1] <- S2[2,1,1] <- sqrt(sigma)/2; S2[1,2,2] <- S2[2,1,2] <- -sqrt(sigma)/2
-  mus=cbind(c(1, rep(0, d-1)), c(0,1, rep(0, d-2)))  # slight mean shift
+  S2[1,2,1] <- S2[2,1,1] <- sqrt(5)/2; S2[1,2,2] <- S2[2,1,2] <- -sqrt(5)/2  # pipeline 2 is less discriminable than pipeline 1
+  #mus=cbind(c(1, rep(0, d-1)), c(0,1, rep(0, d-2)))  # slight mean shift
+  mus=cbind(rep(0, d), rep(0, d))
   samp1 <- sim_gmm(mus=mus, Sigmas=S1, n)
   samp2 <- sim_gmm(mus=mus, Sigmas=S2, n)
   return(list(X1=samp1$X, X2=samp2$X, Y=samp1$Y))
@@ -215,13 +218,13 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0.1) {
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 200
+nrep <- 300
 n.sigma <- 8
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(5, 2, 10, 3, 1)
-sims.sig.min <- c(1, 1, 5, 1, 0.1)
+sims.sig.max <- c(5, 7, 5, 3, 1)
+sims.sig.min <- c(1, 2, 1, 1, 0.1)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Linear", "Cross", "Multiclass", "Annulus/Disc")
 
@@ -234,7 +237,7 @@ experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   }))
 }))
 
-ts.results <- mclapply(experiments, function(exper) {
+list.results.ts <- mclapply(experiments, function(exper) {
   sim <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
   res <- test.two_sample(sim$X1, sim$X2, sim$Y)
   res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
@@ -242,5 +245,6 @@ ts.results <- mclapply(experiments, function(exper) {
   return(res)
 }, mc.cores=no_cores)
 
-ts.results <- do.call(rbind, ts.results)
-saveRDS(ts.results, '../data/sims/discr_sims_ts.rds')
+ts.results <- do.call(rbind, list.results.ts)
+saveRDS(list(ts.results=ts.results, list.results=list.results.ts), '../data/sims/discr_sims_ts.rds')
+
