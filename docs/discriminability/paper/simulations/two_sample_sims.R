@@ -151,8 +151,8 @@ sim.crossed_sig <- function(n, d, sigma=1) {
   S1 <- S; S1[1,1,1] <- S1[2,2,2] <- 5
   S2 <- S; S2[2,2,2] <- S2[1,1,1] <- 5; S[1,1,2] <- S[2,2,1] <- sigma
   # add correlation
-  S1[1,2,1] <- S1[2,1,1] <- sqrt(5)/2; S1[1,2,2] <- S1[2,1,2] <- -sqrt(5)/2
-  S2[1,2,1] <- S2[2,1,1] <- sqrt(5)/2; S2[1,2,2] <- S2[2,1,2] <- -sqrt(5)/2  # pipeline 2 is less discriminable than pipeline 1
+  S1[1,2,1] <- S1[2,1,1] <- sqrt(1)/2; S1[1,2,2] <- S1[2,1,2] <- -sqrt(1)/2
+  S2[1,2,1] <- S2[2,1,1] <- sqrt(sigma)/2; S2[1,2,2] <- S2[2,1,2] <- -sqrt(sigma)/2  # pipeline 2 is less discriminable than pipeline 1
   #mus=cbind(c(1, rep(0, d-1)), c(0,1, rep(0, d-2)))  # slight mean shift
   mus=cbind(rep(0, d), rep(0, d))
   samp1 <- sim_gmm(mus=mus, Sigmas=S1, n)
@@ -218,12 +218,12 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0.1) {
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 300
+nrep <- 500
 n.sigma <- 8
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(5, 7, 5, 3, 1)
+sims.sig.max <- c(10, 12, 5, 3, 1)
 sims.sig.min <- c(1, 2, 1, 1, 0.1)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Linear", "Cross", "Multiclass", "Annulus/Disc")

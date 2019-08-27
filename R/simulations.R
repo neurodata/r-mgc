@@ -498,7 +498,7 @@ discr.sims.exp <- function(n, d, K, signal.scale=1, signal.lshift=1, non.scale=1
 #' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
 #' @examples
 #' library(mgc)
-#' sim <- discr.sims.spread(100, 3, 2)
+#' sim <- discr.sims.fat_tails(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
 discr.sims.fat_tails <- function(n, d, K, signal.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {

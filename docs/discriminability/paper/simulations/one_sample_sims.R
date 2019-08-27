@@ -169,16 +169,16 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0.1) {
   return(list(X=X, Y=Y))
 }
 
-## --------------------------------------
+## -------------------------
 # Driver
 ## -------------------------
 n <- 128; d <- 2
-nrep <- 300
-n.sigma <- 15
+nrep <- 500
+n.sigma <- 8
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(10, 15, 10, 6, 2)
+sims.sig.max <- c(10, 12, 5, 3, 1)
 sims.sig.min <- c(1, 2, 1, 1, 0.1)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Linear", "Cross", "Multiclass", "Annulus/Disc")

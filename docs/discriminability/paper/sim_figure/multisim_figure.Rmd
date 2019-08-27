@@ -21,6 +21,8 @@ require(cowplot)
 require(lolR)
 require(plyr)
 require(scales)
+require(dplyr)
+require(latex2exp)
 ```
 
 ```{r}
@@ -153,114 +155,51 @@ dplots <- arrangeGrob(arrangeGrob(grobs=dat.plots, left="(A)", ncol=length(sims)
 
 ```{r}
 al=0.05  # alpha for the power testing
-one.sample.results <- readRDS('./data/sims/discr_sims_os.rds') %>%
-  mutate(outcome = p.value < al)
-two.sample.results <- readRDS('./data/sims/discr_sims_ts.rds') %>%
-  mutate(outcome = p.value < al)
-one.sample.results$alg <- revalue(one.sample.results$alg, c("Discr" = "Discriminability"))
-two.sample.results$alg <- revalue(two.sample.results$alg, c("Discr" = "Discriminability"))
+one.sample.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
+  mutate(outcome = p.value < al,
+         stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
+         test.name="One Sample Test")
+two.sample.results <- readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
+  mutate(outcome = p.value < al,
+        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
+         test.name="Two Sample Test")
 
-alg.colors <- c("#c70000", "#a7aec5", "#a7aec5", "#6d7694", "#6d7694", "#989898", "#4f4f4f")
-names(alg.colors) <- c("Discriminability", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
-line.types <- c(1, 1, 2, 1, 2, 1, 1)
-names(line.types) <- c("Discriminability", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+sample.test.results <- rbind(one.sample.results, two.sample.results) %>%
+  mutate(test.name=factor(test.name))
+
+alg.colors <- c("#c70000", "#a7aec5", "#4f4f4f")
+line.types <- c(1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr", "ICC o PCA", "I2C2")
 ```
 
-### Convergence of Discriminability
+### Sample Test Plot
 
 ```{r}
-discr.os.results <- subset(one.sample.results, alg=="Discriminability")
-
-conv.plots <- lapply(unique(discr.os.results$sim.name), function(simn) {
-  sim.ss <- subset(discr.os.results, sim.name == simn)
-  dtheo <- mean(sim.ss$tstat)
-  sim.ss$diff <- sim.ss$tstat - dtheo
-  agg <- abs(aggregate(diff ~ n, data=sim.ss, FUN=mean)$diff) + aggregate(diff ~ n, data=sim.ss, FUN=var)$diff
-  l <- ceiling(100*max(agg))/100 + .01
-  ggplot(sim.ss, aes(x=n, y=diff)) +
-    stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
-    stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=1) +
-    geom_hline(yintercept=0, linetype=2, size=1.5) +
-    xlab("") +
-    ylab("") +
-    coord_cartesian(ylim=c(-.02, .02)) +
-    scale_x_continuous(trans=log2_trans()) +
-    theme_bw()
-})
-
-convplot <- arrangeGrob(grobs=conv.plots, left="(B)", ncol=length(conv.plots))
-```
-
-### One Sample Plot
-
-```{r}
-os.plots <- lapply(unique(one.sample.results$sim.name), function(simn) {
-  one.sample.powers <- one.sample.results %>%
-    filter(sim.name == simn) %>%
-    group_by(alg, n, sim.name) %>%
-    summarize(power=mean(outcome))
-  ggplot(one.sample.powers, aes(x=n, y=power, color=alg, linetype=alg)) +
-    geom_line(size=1) +
-    scale_color_manual(name="Algorithm", values=alg.colors) +
-    scale_linetype_manual(name="Algorithm", values=line.types) +
-    scale_x_continuous(trans=log2_trans()) +
-    coord_cartesian(ylim=c(0, 1)) +
-    xlab("") +
-    ylab("") +
-    theme_bw()
-})
-
-os.plots.leg <- g_legend(os.plots[[1]])
-os.plots <- lapply(os.plots, function(plot) {
-  plot +
-    guides(color=FALSE, linetype=FALSE)
-})
-
-
-osplot <- arrangeGrob(grobs=os.plots, left="(C)", ncol=length(os.plots))
-```
-
-### Two Sample Plot
-
-```{r}
-ts.plots <- lapply(unique(two.sample.results$sim.name), function(simn) {
-  two.sample.powers <- two.sample.results %>%
-    filter(sim.name == simn) %>%
-    group_by(alg, n, sim.name) %>%
-    summarize(power=mean(outcome))
-  ggplot(two.sample.powers, aes(x=n, y=power, color=alg, linetype=alg)) +
-    geom_line(size=1) +
-    scale_color_manual(name="Algorithm", values=alg.colors) +
-    scale_linetype_manual(name="Algorithm", values=line.types) +
-    scale_x_continuous(trans=log2_trans()) +
-    coord_cartesian(ylim=c(0, 1)) +
-    xlab("") +
-    ylab("") +
-    theme_bw()
-})
-
-ts.plots.leg <- g_legend(ts.plots[[1]])
-ts.plots <- lapply(ts.plots, function(plot) {
-  plot +
-    guides(color=FALSE, linetype=FALSE)
-})
-
-tsplot <- arrangeGrob(grobs=ts.plots, left="(D)", ncol=length(ts.plots))
-```
-
-### Combined Plot
-
-```{r}
-result.plot <- arrangeGrob(arrangeGrob(convplot, osplot, tsplot, nrow=3), os.plots.leg, widths=c(.9, .15))
+sample.plots <- sample.test.results %>%
+  group_by(stat.name, sim.name, n, d, sigma, test.name) %>%
+  dplyr::summarise(power=mean(outcome)) %>%
+  ggplot(aes(x=sigma, y=power, color=stat.name)) +
+    geom_line() +
+    scale_color_manual(values=alg.colors, name="Reference Statistic") +
+    facet_grid(test.name ~ sim.name, scales="free_x") +
+    theme_bw() +
+    xlab(TeX("$\\sigma$")) +
+    ylab("Statistical Power") +
+    theme(strip.background.x = element_blank(),
+          strip.text.x=element_blank())
 ```
 
 # Full Plot
 
-Output as 10x7.5 and edit in inkscape
-
-```{r, height=20, width=20}
-full.plot <- arrangeGrob(dplots, result.plot, nrow=2, heights=c(.25, .75))
-grid.arrange(full.plot)
+```{r}
+plot.objs <- list(sim.plots, dist.plots, bound.plots, sample.plots)
+grid.arrange(
+  arrangeGrob(grobs=lapply(plot.objs, function(obj) obj + theme(legend.position="none")), 
+              layout_matrix=cbind(c(1,2,3,4,4))),
+  arrangeGrob(grobs=lapply(plot.objs, function(obj) g_legend(obj)), 
+              layout_matrix=cbind(c(1,2,3,4,4))),
+  ncol=2, widths=c(4, 1)
+  )
 ```
 
 
