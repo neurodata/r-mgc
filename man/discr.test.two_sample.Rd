@@ -4,7 +4,7 @@
 \alias{discr.test.two_sample}
 \title{Discriminability Two Sample Permutation Test}
 \usage{
-discr.test.two_sample(X1, X2, Y, dist.xfm = discr.distance,
+discr.test.two_sample(X1, X2, Y, dist.xfm = mgc.distance,
   dist.params = list(method = "euclidian"), dist.return = NULL,
   remove.isolates = TRUE, nperm = 100, no_cores = 1,
   alt = "greater")
@@ -18,7 +18,7 @@ discr.test.two_sample(X1, X2, Y, dist.xfm = discr.distance,
 
 \item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
 it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
-as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
+as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.}
 
 \item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
 Defaults to \code{list(method='euclidean')}.}
@@ -50,6 +50,11 @@ A list containing the following:
 \description{
 A function that takes two sets of paired data and produces a p-value associated with a test of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
 }
+\details{
+A function that performs a two-sample test for whether the discriminability is different for that of one dataset vs another. With \eqn{\hat D_{X_1}} the discriminability of one approach, and \eqn{\hat D_{X_2}} the discriminability of another approach:
+
+\deqn{H_0: D_{X_1} = D_{X_2}} and:\deqn{H_A: D_{X_1} > D_{X_2}}. Also implemented are tests of \eqn{<} and \eqn{\neq}.
+}
 \examples{
 n = 100; d=5
 
@@ -67,6 +72,9 @@ Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
 
 # X1 should be more discriminable, as less noise
 discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
+}
+\references{
+Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
 }
 \author{
 Eric Bridgeford

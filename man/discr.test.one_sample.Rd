@@ -4,7 +4,7 @@
 \alias{discr.test.one_sample}
 \title{Discriminability One Sample Permutation Test}
 \usage{
-discr.test.one_sample(X, Y, is.dist = FALSE, dist.xfm = discr.distance,
+discr.test.one_sample(X, Y, is.dist = FALSE, dist.xfm = mgc.distance,
   dist.params = list(method = "euclidean"), dist.return = NULL,
   remove.isolates = TRUE, nperm = 100, no_cores = 1)
 }
@@ -21,7 +21,7 @@ discr.test.one_sample(X, Y, is.dist = FALSE, dist.xfm = discr.distance,
 
 \item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
 it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
-as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.}
+as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.}
 
 \item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
 Defaults to \code{list(method='euclidean')}.}
@@ -46,7 +46,8 @@ A list containing the following:
 \item{\code{p.value}}{the pvalue associated with the permutation test.}
 }
 \description{
-A function that performs a one-sample test for whether the discriminability differs from random chance.
+A function that performs a one-sample test for whether the discriminability differs from random chance. With \eqn{\hat D_X} the discriminability of \eqn{X}:
+\deqn{H_0: D_X = D_0} and:\deqn{H_A: D_X > D_0} where \eqn{D_0} is the discriminability that would be observed by random chance.
 }
 \examples{
 
@@ -60,6 +61,9 @@ X <- sim$X; Y <- sim$Y
 # p-value is small
 discr.test.one_sample(X, Y, nperm=100)$p.value
 
+}
+\references{
+Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
 }
 \author{
 Eric Bridgeford

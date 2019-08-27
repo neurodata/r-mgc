@@ -1,25 +1,25 @@
 #' MGC K Sample Testing
 #'
 #' MGC K Sample Testing provides a wrapper for MGC Sample testing under the constraint that the Ys here are
-#' categorical labels with K possible sample ids. This function uses a 0-1 loss for the Ys. To use a custom distance
-#' function, use \code{mgc.test} with your custom distance function as \code{Y}.
+#' categorical labels with K possible sample ids. This function uses a 0-1 loss for the Ys (one-hot-encoding)).
 #'
+#' @references Youjin Lee, et al. "Network Dependence Testing via Diffusion Maps and Distance-Based Correlations." ArXiv (2019).
 #' @param X is interpreted as:
 #' \itemize{
 #'    \item{\code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal}
 #'    \item{\code{[n x d]} data matrix}{Otherwise}
 #'  }
 #' @param Y \code{[n]} the labels of the samples with \code{K} unique labels.
-#' @param mgc.opts Arguments to pass to MGC. See \code{\link{mgc.test}} for details.
+#' @param mgc.opts Arguments to pass to MGC, as a named list. See \code{\link{mgc.test}} for details. Do not pass arguments for
+#' \code{is.dist.Y}, \code{dist.xfm.Y}, \code{dist.params.Y}, nor \code{dist.return.Y}, as they will be ignored.
 #' @param ... trailing args.
 #' @return A list containing the following:
-#' \item{\code{pMGC}}{P-value of MGC}
-#' \item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
+#' \item{\code{p.value}}{P-value of MGC}
+#' \item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
 #' \item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
 #' \item{\code{localCorr}}{the local correlations}
 #' \item{\code{optimalScale}}{the optimal scale identified by MGC}
 #' @author Eric Bridgeford
-#'
 #'
 #' @examples
 #'
@@ -33,18 +33,18 @@
 #' result <- mgc.ksample(data_mtx, labels, mgc.opts=list(rep=10))
 #'
 #' @export
-mgc.ksample = function(X, Y, mgc.opts=list(), ...){
-  ylabs <- unique(Y); K <- length(ylabs); n <- length(Y)
-  # one-hot-encode the y-labels for 0-1 loss under euclidian distance
-  Yh <- array(0, dim=c(n, K))
-  for (i in 1:K) {
-    Yh[Y == ylabs[i],i] <- 1
+mgc.ksample <- function(X, Y, mgc.opts=list(), ...){
+
+  Y <- mgc.distance(Y, method="ohe")
+
+  # distance already computed, so skip...
+  if (!is.null(mgc.opts$is.dist.Y)) {
+    if (isFALSE(mgc.opts$is.dist.Y)) {
+      warning("Warning: Distance function is automatically applied via OHE; not using user-input distance function.")
+      mgc.opts$is.dist.Y <- TRUE; mgc.opts$dist.xfm.Y=NULL
+      mgc.opts$dist.params.Y <- NULL; mgc.opts$dist.return.Y <- NULL
+    }
   }
 
-  # compute distance...
-  Dy <- as.matrix(dist(Yh, method='binary'), nrow=n)
-
-  result =  do.call(mgc.test, c(list(X=X, Y=Dy), mgc.opts))
-
-  return(result)
+  return(do.call(mgc.test, c(list(X=X, Y=Yh), mgc.opts)))
 }

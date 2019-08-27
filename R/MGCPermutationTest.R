@@ -1,6 +1,8 @@
 #' MGC Permutation Test
 #'
-#' The main function that tests independent between two data sets by MGC and permutation test.
+#' Test of Dependence using MGC Approach, where, for \eqn{X \sim F_X}, \eqn{Y \sim F_Y}:
+#'
+#' \deqn{H_0: F_X \neq F_Y} and: \deqn{H_A: F_X = F_Y}
 #'
 #' @param X is interpreted as:
 #' \describe{
@@ -15,7 +17,7 @@
 #' @param is.dist.X a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.
 #' @param dist.xfm.X if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
 #' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
-#' as the \code{$D} return argument. See \link[mgc]{discr.distance} for details.
+#' as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.
 #' @param dist.params.X a list of trailing arguments to pass to the distance function specified in \code{dist.xfm.X}.
 #' Defaults to \code{list(method='euclidean')}.
 #' @param dist.return.X the return argument for the specified \code{dist.xfm.X} containing the distance matrix. Defaults to \code{FALSE}.
@@ -26,7 +28,7 @@
 #' @param is.dist.Y a boolean indicating whether your \code{Y} input is a distance matrix or not. Defaults to \code{FALSE}.
 #' @param dist.xfm.Y if \code{is.dist == FALSE}, a distance function to transform \code{Y}. If a distance function is passed,
 #' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
-#' as the \code{dist.return.Y} return argument. See \link[mgc]{discr.distance} for details.
+#' as the \code{dist.return.Y} return argument. See \link[mgc]{mgc.distance} for details.
 #' @param dist.params.Y a list of trailing arguments to pass to the distance function specified in \code{dist.xfm.Y}.
 #' Defaults to \code{list(method='euclidean')}.
 #' @param dist.return.Y the return argument for the specified \code{dist.xfm.Y} containing the distance matrix. Defaults to \code{FALSE}.
@@ -42,6 +44,7 @@
 #'    \item{\code{'mantel'}}{use the mantel global correlation.}
 #'    \item{\code{'rank'}}{use the rank global correlation.}
 #' }
+#' @param no_cores the number of cores to use for the permutations. Defaults to \code{1}.
 #'
 #' @return A list containing the following:
 #' \item{\code{p.value}}{P-value of MGC}
@@ -51,9 +54,8 @@
 #' \item{\code{optimalScale}}{the optimal scale identified by MGC}
 #'
 #' Note that one should avoid report positive discovery via minimizing individual p-values of local correlations,
-#' unless corrected for multiple testing problem.
-#'
-#' @author C. Shen
+#' unless corrected for multiple hypotheses.
+#' @author Eric Bridgeford and C. Shen
 #'
 #' @section Details:
 #' For more details see the help vignette:
@@ -68,35 +70,41 @@
 #' result <- mgc.test(data$X, data$Y, nperm=10)
 #'
 #' @export
-mgc.test <-function(X, Y, nperm=1000, option='mgc'){
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(as.matrix(X)) != ncol(as.matrix(X)) | sum(diag(X)^2) > 0){
-    X = as.matrix(dist(X, method='euclidean'))
-    # print('The first data is not a Euclidean distance matrix; transformed to distance matrix instead.')
+mgc.test <-function(X, Y, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
+                    dist.return.X=NULL, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
+                    dist.return.Y=NULL, nperm=1000, option='mgc', no_cores=1) {
+  # validate input is valid and convert to distance matrices, if necessary
+  validated <- mgc.validator(X, Y, is.dist.X=is.dist.X, dist.xfm.X=dist.xfm.X, dist.params.X=dist.params.X,
+                             dist.return.X=dist.return.X, is.dist.Y=is.dist.Y, dist.xfm.Y=dist.xfm.Y, dist.params.Y=dist.params.Y,
+                             dist.return.Y=dist.return.Y)
+
+  DX <- validated$DX; DY <- validated$DY
+
+  if (no_cores > detectCores()) {
+    stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
+  } else if (no_cores >= 0.8*detectCores()) {
+    warning("You have requested a number of cores near your machine's core count. Expected decreased performance.")
   }
-  if (nrow(as.matrix(Y)) != ncol(as.matrix(Y)) | sum(diag(Y)^2)>0){
-    Y=as.matrix(dist(Y, method='euclidean'))
-    # print('The second data is not a Euclidean distance matrix; transformed to distance matrix instead.')
-  }
-  np = nrow(Y)
+  N = nrow(DY)
 
   # Compute sample MGC and all local correlations
-  result = mgc.sample(X, Y, option)
-  m = nrow(result$localCorr)
-  n = ncol(result$localCorr)
-  pLocalCorr = matrix(0,m,n)
-  pMGC = 0
+  result<- mgc.stat.driver(DX, DY, option)
 
-  # Compute sample MGC and all local correlations for each permuted data
-  for (r in (1:nperm)){
-    # Use random permutations on the second data set
-    per = sample(np)
-    YN = Y[per, per]
-    tmp = mgc.sample(X, YN, option)
-    pMGC = pMGC + (tmp$statMGC >= result$statMGC)*1/nperm
-    pLocalCorr = pLocalCorr + (tmp$localCorr >= result$localCorr)*1/nperm
-  }
+  # compute the null using permutation test
+  mgc.nulls <- unlist(mclapply(1:nperm, function(i) {
+    per <- sample(N)
+    return(mgc.stat.driver(DX, DY[per, per], option=option))
+  }, mc.cores=no_cores), use.names=FALSE)
 
-  result=list(p.value=pMGC,stat=result$statMGC,pLocalCorr=pLocalCorr,localCorr=result$localCorr,optimalScale=result$optimalScale)
-  return(result)
+  # get the boolean mgc test results for each permutation
+  pMGCs <- lapply(mgc.nulls, function(mgc.null) mgc.null$stat >= result$stat)
+  pLocalCorrs <- lapply(mgc.nulls, function(mgc.null) mgc.null$localCorr >= result$localCorr)
+
+  # element-wise average
+  pMGC <- (Reduce("+", pMGCs) + 1)/(nperm + 1)
+  pLocalCorr <- (Reduce("+", pLocalCorrs) + 1)/(nperm + 1)
+
+  return(list(p.value=pMGC,stat=result$stat, pLocalCorr=pLocalCorr,
+              localCorr=result$localCorr, optimalScale=result$optimalScale))
 }
+
