@@ -38,11 +38,14 @@ discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
     }, error=function(e) stop("You have not passed an object Y that can be coerced to a [n] vector."))
   }
 
+  if (nrow(Dx) != length(Y)) {
+    stop("Your distance matrix and your ids vector do not have the same number of samples, after applying distance function.")
+  }
 
   # remove isolated subjects if requested.
   if (remove.isolates) {
-    purged <- remove.isolates(X, Y, is.dist=is.dist)
-    X <- purged$X; Y <- purged$Y
+    purged <- remove.isolates(DX, Y, is.dist=TRUE)
+    DX <- purged$X; Y <- purged$Y
   }
 
 
@@ -50,9 +53,6 @@ discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
     stop("You have passed a vector containing only a single unique sample id.")
   }
 
-  if (nrow(X) != length(Y)) {
-    stop("Your distance matrix and your ids vector do not have the same number of samples, after applying distance function.")
-  }
   return(list(D=X, Y=Y))
 }
 
