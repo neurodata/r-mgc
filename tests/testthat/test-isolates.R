@@ -94,7 +94,7 @@ test_that("All data is isolated", {
 test_that("Distance Matrix Isolate Removal", {
   n = 6; d = 10
   sim <- discr.sims.linear(n=n, d=d, K=2); X <- sim$X;
-  D <- discr.distance(X); Y <- c(2, 1, 1, 1, 1, 1)
+  D <- mgc.distance(X); Y <- c(2, 1, 1, 1, 1, 1)
   purged <- remove.isolates(D, Y, is.dist=TRUE)
   # validate that isolated samples removed correctly
   expect_equal(as.numeric(purged$X), as.numeric(D[which(Y == 1), which(Y == 1)]))
@@ -102,7 +102,7 @@ test_that("Distance Matrix Isolate Removal", {
 
   n = 7; d = 10
   sim <- discr.sims.linear(n=n, d=d, K=2); X <- sim$X;
-  D <- discr.distance(X); Y <- c(2, 1, 1, 1, 3, 1, 1)
+  D <- mgc.distance(X); Y <- c(2, 1, 1, 1, 3, 1, 1)
   purged <- remove.isolates(D, Y, is.dist=TRUE)
   # validate that isolated samples removed correctly
   expect_equal(as.numeric(purged$X), as.numeric(D[which(Y == 1), which(Y == 1)]))
