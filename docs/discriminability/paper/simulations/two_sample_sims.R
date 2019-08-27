@@ -32,7 +32,7 @@ i2c2.os <- function(X, Y) {
 
 ## Two Sample Driver
 
-test.two_sample <- function(X1, X2, Y, dist.xfm=discr.distance,
+test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
                             dist.params=list(method="euclidian"), dist.return=NULL,
                             remove.isolates=TRUE, nperm=100,
                             no_cores=1, alt="greater") {

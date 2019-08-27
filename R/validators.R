@@ -25,7 +25,7 @@
 #' }
 #' @return A list containing the following:
 #' \item{\code{DX}}{The X distance matrix, as a \code{[n x n]} matrix.}
-#' \item{\code{DT}}{The T distance matrix, as a \code{[n x n]} matrix.}
+#' \item{\code{Y}}{The sample ids, with isolates removed..}
 discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                             dist.return=NULL, remove.isolates=TRUE) {
 
@@ -38,7 +38,7 @@ discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
     }, error=function(e) stop("You have not passed an object Y that can be coerced to a [n] vector."))
   }
 
-  if (nrow(Dx) != length(Y)) {
+  if (nrow(DX) != length(Y)) {
     stop("Your distance matrix and your ids vector do not have the same number of samples, after applying distance function.")
   }
 
@@ -53,7 +53,7 @@ discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
     stop("You have passed a vector containing only a single unique sample id.")
   }
 
-  return(list(D=X, Y=Y))
+  return(list(D=DX, Y=Y))
 }
 
 #' MGC Utility Validator

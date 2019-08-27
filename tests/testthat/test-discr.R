@@ -2,7 +2,7 @@ context("discr")
 
 test_that("RDF - 2 Class, d==1", {
   X <- as.matrix(c(0, 1, 2, 3)); Y <- c(1, 1, 2, 2)
-  D <- discr.distance(X)
+  D <- mgc.distance(X)
   drdf <- discr.rdf(D, Y)
   expect_equal(as.numeric(drdf), c(1, .75, .75, 1))
 })
@@ -40,7 +40,7 @@ test_that("Discriminability - using data and distance function manually produces
   sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=1); X <- sim$X; Y <- sim$Y
   dstat.dat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
 
-  D <- discr.distance(X)
+  D <- mgc.distance(X)
   dstat.dist <- discr.stat(D, Y, is.dist = TRUE)
   expect_equal(dstat.dat$discr, dstat.dist$discr)
 })
@@ -49,7 +49,7 @@ test_that("One Sample Test is Valid", {
   n = 100; d=5; nsim=50; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
-  res <- unlist(mclapply(1:nsim, function(i) {
+  res <- unlist(parallel::mclapply(1:nsim, function(i) {
     # no true class difference
     set.seed(seed.idx[i])
     sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=0); X <- sim$X; Y <- sim$Y
@@ -64,7 +64,7 @@ test_that("One Sample Test Detects Relationship", {
   n = 100; d=5; nsim=5; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
-  res <- unlist(mclapply(1:nsim, function(i) {
+  res <- unlist(parallel::mclapply(1:nsim, function(i) {
     # substantial true class difference
     set.seed(seed.idx[i])
     sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=3); X <- sim$X; Y <- sim$Y
@@ -81,7 +81,7 @@ test_that("Two Sample Test is Valid", {
   seed.idx <- floor(runif(nsim, 1, 10000))
   # test all cases of alternatives that can be specified
   sapply(c("greater", "less", "neq"), function(alt) {
-    res <- unlist(mclapply(1:nsim, function(i) {
+    res <- unlist(parallel::mclapply(1:nsim, function(i) {
       # no true class difference, both datasets equally discriminable
       set.seed(seed.idx[i])
       s.g1 <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=0)
@@ -111,7 +111,7 @@ test_that("Two Sample Test Detects Relationship", {
   alts <- c("greater", "less", "neq")
   # test all cases of alternatives that can be specified
   sapply(1:length(alts), function(j) {
-    res <- unlist(mclapply(1:nsim, function(i) {
+    res <- unlist(parallel::mclapply(1:nsim, function(i) {
       # true class difference, where dataset 1 more discriminable than dataset 2
       set.seed(seed.idx[i])
       s.g1 <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=2, signal.scale=1, non.scale=1)

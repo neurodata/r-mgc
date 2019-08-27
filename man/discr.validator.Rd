@@ -39,7 +39,7 @@ Defaults to \code{list(method='euclidean')}.}
 \value{
 A list containing the following:
 \item{\code{DX}}{The X distance matrix, as a \code{[n x n]} matrix.}
-\item{\code{DT}}{The T distance matrix, as a \code{[n x n]} matrix.}
+\item{\code{Y}}{The sample ids, with isolates removed..}
 }
 \description{
 A script that validates that data inputs are correct, and returns a distance matrix and a ids vector.

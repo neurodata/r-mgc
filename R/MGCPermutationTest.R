@@ -48,7 +48,7 @@
 #' @return A list containing the following:
 #' \item{\code{p.value}}{P-value of MGC}
 #' \item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
-#' \item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
+#' \item{\code{p.localCorr}}{P-value of the local correlations by double matrix index}
 #' \item{\code{localCorr}}{the local correlations}
 #' \item{\code{optimalScale}}{the optimal scale identified by MGC}
 #' \item{\code{option}}{specifies which global correlation was used}
@@ -77,8 +77,8 @@
 #' result <- mgc.test(data$X, data$Y, nperm=10)
 #'
 #' @export
-mgc.test <-function(X, Y, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
-                    dist.return.X=NULL, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
+mgc.test <-function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
+                    dist.return.X=NULL, is.dist.Y=FALSE, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
                     dist.return.Y=NULL, nperm=1000, option='mgc', no_cores=1) {
   # validate input is valid and convert to distance matrices, if necessary
   validated <- mgc.validator(X, Y, is.dist.X=is.dist.X, dist.xfm.X=dist.xfm.X, dist.params.X=dist.params.X,
@@ -95,13 +95,13 @@ mgc.test <-function(X, Y, dist.xfm.X=mgc.distance, dist.params.X=list(method='eu
   N = nrow(DY)
 
   # Compute sample MGC and all local correlations
-  result<- mgc.stat.driver(DX, DY, option)
+  result <- mgc.stat.driver(DX, DY, option)
 
   # compute the null using permutation test
-  mgc.nulls <- unlist(mclapply(1:nperm, function(i) {
+  mgc.nulls <- mclapply(1:nperm, function(i) {
     per <- sample(N)
     return(mgc.stat.driver(DX, DY[per, per], option=option))
-  }, mc.cores=no_cores), use.names=FALSE)
+  }, mc.cores=no_cores)
 
   # get the boolean mgc test results for each permutation
   pMGCs <- lapply(mgc.nulls, function(mgc.null) mgc.null$stat >= result$stat)
@@ -111,7 +111,7 @@ mgc.test <-function(X, Y, dist.xfm.X=mgc.distance, dist.params.X=list(method='eu
   pMGC <- (Reduce("+", pMGCs) + 1)/(nperm + 1)
   pLocalCorr <- (Reduce("+", pLocalCorrs) + 1)/(nperm + 1)
 
-  return(list(p.value=pMGC,stat=result$stat, pLocalCorr=pLocalCorr,
+  return(list(p.value=pMGC, stat=result$stat, p.localCorr=pLocalCorr,
               localCorr=result$localCorr, optimalScale=result$optimalScale,
               option=option))
 }

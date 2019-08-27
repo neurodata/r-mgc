@@ -4,8 +4,9 @@
 \alias{mgc.test}
 \title{MGC Permutation Test}
 \usage{
-mgc.test(X, Y, dist.xfm.X = mgc.distance, dist.params.X = list(method =
-  "euclidean"), dist.return.X = NULL, dist.xfm.Y = mgc.distance,
+mgc.test(X, Y, is.dist.X = FALSE, dist.xfm.X = mgc.distance,
+  dist.params.X = list(method = "euclidean"), dist.return.X = NULL,
+  is.dist.Y = FALSE, dist.xfm.Y = mgc.distance,
   dist.params.Y = list(method = "euclidean"), dist.return.Y = NULL,
   nperm = 1000, option = "mgc", no_cores = 1)
 }
@@ -22,6 +23,8 @@ mgc.test(X, Y, dist.xfm.X = mgc.distance, dist.params.X = list(method =
    \item{a \code{[n x n]} distance matrix}{Y is a distance matrix. Use flag \code{is.dist.Y=TRUE}.}
 }}
 
+\item{is.dist.X}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
+
 \item{dist.xfm.X}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
 it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
 as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.}
@@ -34,6 +37,8 @@ Defaults to \code{list(method='euclidean')}.}
     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm.X[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 }}
+
+\item{is.dist.Y}{a boolean indicating whether your \code{Y} input is a distance matrix or not. Defaults to \code{FALSE}.}
 
 \item{dist.xfm.Y}{if \code{is.dist == FALSE}, a distance function to transform \code{Y}. If a distance function is passed,
 it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
@@ -59,10 +64,6 @@ Defaults to \code{list(method='euclidean')}.}
 }}
 
 \item{no_cores}{the number of cores to use for the permutations. Defaults to \code{1}.}
-
-\item{is.dist.X}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
-
-\item{is.dist.Y}{a boolean indicating whether your \code{Y} input is a distance matrix or not. Defaults to \code{FALSE}.}
 }
 \value{
 A list containing the following:

@@ -61,8 +61,8 @@
 #' lcor <- mgc.stat(data$X, data$Y)
 #'
 #' @export
-mgc.stat <- function(X, Y, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
-                     dist.return.X=NULL, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
+mgc.stat <- function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
+                     dist.return.X=NULL, is.dist.Y=FALSE, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
                      dist.return.Y=NULL, option='mgc') {
 
   # validate input is valid and convert to distance matrices, if necessary
