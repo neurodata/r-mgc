@@ -55,13 +55,6 @@ sim <- discr.sims.cross(n, d, 2)
 plot_sim(sim$X, sim$Y, "Cross")
 ```
 
-#
-
-```{r}
-sim <- discr.sims.beta(n, d)
-plot_sim(sim$X, sim$Y, "Beta")
-```
-
 # Radial
 
 ```{r}

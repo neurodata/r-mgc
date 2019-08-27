@@ -33,7 +33,7 @@ i2c2.os <- function(X, Y) {
 
 
 ## One Sample Driver
-test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=discr.distance, dist.params=list(method='euclidean'),
+test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                             dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
 
   validated <- mgc:::discr.validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
@@ -171,14 +171,14 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0.1) {
 
 ## --------------------------------------
 # Driver
-## --------------------------------------
+## -------------------------
 n <- 128; d <- 2
 nrep <- 300
-n.sigma <- 8
+n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(5, 7, 5, 3, 1)
+sims.sig.max <- c(10, 15, 10, 6, 2)
 sims.sig.min <- c(1, 2, 1, 1, 0.1)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Linear", "Cross", "Multiclass", "Annulus/Disc")
@@ -203,3 +203,4 @@ list.results.os <- mclapply(experiments, function(exper) {
 
 bound.results.os <- do.call(rbind, list.results.os)
 saveRDS(list(os.results=bound.results.os, list.results=list.results.os), '../data/sims/discr_sims_os.rds')
+
