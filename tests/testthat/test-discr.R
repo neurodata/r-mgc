@@ -1,4 +1,35 @@
 context("discr")
+require(MASS)
+require(abind)
+
+sim_gmm <- function(mus, Sigmas, n) {
+  K <- dim(mus)[2]
+  ni <- round(n/K)
+  labs <- c(sapply(1:K, function(k) rep(k, ni)))
+  ylabs <- as.vector(sort(unique(labs)))
+  res <- sapply(ylabs, function(y) mvrnorm(n=sum(labs == y), mus[,y], Sigmas[,,y]),
+                USE.NAMES=TRUE, simplify=FALSE)
+  X <- array(0, dim=c(n, dim(Sigmas)[1]))
+  for (y in ylabs) {
+    X[labs == y,] <- res[[y]]
+  }
+  return(list(X=X, Y=labs))
+}
+
+## Linear Signal Difference
+# a simulation where classes are linearly distinguishable
+# 2 classes
+sim.linear_sig <- function(n, d, sigma=2) {
+  S <- diag(d)
+  S[1, 1] <- 1
+  S[-c(1), -c(1)] <- 1
+  S2 <- S*sigma  # sample 2 has different covariance in signal dimension
+  mus=cbind(rep(0, d), c(1, rep(0, d-1))) # with the same mean signal shift between the classes
+  # sample 1 should be more discriminable than sample 2
+  samp1 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n)
+  samp2 <- sim_gmm(mus=mus, Sigmas=abind(S2, S2, along=3), n)
+  return(list(X1=samp1$X, X2=samp2$X, Y=samp1$Y))
+}
 
 test_that("RDF - 2 Class, d==1", {
   X <- as.matrix(c(0, 1, 2, 3)); Y <- c(1, 1, 2, 2)
@@ -61,7 +92,7 @@ test_that("One Sample Test is Valid", {
 })
 
 test_that("One Sample Test Detects Relationship", {
-  n = 100; d=5; nsim=5; alpha=0.1
+  n = 100; d=3; nsim=5; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
   res <- unlist(parallel::mclapply(1:nsim, function(i) {
@@ -69,66 +100,30 @@ test_that("One Sample Test Detects Relationship", {
     set.seed(seed.idx[i])
     sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=3); X <- sim$X; Y <- sim$Y
     set.seed(seed.idx[i])
-    return(discr.test.one_sample(X, Y, nperm=100)$p.value < alpha)
+    return(discr.test.one_sample(X, Y, nperm=50)$p.value < alpha)
   }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
   # check power is near 1
   expect_lt(abs(mean(res) - 1), 0.1)
 })
 
-test_that("Two Sample Test is Valid", {
-  n = 100; d=5; nsim=50; alpha=0.1
+test_that("Two Sample Test is Valid and Detects Relationship", {
+  n = 100; d=2; nsim=10; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
+  sim.opts <- list(list(alt="greater", sigma=20, outcome=1),
+                   list(alt="neq", sigma=20, outcome=1),
+                   list(alt="less", sigma=0.1, outcome=1))
   # test all cases of alternatives that can be specified
-  sapply(c("greater", "less", "neq"), function(alt) {
-    res <- unlist(parallel::mclapply(1:nsim, function(i) {
-      # no true class difference, both datasets equally discriminable
-      set.seed(seed.idx[i])
-      s.g1 <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=0)
-      set.seed(seed.idx[i])
-      s.g2 <- discr.sims.linear(n=n*3, d=d, K=2, signal.lshift=0)
-      g2.out <- list(X=NULL, Y=NULL)
-      for (y in unique(s.g1$Y)) {
-        idx.g2 <- which(s.g2$Y == y)
-        n.y <- sum(s.g1$Y == y)
-        g2.out$X <- rbind(g2.out$X, s.g2$X[idx.g2[1:n.y],])
-        g2.out$Y <- c(g2.out$Y, s.g2$Y[idx.g2[1:n.y]])
-      }
-      ord.g1 <- order(s.g1$Y)
-      set.seed(seed.idx[i])
-      return(discr.test.two_sample(s.g1$X[ord.g1,], g2.out$X, s.g1$Y[ord.g1], alt=alt, nperm=50)$p.value < alpha)
-    }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
-    # check power is near alpha
-    expect_lte(abs(mean(res) - alpha), 0.1)
-  })
-})
-
-test_that("Two Sample Test Detects Relationship", {
-  n = 100; d=3; nsim=10; alpha=0.1
-  set.seed(12345)
-  seed.idx <- floor(runif(nsim, 1, 10000))
-  expect_opts <- c(1, 0, 1)
-  alts <- c("greater", "less", "neq")
-  # test all cases of alternatives that can be specified
-  sapply(1:length(alts), function(j) {
+  sapply(sim.opts, function(sim.opt) {
     res <- unlist(parallel::mclapply(1:nsim, function(i) {
       # true class difference, where dataset 1 more discriminable than dataset 2
       set.seed(seed.idx[i])
-      s.g1 <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=2, signal.scale=1, non.scale=1)
+      sim <- sim.linear_sig(n, d, sigma=sim.opt$sigma)
       set.seed(seed.idx[i])
-      s.g2 <- discr.sims.linear(n=n*3, d=d, K=2, signal.lshift=2, signal.scale=2, non.scale=2)
-      g2.out <- list(X=NULL, Y=NULL)
-      for (y in unique(s.g1$Y)) {
-        idx.g2 <- which(s.g2$Y == y)
-        n.y <- sum(s.g1$Y == y)
-        g2.out$X <- rbind(g2.out$X, s.g2$X[idx.g2[1:n.y],])
-        g2.out$Y <- c(g2.out$Y, s.g2$Y[idx.g2[1:n.y]])
-      }
-      ord.g1 <- order(s.g1$Y)
-      set.seed(seed.idx[i])
-      return(discr.test.two_sample(s.g1$X[ord.g1,], g2.out$X, s.g1$Y[ord.g1], alt=alts[j], nperm=50)$p.value < alpha)
+      pval <- discr.test.two_sample(sim$X1, sim$X2, sim$Y, alt=sim.opt$alt, nperm=50)$p.value
+      return(pval < alpha)
     }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
     # check power accordingly
-    expect_lte(abs(mean(res) - expect_opts[j]), 0.1)
+    expect_lte(abs(mean(res) - sim.opt$outcome), 0.15)
   })
 })

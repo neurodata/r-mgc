@@ -58,7 +58,7 @@
 #'
 #' n=200; d=2
 #' data <- mgc.sims.linear(n, d)
-#' lcor <- mgc.stat(data$X, data$Y)
+#' mgc.stat.res <- mgc.stat(data$X, data$Y)
 #'
 #' @export
 mgc.stat <- function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
