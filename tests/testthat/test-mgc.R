@@ -35,10 +35,10 @@ test_that("MGC Works with Distance and Non-Distance Matrices for X and Y", {
   n = 100; d=5; nsim=50; alpha=0.1
   sim <- mgc.sims.linear(n=n, d=d, eps=1, ind=FALSE); X <- sim$X; Y <- sim$Y
   DX <- mgc.distance(sim$X); DY <- mgc.distance(sim$Y)
-  test.xy <- mgc.test(X, Y, nperm=100, no_cores=parallel::detectCores() - 1)
-  test.dx <- mgc.test(DX, Y, nperm=100, is.dist.X=TRUE, no_cores = parallel::detectCores() - 1)
-  test.dy <- mgc.test(X, DY, nperm=100, is.dist.Y=TRUE, no_cores = parallel::detectCores() - 1)
-  test.dxy <- mgc.test(DX, DY, nperm=100, is.dist.X=TRUE, is.dist.Y=TRUE, no_cores = parallel::detectCores() - 1)
+  test.xy <- suppressWarnings(mgc.test(X, Y, nperm=100, no_cores=parallel::detectCores() - 1))
+  test.dx <- suppressWarnings(mgc.test(DX, Y, nperm=100, is.dist.X=TRUE, no_cores = parallel::detectCores() - 1))
+  test.dy <- suppressWarnings(mgc.test(X, DY, nperm=100, is.dist.Y=TRUE, no_cores = parallel::detectCores() - 1))
+  test.dxy <- suppressWarnings(mgc.test(DX, DY, nperm=100, is.dist.X=TRUE, is.dist.Y=TRUE, no_cores = parallel::detectCores() - 1))
 
   expect_true(all.equal(test.xy$p.value, test.dx$p.value, test.dy$p.value, test.dxy$p.value))
   expect_true(all.equal(test.xy$stat, test.dx$stat, test.dy$stat, test.dxy$stat))
