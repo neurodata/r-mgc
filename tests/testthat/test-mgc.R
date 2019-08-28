@@ -17,7 +17,7 @@ test_that("MGC Detects Global Scale when Global Scale True", {
 })
 
 test_that("MGC is Valid", {
-  n = 100; d=5; nsim=10; alpha=0.1
+  n = 100; d=5; nsim=20; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
   res <- unlist(parallel::mclapply(1:nsim, function(i) {
@@ -25,10 +25,10 @@ test_that("MGC is Valid", {
     set.seed(seed.idx[i])
     sim <- mgc.sims.linear(n=n, d=d, eps=1, ind=TRUE); X <- sim$X; Y <- sim$Y
     set.seed(seed.idx[i])
-    return(mgc.test(X, Y, nperm=20)$p.value < alpha)
+    return(mgc.test(X, Y, nperm=40)$p.value < alpha)
   }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
   # check power is near alpha
-  expect_lte(abs(mean(res) - alpha), 0.16)
+  expect_lte(abs(mean(res) - alpha), 0.15)
 })
 
 test_that("MGC Works with Distance and Non-Distance Matrices for X and Y", {
