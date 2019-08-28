@@ -16,6 +16,8 @@ discr.sims.fat_tails(n, d, K, signal.scale = 1, rotate = FALSE,
 
 \item{signal.scale}{the scaling for the signal dimension. Defaults to \code{1}.}
 
+\item{rotate}{whether to apply a random rotation. Defaults to \code{TRUE}.}
+
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior
 of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
@@ -27,7 +29,7 @@ A function to simulate data with the same mean that spreads as class id increase
 }
 \examples{
 library(mgc)
-sim <- discr.sims.spread(100, 3, 2)
+sim <- discr.sims.fat_tails(100, 3, 2)
 }
 \author{
 Eric Bridgeford

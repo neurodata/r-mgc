@@ -69,7 +69,7 @@ Defaults to \code{list(method='euclidean')}.}
 A list containing the following:
 \item{\code{p.value}}{P-value of MGC}
 \item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
-\item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
+\item{\code{p.localCorr}}{P-value of the local correlations by double matrix index}
 \item{\code{localCorr}}{the local correlations}
 \item{\code{optimalScale}}{the optimal scale identified by MGC}
 \item{\code{option}}{specifies which global correlation was used}

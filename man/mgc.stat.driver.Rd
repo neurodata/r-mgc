@@ -6,6 +6,19 @@
 \usage{
 mgc.stat.driver(DX, DY, option = "mgc")
 }
+\arguments{
+\item{DX}{the first distance matrix.}
+
+\item{DY}{the second distance matrix.}
+
+\item{option}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
+\describe{
+   \item{\code{'mgc'}}{use the MGC global correlation.}
+   \item{\code{'dcor'}}{use the dcor global correlation.}
+   \item{\code{'mantel'}}{use the mantel global correlation.}
+   \item{\code{'rank'}}{use the rank global correlation.}
+}}
+}
 \description{
 MGC Sample Statistic Internal Driver
 }

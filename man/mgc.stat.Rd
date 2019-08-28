@@ -78,7 +78,7 @@ library(mgc)
 
 n=200; d=2
 data <- mgc.sims.linear(n, d)
-lcor <- mgc.stat(data$X, data$Y)
+mgc.stat.res <- mgc.stat(data$X, data$Y)
 
 }
 \references{

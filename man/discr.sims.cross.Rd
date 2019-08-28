@@ -21,6 +21,8 @@ discr.sims.cross(n, d, K, signal.scale = 10, non.scale = 1,
 \item{mean.scale}{whether the magnitude of the difference in the means between the two classes.
 If a mean scale is requested, \code{d} should be at least > \code{K}.}
 
+\item{rotate}{whether to apply a random rotation. Defaults to \code{TRUE}.}
+
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior
 of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
@@ -32,7 +34,7 @@ A function to simulate data with the same mean that spreads as class id increase
 }
 \examples{
 library(mgc)
-sim <- discr.sims.spread(100, 3, 2)
+sim <- discr.sims.cross(100, 3, 2)
 }
 \author{
 Eric Bridgeford

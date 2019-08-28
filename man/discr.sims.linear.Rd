@@ -20,6 +20,8 @@ discr.sims.linear(n, d, K, signal.scale = 1, signal.lshift = 1,
 
 \item{non.scale}{the scaling for the non-signal dimensions. Defaults to \code{1}.}
 
+\item{rotate}{whether to apply a random rotation. Defaults to \code{TRUE}.}
+
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior
 of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
