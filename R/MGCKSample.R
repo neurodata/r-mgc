@@ -30,7 +30,7 @@
 #' data <- mgc.sims.joint(n, d)
 #' data_mtx <- rbind(data$X, data$Y)
 #' labels <- c(replicate(n, 0), replicate(n, 1))
-#' result <- mgc.ksample(data_mtx, labels, mgc.opts=list(rep=10))
+#' result <- mgc.ksample(data_mtx, labels, mgc.opts=list(nperm=10))
 #'
 #' @export
 mgc.ksample <- function(X, Y, mgc.opts=list(), ...){
