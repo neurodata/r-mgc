@@ -752,7 +752,7 @@ mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
 #' @examples
 #' library(mgc)
 #' # sample 100 points from 3-d 2-ball with radius 2
-#' X <- mgc.sims.rball(100, 3, 2)
+#' X <- mgc.sims.2ball(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
@@ -776,8 +776,8 @@ mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
 #' @return the points sampled from the sphere, as a \code{[n, d]} array.
 #' @examples
 #' library(mgc)
-#' # sample 100 points from 3-d 2-ball with radius 2
-#' X <- mgc.sims.rball(100, 3, 2)
+#' # sample 100 points from 3-d 2-sphere with radius 2
+#' X <- mgc.sims.2sphere(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.2sphere <- function(n, d, r, cov.scale=0) {

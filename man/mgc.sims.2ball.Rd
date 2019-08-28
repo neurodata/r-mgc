@@ -25,7 +25,7 @@ Sample from the 2-ball in d-dimensions.
 \examples{
 library(mgc)
 # sample 100 points from 3-d 2-ball with radius 2
-X <- mgc.sims.rball(100, 3, 2)
+X <- mgc.sims.2ball(100, 3, 2)
 }
 \author{
 Eric Bridgeford
