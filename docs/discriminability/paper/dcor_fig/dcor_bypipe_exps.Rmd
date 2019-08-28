@@ -31,9 +31,9 @@ require(tidyverse)
 
 
 ```{r}
-results <- readRDS('./data/real/dep_wt_fmri_results.rds')
+results <- readRDS('../data/real/dep_wt_fmri_results.rds')
 
-dset.cols <- readRDS("./dset_colors.rds")
+dset.cols <- readRDS("../data/real/dset_colors.rds")
 
 single.ds <- lapply(results, function(res) {
   res %>%
@@ -101,6 +101,8 @@ lapply(unique(stat.vs.perf$xfm), function(xf) {
         xlab("Reference Statistic") +
         ylab(sprintf("%s Effect Size", ta)) +
         scale_color_manual(values=dset.cols) +
+        scale_y_continuous(limits=c(0, 1), expand = c(0, 0)) +
+        scale_x_continuous(limits=c(0, 1), expand = c(0, 0)) +
         guides(color=FALSE) +
         scale_size(range=c(0.5, 3)) +
         guides(size=FALSE, color=FALSE)

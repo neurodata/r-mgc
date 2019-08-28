@@ -3,3 +3,4 @@
 ^docs$
 ^LICENSE$
 ^README\.md$
+^\.travis\.yml$

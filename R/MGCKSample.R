@@ -35,7 +35,7 @@
 #' @export
 mgc.ksample <- function(X, Y, mgc.opts=list(), ...){
 
-  Y <- mgc.distance(Y, method="ohe")
+  DY <- mgc.distance(Y, method="ohe")
 
   # distance already computed, so skip...
   if (!is.null(mgc.opts$is.dist.Y)) {
@@ -46,5 +46,5 @@ mgc.ksample <- function(X, Y, mgc.opts=list(), ...){
     }
   }
 
-  return(do.call(mgc.test, c(list(X=X, Y=Yh), mgc.opts)))
+  return(do.call(mgc.test, c(list(X=X, Y=DY), mgc.opts)))
 }

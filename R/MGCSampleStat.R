@@ -76,7 +76,15 @@ mgc.stat <- function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params
 }
 
 #' MGC Sample Statistic Internal Driver
-#'
+#' @param DX the first distance matrix.
+#' @param DY the second distance matrix.
+#' @param option is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.
+#' \describe{
+#'    \item{\code{'mgc'}}{use the MGC global correlation.}
+#'    \item{\code{'dcor'}}{use the dcor global correlation.}
+#'    \item{\code{'mantel'}}{use the mantel global correlation.}
+#'    \item{\code{'rank'}}{use the rank global correlation.}
+#' }
 mgc.stat.driver <- function(DX, DY, option='mgc') {
   # compute local correlation map
   localCorr <- mgc.localcorr(DX, DY, option)$corr # compute all localCorr

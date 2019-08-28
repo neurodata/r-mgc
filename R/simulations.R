@@ -404,6 +404,7 @@ mgc.sims.ubern <- function(n, d, eps=0.5, p=0.5) {
 #' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
 #' @param signal.lshift the location shift for the signal dimension between the classes. Defaults to \code{1}.
 #' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
@@ -449,6 +450,7 @@ discr.sims.linear <- function(n, d, K, signal.scale=1, signal.lshift=1, non.scal
 #' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
 #' @param signal.lshift the location shift for the signal dimension between the classes. Defaults to \code{1}.
 #' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
@@ -492,6 +494,7 @@ discr.sims.exp <- function(n, d, K, signal.scale=1, signal.lshift=1, non.scale=1
 #' @param d the number of dimensions.
 #' @param K the number of classes in the dataset.
 #' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
@@ -539,13 +542,14 @@ discr.sims.fat_tails <- function(n, d, K, signal.scale=1, rotate=FALSE, class.eq
 #' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
 #' @param mean.scale whether the magnitude of the difference in the means between the two classes.
 #' If a mean scale is requested, \code{d} should be at least > \code{K}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
 #' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
 #' @examples
 #' library(mgc)
-#' sim <- discr.sims.spread(100, 3, 2)
+#' sim <- discr.sims.cross(100, 3, 2)
 #' @author Eric Bridgeford
 #' @export
 discr.sims.cross <- function(n, d, K, signal.scale=10, non.scale=1, mean.scale=0,

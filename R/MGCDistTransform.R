@@ -129,11 +129,11 @@ DistRanks <- function(dis) {
 #' @export
 mgc.distance <- function(X, method='euclidean') {
   if (method == "ohe") {
-    ylabs <- unique(Y); K <- length(ylabs); n <- length(Y)
+    ylabs <- unique(X); K <- length(ylabs); n <- length(X)
     # one-hot-encode the y-labels for 0-1 loss under euclidian distance
     Yh <- array(0, dim=c(n, K))
     for (i in 1:K) {
-      Yh[Y == ylabs[i],i] <- 1
+      Yh[X == ylabs[i],i] <- 1
     }
 
     # compute distance...

@@ -117,7 +117,7 @@ sim_gmm <- function(mus, Sigmas, n) {
 ## No Signal
 # a simulation where both pipelines are equally discriminable
 # 2 classes
-sim.no_signal <- function(n, d, sigma=1) {
+sim.no_signal <- function(n, d, sigma=0) {
   # samples 1 and 2 have classes are from same distribution, so no signal should be detected w.p. alpha
   samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=sigma*abind(diag(d), diag(d), along=3), n)
   samp2 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=sigma*abind(diag(d), diag(d), along=3), n)
@@ -128,7 +128,7 @@ sim.no_signal <- function(n, d, sigma=1) {
 # a simulation where classes are linearly distinguishable, and pipeline 1 is more discriminable
 # than pipeline 2
 # 2 classes
-sim.linear_sig <- function(n, d, sigma=2) {
+sim.linear_sig <- function(n, d, sigma=0) {
   S <- diag(d)
   S[1, 1] <- 2
   S[-c(1), -c(1)] <- 1
@@ -136,34 +136,58 @@ sim.linear_sig <- function(n, d, sigma=2) {
   mus=cbind(rep(0, d), c(1, rep(0, d-1))) # with the same mean signal shift between the classes
   # sample 1 should be more discriminable than sample 2
   samp1 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n)
-  samp2 <- sim_gmm(mus=mus, Sigmas=abind(S2, S2, along=3), n)
-  return(list(X1=samp1$X, X2=samp2$X, Y=samp1$Y))
+  samp2 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n)
+  return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
+
 ## Crossed Signal Difference
-# a simulation where classes are crossed but distinguishable, and pipeline 1 is more discriminable
-# than pipeline 2
+# a simulation where classes are crossed but distinguishable
 # also contains correlation btwn dimensions
 # 2 classes
-sim.crossed_sig <- function(n, d, sigma=1) {
-  S1s <- diag(d); S <- abind(S1s, S1s, along=3)
+sim.crossed_sig <- function(n, d, K=16, sigma=0) {
+  # class mus
+  mu.class.1 <- rep(0, d)
+  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)
+  S.class <- diag(d)*sqrt(K)
+
+  mus.class <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
+                       mvrnorm(n=K/2, mu.class.2, S.class)))
+  ni <- n/K
+
   # crossed signal
-  S1 <- S; S1[1,1,1] <- S1[2,2,2] <- 5
-  S2 <- S; S2[2,2,2] <- S2[1,1,1] <- 5; S[1,1,2] <- S[2,2,1] <- sigma
-  # add correlation
-  S1[1,2,1] <- S1[2,1,1] <- sqrt(1)/2; S1[1,2,2] <- S1[2,1,2] <- -sqrt(1)/2
-  S2[1,2,1] <- S2[2,1,1] <- sqrt(sigma)/2; S2[1,2,2] <- S2[2,1,2] <- -sqrt(sigma)/2  # pipeline 2 is less discriminable than pipeline 1
-  #mus=cbind(c(1, rep(0, d-1)), c(0,1, rep(0, d-2)))  # slight mean shift
+  Sigma.1 <- cbind(c(2,0), c(0,0.1))
+  Sigma.2 <- cbind(c(0.1,0), c(0,2))
   mus=cbind(rep(0, d), rep(0, d))
-  samp1 <- sim_gmm(mus=mus, Sigmas=S1, n)
-  samp2 <- sim_gmm(mus=mus, Sigmas=S2, n)
-  return(list(X1=samp1$X, X2=samp2$X, Y=samp1$Y))
+
+  X1 <- do.call(rbind, lapply(1:K, function(k) {
+    # add random correlation
+    Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
+    rho <- runif(1, min=-1, max=1)*sqrt(2*0.1)
+    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
+    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
+    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni)
+    return(sweep(sim$X, 2, mus.class[,k], "+"))
+  }))
+
+  X2 <- do.call(rbind, lapply(1:K, function(k) {
+    # add random correlation
+    Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
+    rho <- runif(1, min=-1, max=1)*sqrt(2*0.1)
+    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
+    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
+    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni)
+    return(sweep(sim$X, 2, mus.class[,k], "+"))
+  })) + array(rnorm(n*d), dim=c(n, d))*sigma
+
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
+  return(list(X1=X1, X2=X2, Y=Y))
 }
 
 ## Samples from Multiclass Gaussians
 # a simulation where there are multiple classes present, and a correlation structure
 # 2 classes
-sim.multiclass_gaussian <- function(n, d, K=16, sigma=1) {
+sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
   S.k <- diag(d)*1
   S.k[upper.tri(S.k)] <- 0.5  # correlated
   S.k[lower.tri(S.k)] <- 0.5
@@ -175,14 +199,13 @@ sim.multiclass_gaussian <- function(n, d, K=16, sigma=1) {
   mus <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
                  mvrnorm(n=K/2, mu.class.2, S.class)))
   S1 <- abind(lapply(1:K, function(k) S.k), along=3)
-  S2 <- S1*sigma  # pipeline 2 less discriminable than pipeline 1
 
   samp1 <- sim_gmm(mus=mus, Sigmas=S1, n)
-  samp2 <- sim_gmm(mus=mus, Sigmas=S2, n)
-  return(list(X1=samp1$X, X2=samp2$X, Y=samp1$Y))
+  samp2 <- sim_gmm(mus=mus, Sigmas=S1, n)
+  return(list(X1=samp1$X, X2= samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
-sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0.1) {
+sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
   # centers
   K.cent <- K/2
   mu.class <- rep(0, d)
@@ -205,13 +228,13 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0.1) {
 
   X2 <- do.call(rbind, lapply(1:K.cent, function(k) {
     X <- array(NaN, dim=c(ni*2, d))
-    X[1:ni,] <- sweep(mgc.sims.2ball(ni, d, r=1, cov.scale=sigma), 2, mus[,k], "+")
-    X[(ni + 1):(2*ni),] <- sweep(mgc.sims.2sphere(ni, r=1, d=d, cov.scale=sigma), 2, mus[,k], "+")
+    X[1:ni,] <- sweep(mgc.sims.2ball(ni, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
+    X[(ni + 1):(2*ni),] <- sweep(mgc.sims.2sphere(ni, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
     return(X)
   }))
 
-  Y <- sapply(1:K, function(k) rep(k, ni))
-  return(list(X1=X1, X2=X2, Y=Y))
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
+  return(list(X1=X1, X2=X2 + array(rnorm(n*d), dim=c(n, d))*sigma, Y=Y))
 }
 
 ## --------------------------------------
@@ -223,10 +246,10 @@ n.sigma <- 8
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(10, 12, 5, 3, 1)
-sims.sig.min <- c(1, 2, 1, 1, 0.1)
+sims.sig.max <- c(10, 2, 2, 4, 1)
+sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Cross", "Multiclass", "Annulus/Disc")
+  c("No Signal", "Linear", "Cross", "Gaussian", "Annulus/Disc")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
