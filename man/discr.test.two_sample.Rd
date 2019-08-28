@@ -61,6 +61,9 @@ Also implemented are tests of \eqn{<}{<} and \eqn{\neq}{!=}.
 }
 
 \examples{
+require(mgc)
+require(MASS)
+
 n = 100; d=5
 
 # generate two subjects truths; true difference btwn

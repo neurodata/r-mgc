@@ -59,6 +59,7 @@ is the discriminability that would be observed by random chance.
 
 \examples{
 
+require(mgc)
 n = 100; d=5
 
 # simulation with a large difference between the classes

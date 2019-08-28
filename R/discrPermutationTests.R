@@ -41,6 +41,7 @@
 #'
 #' @examples
 #'
+#' require(mgc)
 #' n = 100; d=5
 #'
 #' # simulation with a large difference between the classes
@@ -118,6 +119,9 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #'
 #'
 #' @examples
+#' require(mgc)
+#' require(MASS)
+#'
 #' n = 100; d=5
 #'
 #' # generate two subjects truths; true difference btwn
