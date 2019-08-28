@@ -32,7 +32,7 @@
 #' @examples
 #' sim <- discr.sims.linear(100, 10, K=2)
 #' X <- sim$X; Y <- sim$Y
-#' discr.stat(X, Y)
+#' discr.stat(X, Y)$discr
 #'
 #' @author Eric Bridgeford
 #' @export
