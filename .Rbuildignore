@@ -6,3 +6,4 @@
 ^\.travis\.yml$
 ^citation\.bib$
 ^codecov\.yml$
+^codecov\.R$
