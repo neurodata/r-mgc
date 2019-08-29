@@ -4,33 +4,86 @@
 \alias{discr.test.two_sample}
 \title{Discriminability Two Sample Permutation Test}
 \usage{
-discr.test.two_sample(D1, D2, ids, nperm = 100, verbose = FALSE)
+discr.test.two_sample(X1, X2, Y, dist.xfm = mgc.distance,
+  dist.params = list(method = "euclidian"), dist.return = NULL,
+  remove.isolates = TRUE, nperm = 100, no_cores = 1,
+  alt = "greater")
 }
 \arguments{
-\item{D1}{is interpreted as:
+\item{X1}{is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.}
+
+\item{X2}{is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.}
+
+\item{Y}{\code{[n]} a vector containing the sample ids for our \code{n} samples. Should be matched such that \code{Y[i]} is the corresponding label for \code{X1[i,]} and \code{X2[i,]}.}
+
+\item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.}
+
+\item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
 \describe{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 }}
 
-\item{D2}{is interpreted as:
-\describe{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
-}}
+\item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
+one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.}
 
-\item{ids}{\code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.}
+\item{nperm}{the number of permutations for permutation test. Defualts to \code{100}.}
 
-\item{nperm}{the number of permutations to perform. Defaults to \code{100}.}
+\item{no_cores}{the number of cores to use for the permutations. Defaults to \code{1}.}
 
-\item{verbose}{whether to print the itereation numbers. Defaults to \code{FALSE}.}
+\item{alt}{the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
+or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.}
 }
 \value{
-the pvalue associated with the permutation test.
+A list containing the following:
+\item{\code{stat}}{the observed test statistic. the test statistic is the difference in discriminability of X1 vs X2.}
+\item{\code{discr}}{the discriminabilities for each of the two data sets, as a list.}
+\item{\code{null}}{the null distribution of the test statistic, computed via permutation.}
+\item{\code{p.value}}{The p-value associated with the test.}
+\item{\code{alt}}{The alternative hypothesis for the test.}
 }
 \description{
-A function that takes two distance matrices and produces a p-value associated with whether or not the distance matrices differ significantly.
+A function that takes two sets of paired data and tests of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
+}
+\section{Details}{
+
+
+A function that performs a two-sample test for whether the discriminability is different for that of
+one dataset vs another, as described in Bridgeford et al. (2019). With \eqn{\hat D_{X_1}}{Dhatx1} the sample discriminability of one approach, and \eqn{\hat D_{X_2}}{Dhatx2} the sample discriminability of another approach:
+
+\deqn{H_0: D_{X_1} = D_{X_2}}{H0: Dx1 = Dx2} and:\deqn{H_A: D_{X_1} > D_{X_2}}{Ha: Dx1 > Dx2}.
+Also implemented are tests of \eqn{<}{<} and \eqn{\neq}{!=}.
+}
+
+\examples{
+require(mgc)
+require(MASS)
+
+n = 100; d=5
+
+# generate two subjects truths; true difference btwn
+# subject 1 (column 1) and subject 2 (column 2)
+mus <- cbind(c(0, 0), c(1, 1))
+Sigma <- diag(2)  # dimensions are independent
+
+# first dataset X1 contains less noise than X2
+X1 <- do.call(rbind, lapply(1:dim(mus)[2],
+  function(k) {mvrnorm(n=50, mus[,k], 0.5*Sigma)}))
+X2 <- do.call(rbind, lapply(1:dim(mus)[2],
+  function(k) {mvrnorm(n=50, mus[,k], 2*Sigma)}))
+Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
+
+# X1 should be more discriminable, as less noise
+discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
+}
+\references{
+Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
 }
 \author{
-Shangsi Wang and Eric Bridgeford
+Eric Bridgeford
 }

@@ -1,0 +1,291 @@
+---
+title: "figure_2"
+author: "Eric Bridgeford"
+date: "November 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(lolR)
+require(plyr)
+require(scales)
+require(dplyr)
+require(latex2exp)
+```
+
+```{r}
+g_legend<-function(a.gplot){
+  tryCatch({
+    tmp <- ggplot_gtable(ggplot_build(a.gplot))
+    leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+    legend <- tmp$grobs[[leg]]
+    return(legend)
+  }, error=function(e) {return(ggplot() + theme_void())})
+}
+```
+
+## Data Plots
+
+```{r}
+## ------------------------------------------
+# Simulations
+## ------------------------------------------
+sim_gmm <- function(mus, Sigmas, n) {
+  K <- dim(mus)[2]
+  ni <- round(n/K)
+  labs <- c(sapply(1:K, function(k) rep(k, ni)))
+  ylabs <- as.vector(sort(unique(labs)))
+  res <- sapply(ylabs, function(y) mvrnorm(n=sum(labs == y), mus[,y], Sigmas[,,y]), USE.NAMES=TRUE, simplify=FALSE)
+  X <- array(0, dim=c(n, dim(Sigmas)[1]))
+  for (y in ylabs) {
+    X[labs == y,] <- res[[y]]
+  }
+  return(list(X=X, Y=labs))
+}
+
+
+## No Signal
+# a simulation where no distinguishable signal present
+# 2 classes
+sim.no_signal <- function(n, d, sigma=1) {
+  # classes are from same distribution, so signal should be detected w.p. alpha
+  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d)), Y=samp$Y,
+              Z=c(rep(1, n/2), rep(2, n/2))))
+}
+
+## Linear Signal Difference
+# a simulation where classes are linearly distinguishable
+# 2 classes
+sim.linear_sig <- function(n, d, sigma=0) {
+  Sigma <- diag(d)
+  Sigma[1, 1] <- 2
+  Sigma[-c(1), -c(1)] <- 1
+  Sigma[1,1] <- 2
+  mus=cbind(rep(0, d), c(4, rep(0, d-1))) # with a mean signal shift between the classes
+  samp <- sim_gmm(mus=mus, Sigmas=abind(Sigma, Sigma, along=3), n)
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y, 
+              Z=c(rep(1, n/2), rep(2, n/2))))
+}
+
+## Crossed Signal Difference
+# a simulation where classes are crossed but distinguishable
+# also contains correlation btwn dimensions
+# 2 classes
+sim.crossed_sig <- function(n, d, K=16, sigma=0) {
+  # class mus
+  mu.class.1 <- rep(0, d)
+  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)*1.25
+  S.class <- diag(d)*sqrt(K)
+
+  mus.class <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
+                 mvrnorm(n=K/2, mu.class.2, S.class)))
+  ni <- n/K
+
+  # crossed signal
+  Sigma.1 <- cbind(c(2,0), c(0,0.1))
+  Sigma.2 <- cbind(c(0.1,0), c(0,2))
+  mus=cbind(rep(0, d), rep(0, d))
+
+  X <- do.call(rbind, lapply(1:K, function(k) {
+    # add random correlation
+    Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
+    rho <- runif(1, min=-1, max=1)*sqrt(2*0.1)
+    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
+    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
+    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni)
+    return(sweep(sim$X, 2, mus.class[,k], "+"))
+  }))
+
+  X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
+
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
+  return(list(X=X, Y=Y, Z=c(rep(1, n/2), rep(2, n/2))))
+}
+
+## Samples from Multiclass Gaussians
+# a simulation where there are multiple classes present, and a correlation structure
+# 2 classes
+sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
+  S.k <- diag(d)*1
+  S.k[upper.tri(S.k)] <- 0.5  # correlated
+  S.k[lower.tri(S.k)] <- 0.5
+
+  mu.class.1 <- rep(0, d)
+  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)*1.25
+  S.class <- diag(d)*sqrt(K)
+
+  mus <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
+                 mvrnorm(n=K/2, mu.class.2, S.class)))
+  Sigmas <- abind(lapply(1:K, function(k) S.k), along=3)
+
+  samp <- sim_gmm(mus=mus, Sigmas=Sigmas, n)
+  return(list(X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=samp$Y,
+              Z=c(rep(1, n/2), rep(2, n/2))))
+}
+
+# 8 pairs of annulus/discs
+sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
+  # centers
+  K.cent <- K/2
+  mu.class <- rep(0, d)
+  S.class <- diag(d)*sqrt(K)
+
+  mu.class.1 <- rep(0, d)
+  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)*1.25
+  S.class <- diag(d)*sqrt(K)
+
+  mus <- t(rbind(mvrnorm(n=K.cent/2, mu.class.1, S.class),
+                 mvrnorm(n=K.cent/2, mu.class.2, S.class)))
+
+  ni <- n/K
+
+  X <- do.call(rbind, lapply(1:K.cent, function(k) {
+    X <- array(NaN, dim=c(ni*2, d))
+    X[1:ni,] <- sweep(mgc.sims.2ball(ni, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
+    X[(ni + 1):(2*ni),] <- sweep(mgc.sims.2sphere(ni, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
+    return(X)
+  }))
+
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
+  return(list(X=X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=Y, Z=c(rep(1, n/2), rep(2, n/2))))
+}
+```
+
+```{r, fig.width=10, fig.height=2}
+n <- 256; d <- 2
+
+simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
+                    sim.multiclass_gaussian, sim.multiclass_ann_disc)
+names(simulations) <- c("(i) No Signal", "(ii) Linear", "(iii) Cross", "(iv) Gaussian", "(v) Annulus/Disc")
+
+colors <- c('#e6194b','#4363d8', '#ffe119', '#3cb44b', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff')
+
+sim.dat <- lapply(names(simulations), function(sim.name) {
+  sim <- do.call(simulations[[sim.name]], list(n=n, d=d, sigma=0))
+  dmtx <- melt(mgc.distance(sim$X))
+  dmtx$value <- dmtx$value^2
+  dmtx$value <- (dmtx$value - min(dmtx$value))/(max(dmtx$value) - min(dmtx$value))
+  dmtx$sim.name <- sim.name
+  return(list(data=data.frame(sim.name=sim.name,
+                    x1=(sim$X[,1] - min(sim$X[,1]))/(max(sim$X[,1]) - min(sim$X[,1])),
+                    x2=(sim$X[,2] - min(sim$X[,2]))/(max(sim$X[,2]) - min(sim$X[,2])),
+                    y=sim$Y, z=sim$Z),
+              dmtx=dmtx))
+})
+
+sim.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$data)) %>%
+  mutate(sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
+         y=factor(y), z=factor(z), plot.name="(A) Simulation") %>%
+  ggplot(aes(x=x1, y=x2, color=y, shape=z)) +
+    geom_point() +
+    facet_grid(plot.name ~ sim.name, scales="free") +
+    xlab(TeX("$x_1$")) +
+    ylab(TeX("$x_2$")) +
+    scale_color_manual(values=colors, guide=FALSE) +
+    theme_bw() +
+    scale_shape_discrete(name="Gender") +
+    theme(axis.text=element_text(color="#FFFFFF"),
+          axis.ticks=element_blank())
+
+dmtx.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$dmtx)) %>%
+  mutate(sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE), 
+         plot.name="(B) Distance Mtx") %>%
+  ggplot(aes(x=Var1, y=Var2, fill=sqrt(value))) +
+    geom_tile() +
+  xlab("Sample 1") +
+  ylab("Sample 2") +
+  theme_bw() +
+  scale_fill_gradient(name="Distance", low="#FFFFFF", high="#9900FF") +
+  facet_grid(plot.name ~ sim.name, scales="free") +
+    theme(strip.background.x = element_blank(),
+          strip.text.x=element_blank())
+```
+
+## Bound Plots
+
+```{r}
+
+```
+
+## One and Two Sample Plots
+
+```{r}
+al=0.05  # alpha for the power testing
+one.sample.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
+  mutate(outcome = p.value < al,
+         stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
+         test.name="(C) One Sample Test",
+        sim.name=recode_factor(sim.name, "No Signal" = "(i) No Signal",
+                               "Linear" = "(ii) Linear",
+                               "Cross" = "(iii) Cross",
+                               "Gaussian" = "(iv) Gaussian",
+                               "Annulus/Disc" = "(v) Annulus/Disc"))
+two.sample.results <- readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
+  mutate(outcome = p.value < al,
+        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
+        test.name="(D) Two Sample Test",
+        sim.name=recode_factor(sim.name, "No Signal" = "(i) No Signal",
+                               "Linear" = "(ii) Linear",
+                               "Cross" = "(iii) Cross",
+                               "Gaussian" = "(iv) Gaussian",
+                               "Annulus/Disc" = "(v) Annulus/Disc"))
+
+sample.test.results <- rbind(one.sample.results, two.sample.results) %>%
+  mutate(test.name=factor(test.name),
+         sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
+         stat.name=factor(stat.name, levels=c("I2C2", "ICC o PCA", "Discr"), ordered=TRUE)) %>%
+  group_by(test.name, sim.name, n, d, stat.name) %>%
+  mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma)))
+
+alg.colors <- c("#c70000", "#a7aec5", "#6699cc")
+line.types <- c(1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr", "ICC o PCA", "I2C2")
+```
+
+### Sample Test Plot
+
+```{r}
+sample.plots <- sample.test.results %>%
+  group_by(stat.name, sim.name, n, d, sigma, test.name, sigma.wt) %>%
+  dplyr::summarise(power=mean(outcome)) %>%
+  ggplot(aes(x=sigma.wt, y=power, color=stat.name)) +
+    geom_line() +
+    scale_color_manual(values=alg.colors, name="Reference Statistic") +
+    facet_grid(test.name ~ sim.name, scales="free_x") +
+    theme_bw() +
+    scale_y_continuous(limits=c(0, 1)) +#, expand=c(0, 0)) +
+    geom_hline(yintercept=0.05, color="black") +
+    xlab(TeX("$\\sigma$")) +
+    ylab("Statistical Power") +
+    theme(strip.background.x = element_blank(),
+           strip.text.x=element_blank())
+```
+
+# Full Plot
+
+```{r}
+plot.objs <- list(sim.plots, dmtx.plots,
+                  sample.plots)#, bound.plots, sample.plots)
+grid.arrange(
+  arrangeGrob(grobs=lapply(plot.objs, function(obj) obj + theme(legend.position="none")), 
+              layout_matrix=cbind(c(1,2,3, 3))),#,4,4))),
+  arrangeGrob(grobs=lapply(plot.objs, function(obj) g_legend(obj)), 
+              layout_matrix=cbind(c(1,2,3,3))),#4,4))),
+  ncol=2, widths=c(4, 1)
+  )
+```
+
+

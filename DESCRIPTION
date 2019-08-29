@@ -1,8 +1,8 @@
 Package: mgc
 Type: Package
 Title: Multiscale Graph Correlation
-Version: 1.0.1
-Date: 2018-04-12
+Version: 2.0.0
+Date: 2019-08-29
 Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
 	   	    email = "ericwb95@gmail.com"),
 	   	 person("Censheng", "Shen", role="aut",
@@ -12,21 +12,25 @@ Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
 	     person("Joshua", "Vogelstein", role = "ths",
 	     	    email = "jovo@jhu.edu"))
 Maintainer: Eric Bridgeford <ericwb95@gmail.com>
-Description: Multiscale Graph Correlation (MGC) is a framework developed by Shen et al. (2017) <arXiv:1609.05148> that extends global correlation procedures to be multiscale; consequently, MGC tests typically require far fewer samples than existing methods for a wide variety of dependence structures and dimensionalities, while maintaining computational efficiency. Moreover, MGC provides a simple and elegant multiscale characterization of the potentially complex latent geometry underlying the relationship. 
+Description: Multiscale Graph Correlation (MGC) is a framework developed by Vogelstein et al. (2019) <10.7554/eLife.41690> that extends global correlation procedures to be multiscale; consequently, MGC tests typically require far fewer samples than existing methods for a wide variety of dependence structures and dimensionalities, while maintaining computational efficiency. Moreover, MGC provides a simple and elegant multiscale characterization of the potentially complex latent geometry underlying the relationship.
 Depends:
     R (>= 3.4.0)
 Imports:
   stats,
   SDMTools,
-  MASS
-URL: https://github.com/neurodata/mgc
-Suggests: testthat,
-  ggplot2,
-  reshape2,
-  knitr,
-  rmarkdown
+  MASS,
+  abind,
+  boot,
+  energy
+URL: https://github.com/neurodata/r-mgc
+Suggests: 
+    testthat (>= 2.1.0),
+    ggplot2,
+    reshape2,
+    knitr,
+    rmarkdown
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 VignetteBuilder: knitr

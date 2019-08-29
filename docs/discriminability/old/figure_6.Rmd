@@ -1,0 +1,510 @@
+---
+title: "Figure 6 dMRI/fMRI/multiplot"
+author: "Eric Bridgeford"
+date: "2/28/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(ggplot2)
+require(scales)
+require(lme4)
+require(reshape2)
+require(plyr)
+require(dplyr)
+library(tidyr)
+require(ggbeeswarm)
+require(latex2exp)
+require(ggExtra)
+require(ggpubr)
+require(grid)
+require(gridExtra)
+require(stringr)
+require(data.table)
+require(abind)
+require(tidyverse)
+require(forcats)
+require(dplyr)
+```
+
+
+```{r}
+fmri.results <- readRDS('./data/real/discr_fmri_results.rds')
+fmri.pvals <- readRDS('./data/real/fmri_pval_results.rds')
+```
+
+```{r}
+dmri.results <- readRDS('./data/real/discr_dmri_results.rds')
+dmri.datasets <- data.frame()
+```
+
+# fMRI Multiplot
+
+```{r}
+reg_opts <- c("A", "F")
+names(reg_opts) <- c("ANTs", "FSL")
+freq_opts <- c("F", "N")
+names(freq_opts) <- c(TRUE, FALSE)
+scrub_opts <- c("S", "X")
+names(scrub_opts) <- c(TRUE, FALSE)
+gsr_opts <- c("G", "X")
+names(gsr_opts) <- c(TRUE, FALSE)
+atlas_opts <- c("A", "C", "D", "H")
+names(atlas_opts) <- c("AAL", "CC200", "Desikan", "HO")
+dsets <- unique(fmri.results$Dataset)
+
+fmri.results <- do.call(rbind, lapply(1:dim(fmri.results)[1], function(i) {
+  dat <- fmri.results[i,]
+  name <- paste(dat$Reg, dat$FF, dat$Scr, dat$GSR, dat$Parcellation,
+                dat$xfm, sep="")
+  return(cbind(data.frame(Name=name), dat))
+}))
+```
+
+Leave only the "best" NKI Pipeline, where the "best" pipeline is the one that has the highest average discriminability across all pipelines:
+
+```{r}
+nki.discr <- subset(fmri.results, grepl("NKI", Dataset)) %>%
+  group_by(Dataset) %>%
+  dplyr::summarise(avg.discr=mean(discr))
+nki.worst <- as.character(nki.discr$Dataset[nki.discr$avg.discr != max(nki.discr$avg.discr)])
+nki.best <- as.character(nki.discr$Dataset[nki.discr$avg.discr == max(nki.discr$avg.discr)])
+
+fmri.results <- mutate(subset(fmri.results, !(Dataset %in% nki.worst)),
+                       Dataset=revalue(Dataset, c("NKI24_mx645" = "NKI1")))
+fmri.results$Dataset <- factor(fmri.results$Dataset, levels=unique(as.character(fmri.results$Dataset)))
+fmri.results$Dataset <- fct_recode(fmri.results$Dataset, MRN1="MRNTRT")
+dmri.results$Dataset <- fct_recode(dmri.results$Dataset, NKI1="NKI24")
+```
+
+
+```{r}
+nan.mean <- function(x) {
+  mean(x, na.rm=TRUE)
+}
+
+fmri.summarized <- fmri.results %>%
+  group_by(Name, Reg, FF, Scr, GSR, Parcellation, xfm) %>%
+  dplyr::summarise(wt.discr=sum(discr*nsub)/sum(nsub))
+```
+
+```{r}
+fmri.best.pipe <- as.character(fmri.summarized[which.max(fmri.summarized$wt.discr),]$Name)
+pv.mtx <- lapply(fmri.pvals, function(fm.dset) fm.dset$pvals)
+dset.pvals <- abind(pv.mtx, along=3)
+pvals.best <- apply(dset.pvals[fmri.best.pipe,,], c(1), function(x) median(x, na.rm=TRUE))
+pvals.best.dat <- data.frame(Name=names(pvals.best), pval=as.numeric(pvals.best))
+fmri.pvals <- merge(fmri.summarized, pvals.best.dat, by="Name")
+```
+
+
+```{r}
+fmri.results$Name <- factor(fmri.results$Name, 
+                                levels=as.character(fmri.pvals$Name[order(fmri.pvals$pval, decreasing = TRUE)]),
+                                ordered=TRUE)
+```
+
+```{r}
+dset.cols <- c("#b20000", "#b26666", "#024b30", "#e5a983", "#7f5e49", "#e5b000", 
+"#b29944", "#7f7349", "#c3e600", "#a2b344", "#488018", "#b25922",
+"#83e6a0", "#49806e", "#66adb3", "#57a5e6", "#496780", "#8393e6", 
+"#495280", "#542ce6", "#561880", "#ad57e6", "#e200e6", "#7f4980", 
+"#b3227d", "#e683c1", "#b2002d", "#e5577b")
+names(dset.cols) <- unique(c(as.character(fmri.results$Dataset), as.character(dmri.results$Dataset)))
+saveRDS(dset.cols, "dset_colors.rds")
+```
+
+```{r, fig.height=8, fig.width=12}
+fmri.64pipe <- ggplot() +
+  geom_point(data=subset(fmri.results, xfm=="P"), aes(x=Name, y=discr, color=Dataset, size=nscans)) +
+  xlab("Preprocessing Strategy") +
+  ylab("Discriminability") +
+  theme_bw() +
+  ggtitle("Comparing Discriminability Across 64 Preprocessing Strategies") +
+  theme(axis.text.x=element_text(angle=90, size=8), axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14), plot.title=element_text(size=16),
+        panel.grid.major.x=element_blank(), panel.grid.minor.x=element_blank()) +
+  geom_point(data=subset(fmri.pvals, xfm=="P"), aes(x=Name, y=wt.discr), shape="triangle", size=2) +
+  guides(color=guide_legend(ncol=2)) +
+  scale_color_manual(values=dset.cols) +
+  scale_size(range=c(0.5, 3), name="#Scans")
+
+plot(fmri.64pipe)
+```
+
+```{r}
+# Registration
+reg.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, FF=fmri.results$FF,
+                             Scr=fmri.results$Scr, GSR=fmri.results$GSR,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+reg.result <- do.call(rbind, lapply(1:dim(reg.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==reg.sum$Dataset[i] & FF==reg.sum$FF[i] & Scr==reg.sum$Scr[i] &
+                   GSR==reg.sum$GSR[i] & Parcellation==reg.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- reg.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$Reg == "F"] - rows$discr[rows$Reg == "A"]
+  } else {
+    print()
+  }
+  return(reslt)
+}))
+
+# Freq Filtering
+freq.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             Scr=fmri.results$Scr, GSR=fmri.results$GSR,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+freq.result <- do.call(rbind, lapply(1:dim(freq.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==freq.sum$Dataset[i] & Reg==freq.sum$Reg[i] & Scr==freq.sum$Scr[i] &
+                   GSR==freq.sum$GSR[i] & Parcellation==freq.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- reg.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$FF == "N"] - rows$discr[rows$FF == "F"]
+  } else {
+    print()
+  }
+  return(reslt)
+}))
+
+
+# Scrubbing
+scr.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, GSR=fmri.results$GSR,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+scr.result <- do.call(rbind, lapply(1:dim(scr.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==scr.sum$Dataset[i] & Reg==scr.sum$Reg[i] & FF==scr.sum$FF[i] &
+                   GSR==scr.sum$GSR[i] & Parcellation==scr.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- reg.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$Scr == "N"] - rows$discr[rows$Scr == "S"]
+  } else {
+    print()
+  }
+  return(reslt)
+}))
+
+# Scrubbing
+gsr.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, Scr=fmri.results$Scr,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+gsr.result <- do.call(rbind, lapply(1:dim(gsr.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==gsr.sum$Dataset[i] & Reg==gsr.sum$Reg[i] & FF==gsr.sum$FF[i] &
+                   Scr==gsr.sum$Scr[i] & Parcellation==gsr.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- gsr.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$GSR == "G"] - rows$discr[rows$GSR == "N"]
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+
+# Parcellation
+parcel.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, Scr=fmri.results$Scr,
+                             GSR=fmri.results$GSR, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+parcel.result <- do.call(rbind, lapply(1:dim(parcel.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==parcel.sum$Dataset[i] & Reg==parcel.sum$Reg[i] & FF==parcel.sum$FF[i] &
+                   Scr==parcel.sum$Scr[i] & GSR==parcel.sum$GSR[i] & xfm==reg.sum$xfm[i])
+  reslt <- parcel.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$Parcellation == "C"] - max(rows$discr[rows$Parcellation != "C"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+# Edge
+edge.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, Scr=fmri.results$Scr,
+                             GSR=fmri.results$GSR, Parcellation=fmri.results$Parcellation), FUN=function(x) {NaN})
+edge.result <- do.call(rbind, lapply(1:dim(edge.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==edge.sum$Dataset[i] & Reg==edge.sum$Reg[i] & FF==edge.sum$FF[i] &
+                   Scr==edge.sum$Scr[i] & GSR==edge.sum$GSR[i] & Parcellation==edge.sum$Parcellation[i])
+  reslt <- parcel.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$xfm == "P"] - max(rows$discr[rows$xfm != "P"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+result <- rbind(data.frame(discr=reg.result$discr, Option="FSL - ANTs"), 
+                data.frame(discr=freq.result$discr, Option="NFF - FF"), 
+                data.frame(discr=scr.result$discr, Option="NSC - SCR"), 
+                data.frame(discr=gsr.result$discr, Option="GSR - NGS"), 
+                data.frame(discr=parcel.result$discr, Option="CC200 - max(others)"),
+                data.frame(discr=edge.result$discr, Option="PTR - max(others)"))
+```
+
+```{r}
+set.seed(1234)
+f5.fmri <- ggplot(result, aes(x=Option, y=discr)) +#, color=Option)) +
+  geom_quasirandom(data=result[sample(dim(result)[1], 2000),],
+                   alpha=0.6, size=0.25, bandwidth=1) +
+  geom_violin(color="black", fill="transparent") +
+  stat_summary(fun.y="mean", geom="point", color="black", size=2) +
+  theme_bw() +
+  xlab("") +
+  geom_hline(yintercept = 0, linetype=1, size=0.8) +
+  ylab(TeX("$\\hat{D}_{opt} - max(\\hat{D}_{others})$")) +
+  ggtitle("(A) Impact of fMRI Preprocessing Options on Discriminability") +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank()) +
+  guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
+```
+
+# dMRI plots
+
+
+```{r}
+f5.dmri2 <- ggplot(subset(dmri.results, Dataset == "SWU4"), aes(x=nroi, y=discr, color=xfm, group=xfm)) +
+  geom_point() +
+  scale_x_continuous(trans=log10_trans()) +
+  xlab("Number of Parcels in Parcellation") +
+  scale_color_discrete(name="Edge Transform", label=c("Raw", "PTR", "Log")) +
+  theme_bw() +
+  ylab("Discriminability") +
+  theme(panel.grid.minor.y = element_blank()) +
+  ggtitle("(B.ii) Impact of ROI Count on dMRI Discriminability") +
+  guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
+```
+
+```{r}
+xfm.dm.sum <- aggregate(list(discr=dmri.results$discr), 
+                     by=list(Dataset=dmri.results$Dataset, Parcellation=dmri.results$Parcellation), FUN=function(x) {NaN})
+xfm.dm.result <- do.call(rbind, lapply(1:dim(xfm.dm.sum)[1], function(i) {
+  rows <- subset(dmri.results, Dataset==xfm.dm.sum$Dataset[i] & Parcellation==xfm.dm.sum$Parcellation[i])
+  reslt <- xfm.dm.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$xfm == "L"] - max(rows$discr[rows$xfm == "N"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+xfmp.dm.sum <- aggregate(list(discr=dmri.results$discr), 
+                     by=list(Dataset=dmri.results$Dataset, Parcellation=dmri.results$Parcellation), FUN=function(x) {NaN})
+xfmp.dm.result <- do.call(rbind, lapply(1:dim(xfmp.dm.sum)[1], function(i) {
+  rows <- subset(dmri.results, Dataset==xfmp.dm.sum$Dataset[i] & Parcellation==xfmp.dm.sum$Parcellation[i])
+  reslt <- xfm.dm.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$xfm == "P"] - max(rows$discr[rows$xfm == "N"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+xfmlp.dm.sum <- aggregate(list(discr=dmri.results$discr), 
+                     by=list(Dataset=dmri.results$Dataset, Parcellation=dmri.results$Parcellation), FUN=function(x) {NaN})
+xfmlp.dm.result <- do.call(rbind, lapply(1:dim(xfmlp.dm.sum)[1], function(i) {
+  rows <- subset(dmri.results, Dataset==xfmlp.dm.sum$Dataset[i] & Parcellation==xfmlp.dm.sum$Parcellation[i])
+  reslt <- xfm.dm.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$xfm == "L"] - max(rows$discr[rows$xfm == "P"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+xfmp.dm.result$Option = "PTR - Raw"
+xfm.dm.result$Option = "Log - Raw"
+xfmlp.dm.result$Option = "Log - PTR"
+
+xfm.result <- rbind(xfmp.dm.result, xfm.dm.result, xfmlp.dm.result)
+```
+
+```{r}
+f5.dmri1 <- ggplot(xfm.result, aes(x=Option, y=discr)) +# , color=Option)) +
+  geom_jitter(alpha=0.8, size=1) +
+  geom_violin(color="black", fill="transparent", scale="width") +
+  theme_bw() +
+  xlab("Edge Transform") +
+  geom_hline(yintercept = 0, linetype=1, size=0.8) +
+  #scale_color_discrete() +
+  ylab(TeX("Difference in Discriminability")) +
+  ggtitle("(B.i) Edge Transform for dMRI Connectome") +
+  theme_bw() +
+  theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank()) +
+  guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
+```
+
+```{r}
+grid.arrange(f5.fmri, arrangeGrob(f5.dmri1, f5.dmri2, widths=c(0.5, 0.7), nrow=1), heights=c(0.5, 0.5), nrow=2)
+```
+
+# Multi-Modal Inquiries
+
+```{r}
+fmri.cov <- data.frame(Dataset=c('BNU1', 'BNU3', 'DC1', 'HNU1', 'IACAS1', 'IPCAS1', 'IPCAS2', 'IPCAS3',
+                                 'IPCAS4', 'IPCAS5', 'IPCAS6', 'IPCAS7', 'IPCAS8', 'JHNU', 'LMU1', 'LMU2',
+                                 'LMU3', 'MPG1', 'MRN1', 'NKI1_mx645', 'NKI24_mx1400', 'NKI24_std2500', 'NYU1',
+                                 'NYU2', 'SWU1', 'SWU2', 'SWU3', 'SWU4', 'UM', 'UPSM1', 'UWM', 'Utah1',
+                                 'Utah2', 'XHCUMS', 'IBATRT'), 
+                       Scanner.Man=c('Siemens', 'Siemens', 'Philips', 'GE', 'GE', 'Siemens', 'Siemens', 
+                                     'Siemens', 'GE', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens',
+                                     'Philips', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens',
+                                     'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens',
+                                     'Siemens', 'Siemens', 'GE', 'Siemens', 'Siemens', 'Siemens', 'Siemens'),
+                       Scanner.Mod=c('TrioTim', 'TrioTim', NaN, 'MR750', 'Signa HDx', 'TrioTim', 'TrioTim',
+                                     'TrioTim', 'MR750', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim',
+                                     'Achieva', 'Verio', 'TrioTim', 'Magentom', 'TrioTim', 'TrioTim', 'TrioTim', 
+                                     'TrioTim', 'Allegra', 'Allegra', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim',
+                                     'TrioTim', 'TrioTim', 'MR750', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim'),
+                       Headcoil.Channels=c(12, 12, 32, 8, 8, 8, 32, 8, 8, 12, 8, 8, 12, 8, 32, 12, 12, NaN, 12, 32, 32, 32,
+                                  1, 1, 8, 8, 8, 8, 12, 12, 8, 12, 12, 12, 12),
+                       Magnet.Strength=c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                             3, 3, 3, 3, 3, 3, 3),
+                       TE=c(30, 30, 35, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 17, 29, 30, 30, 30,
+                            25, 15, 30, 30, 30, 30, 30, 29, 25, 28, 28, 30, 30),
+                       TR=c(2000, 2000, 2500, 2000, 2000, 2000, 2500, 2000, 2000, 2000, 2500, 2500, 2000, 2000, 2500,
+                            3000, 3000, 3000, 2000, 645, 1400, 2500, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 1500,
+                            2600, 2000, 2000, 3000, 1750),
+                       Orientation=c(NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN, 'coronal', 'axial', 'axial', 'axial', 'axial',
+                                     'axial', 'axial', 'axial', 'axial', 'axial', 'axial', 'axial', 'axial', NaN,
+                                     'axial', 'axial', 'axial', 'axial', 'axial', 'axial', 'axial', NaN, 'axial',
+                                     'axial', 'axial', 'axial'),
+                       STC=c('interleaved', 'interleaved', 'interleaved', 'interleaved', 'interleaved', 
+                             'interleaved', 'interleaved', 'interleaved', 'interleaved', 'interleaved',
+                             'interleaved', 'interleaved', 'interleaved', 'interleaved', 'sequential',
+                             'interleaved', 'interleaved', 'interleaved', 'interleaved', 'interleaved',
+                             'interleaved', 'interleaved', NaN, 'interleaved', 'interleaved', 'interleaved',
+                             'interleaved', 'interleaved', 'sequential', 'sequential', 'interleaved', 'interleaved',
+                             'interleaved', 'interleaved', 'sequential'),
+                       Direction=c('asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc',
+                             'asc', 'asc', 'asc', 'asc', 'asc','asc', 'asc', 'asc', 'asc', 'asc',
+                             'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'desc', 'asc', 
+                             'asc', 'asc', 'asc', 'asc', 'asc'),
+                       Slice.Thick=c(3.5, 3.5, 3.5, 3.4, 4.0, 4.0, 3.0, 3.0, 3.5, 5.0, 3.5, 3.0, 3.0, 4.0, 3.0,
+                                     4.0, 4.0, 1.5, 3.5, 3.0, 2.0, 3.0, 3.0, 4.0, 3, 3, 3, 3, 4.0, 4.0, 3.5, 3.0,
+                                     3.0, 3.0, 3.6),
+                       Planar.Res=c(3.1, 3.5, 3, 3.4, 3.4, 4.0, 3.8, 3.4, 3.5, 3.1, 3.5, 3.0, 3.4, 3.75, 2.95, 
+                            3.0, 3.0, 1.5, 3.8, 3.0, 2.0, 3.0, 3.0, 3.0, 3.1, 3.4, 3.4, 3.4, 4.0, 3.1, 3.5,
+                            3.4, 3.4, 3.0, 3.4),
+                       nscan=c(200, 150, 120, 300, 240, 205, 212, 180, 180, 170, 242, 184, 240, 250, 180,
+                               120, 120, 300, 150, 900, 404, 120, 197, 180, 240, 300, 242, 242, 150, 200,
+                               231, 240, 240, 124, 220),
+                       Fat.Supp=c(T, T, T, T, F, T, T, T, T, T, T, T, T, T, T, T, T, NaN, T, T, T, T, NaN, T, T,
+                            T, T, T, T, T, F, T, T, T, T))
+
+dmri.cov <- data.frame(Dataset=c('BNU1', 'BNU3', 'HNU1', 'IPCAS1', 'IPCAS2', 'IPCAS8', 'MRN1', 'NKI1', 'SWU4',
+                                 'XHCUMS'),
+                       Scanner.Man=c("Siemens", "Siemens", "GE", 'Siemens', 'Siemens', 'Siemens', 'Siemens', 
+                                     'Siemens', 'Siemens', 'Siemens'),
+                       Scanner.Mod=c("TrioTim", "TrioTim", "MR750", 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim', 
+                                     'TrioTim', 'TrioTim', 'TrioTim'),
+                       Magnet.Strength=c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3),
+                       Headcoil.Channels=c(12, 12, 8, 8, 32, 12, 12, 32, 8, 12),
+                       TE=c(89, 104, 'Min', NaN, NaN, 104, 84, 95, NaN, 83),
+                       TR=c(8000, 7200, 8600, NaN, NaN, 6600, 9000, 2400, NaN, 8000),
+                       Orientation=c(NaN, NaN, NaN, NaN, NaN, 'a', 'a', 'a', NaN, 'a'),
+                       STC=c('interleaved', 'interleaved', 'interleaved', NaN, NaN, 'interleaved', 'interleaved',
+                             'interleaved', NaN, 'interleaved'),
+                       Slice.Thick=c(2.2, 2.5, 1.5, NaN, NaN, 3.0, 2.0, 2.0, NaN, 2.0),
+                       Planar.Res=c(2.2, 1.8, 1.5, NaN, NaN, 1.8, 2.0, 2.0, NaN, 2.0),
+                       Fat.Supp=c(T, T, T, NaN, NaN, T, T, T, NaN, T),
+                       n.Directions=c(30, 64, 33, 62, 39, 64, 35, 137, 93, 64),
+                       Bval.Intens=c(1000, 1000, 1000, NaN, NaN, 1000, 800, 1500, 1000, 700))
+```
+
+```{r}
+fmri.dset.aug <- merge(fmri.cov, fmri.results, by="Dataset")
+dmri.dset.aug <- merge(dmri.cov, dmri.results, by="Dataset")
+```
+
+```{r}
+fmri.scan.params <- fmri.dset.aug %>%
+  filter(Reg=="F", FF=="N", Scr=="N", GSR=="G", Parcellation=="C", xfm=="P") %>%
+  select(-one_of("Name", "Reg", "FF", "Scr", "GSR", "Parcellation", 'nroi', 
+                 'Magnet.Strength', "xfm", "Scanner.Man", "Orientation", "Fat.Supp", "Direction",
+                 "nscan")) %>%
+  mutate(nsub=as.numeric(nsub), Headcoil.Channels=as.numeric(Headcoil.Channels),
+         Planar.Res=as.numeric(Planar.Res), Slice.Thick=as.numeric(Slice.Thick), TE=as.numeric(TE),
+         TR=as.numeric(TR)) %>%
+  rename("#Headcoil Channels"="Headcoil.Channels", "#Subjects"="nsub", "#Sessions"="nses",
+         "Planar Res."="Planar.Res", "Slice Thickness"="Slice.Thick", "Acq. Order"="STC",
+         "Scanner Model"="Scanner.Mod") %>%
+  gather("Parameter", "Value", -Dataset, -discr, -nscans) %>%
+  filter(Value != NaN) %>%
+  ggplot(aes(x=as.factor(Value), y=discr, color=Dataset, size=nscans)) +
+    geom_point() +
+    xlab("Value") +
+    ylab("Discriminability") +
+    scale_color_manual(values=dset.cols) +
+    facet_wrap(Parameter~., nrow=2, scale="free_x") +
+    theme_bw() +
+  scale_size(range=c(0.5, 3), name="#Scans") +
+  ggtitle("(A) fMRI Scan Parameters") +
+  theme(legend.position = NaN)
+
+mm.leg <- get_legend(fmri.64pipe)
+```
+
+```{r}
+dmri.scan.params <- dmri.dset.aug %>%
+  filter(xfm=="P", Parcellation=="CPAC200") %>% #%in% c("CPAC200", "AAL", "HarvardOxford", "desikan")) %>%
+  select(-one_of('nroi', 'Magnet.Strength', "xfm", "Scanner.Man", "Orientation", "Fat.Supp",
+                 "Slice.Thick", "STC", "TE")) %>%
+  mutate(nsub=as.numeric(nsub), Headcoil.Channels=as.numeric(Headcoil.Channels),
+         Planar.Res=as.numeric(Planar.Res),# TE=as.numeric(TE),
+         TR=as.numeric(TR)) %>%
+  rename("#Headcoil Channels"="Headcoil.Channels", "#Subjects"="nsub", "#Sessions"="nses",
+         "Planar Res."="Planar.Res", "Scanner Model"="Scanner.Mod", "B-Value Intensity"="Bval.Intens",
+         "#Diffusion Directions"="n.Directions") %>%
+  gather("Parameter", "Value", -Dataset, -discr, -nscans, -Parcellation) %>%
+  filter(Value != NaN) %>%
+  ggplot(aes(x=as.factor(Value), y=discr, color=Dataset, size=nscans)) +
+    geom_point() +
+    xlab("Value") +
+    ylab("Discriminability") +
+    scale_color_manual(values=dset.cols) +
+    facet_wrap(Parameter~., nrow=2, scale="free_x") +
+    theme_bw() +
+    scale_size(range=c(0.5, 3), name="#Scans") +
+    ggtitle("(B) dMRI Scan Parameters") +
+    theme(legend.position = NaN)
+```
+
+```{r}
+mm.dat <- merge(fmri.results %>%
+  filter(Reg=="F", FF=="N", Scr=="N", GSR=="G", xfm=="P") %>%
+    mutate(Parcellation=fct_recode(Parcellation, "CPAC200"="C", "HO"="H",
+                                   "AAL"="A", "Desikan"="D")),
+  dmri.results %>%
+    filter(xfm=="P", Parcellation %in% c("CPAC200", "HarvardOxford", "AAL", "desikan")) %>%
+    mutate(Parcellation=fct_recode(Parcellation, "HO"="HarvardOxford",
+                                   "Desikan"="desikan")),
+  by=c("Parcellation", "Dataset")) %>%
+  ggplot(aes(x=Parcellation, y=discr.y-discr.x, color=Dataset, size=nscans.x)) +
+    geom_point() +
+    xlab("Parcellation") +
+    ylab(TeX("$\\hat{D}_{dMRI} - \\hat{D}_{fMRI}$")) +
+    scale_color_manual(values=dset.cols) +
+    theme_bw() +
+    geom_hline(yintercept=0) +
+    scale_size(range=c(0.5, 3), name="#Scans") +
+    ggtitle("(C) Multimodal MRI Comparison") +
+    theme(legend.position = NaN)
+```
+
+```{r}
+grid.arrange(fmri.scan.params, dmri.scan.params, mm.dat, mm.leg, 
+             layout_matrix=cbind(c(1, 2, 3), c(4, 4, 4)), widths=c(0.8, 0.2))
+```
+
+
+

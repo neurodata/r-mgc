@@ -1,0 +1,137 @@
+---
+title: "knn_fig"
+author: "Eric Bridgeford"
+date: "February 27, 2019"
+output: html_document
+---
+
+```{r setup, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(dplyr)
+require(tidyr)
+```
+
+# fMRI Figure
+
+```{r}
+fmri.results <- readRDS('./data/real/rf_fmri_results.rds')
+stat.results <- fmri.results$statistics
+problem.results <- fmri.results$rf
+
+#stat.results <- subset(stat.results, alg != "I2C2")
+stat.results.sum  <- stat.results %>%
+  group_by(thresh, alg, nroi) %>%
+  summarize(stat=weighted.mean(stat, nsub), nsub=sum(nsub), nscans=sum(nscans))
+problem.results.sum  <- problem.results %>%
+  group_by(thresh, task, Metric, nroi, embed) %>%
+  summarize(stat=weighted.mean(stat, nsub), null=weighted.mean(null, nsub), nsub=sum(nsub), nscans=sum(nscans))
+```
+
+```{r}
+max.stat <- stat.results.sum %>%
+  group_by(alg) %>%
+  slice(which.max(stat))
+
+min.prob <- problem.results.sum %>%
+  group_by(embed, task) %>%
+  slice(which.min(stat))
+```
+
+```{r}
+problem.results.sum %>%
+  gather("model", "statistic", -thresh, -task,  -Metric, -nroi, -nsub, -nscans, -embed) %>%
+  ggplot() +
+    geom_line(aes(color=task, linetype=hypothesis, x=thresh, y=statistic)) +
+    geom_line(data=stat.results.sum, aes(color=alg, x=thresh, y=stat)) +
+    geom_point(data=min.prob, aes(x=thresh, y=stat, color=task)) +
+    geom_point(data=max.stat, aes(x=thresh, y=stat, color=alg)) +
+    ggtitle("Examining Task Performance with RF Classification") +
+    facet_wrap(.~embed) +
+    theme_bw() +
+    xlab("Threshold") +
+    ylab("Statistic")
+```
+
+
+```{r}
+class.res <- subset(classifier.results, k == 4 & Metric %in% c("RMSE", "Accuracy") & task != "Lifestyle")
+class.res$value[class.res$Metric == "Accuracy"] <- 1 - class.res$value[class.res$Metric=="Accuracy"]
+min.task <- data.frame(min.thresh=c(), min.stat=c(), task=c())
+for (un in unique(class.res$task)) {
+  ss <- class.res[class.res$task == un,]
+  ss$value <- (ss$value - min(ss$value))/(max(ss$value) - min(ss$value))
+  class.res$value[class.res$task == un] <- ss$value
+  min.pt <- which(ss$value == min(ss$value))[1]
+  min.task <- rbind(min.task, data.frame(min.thresh=ss$thresh[min.pt], min.stat=ss$value[min.pt], task=un))
+}
+```
+
+```{r}
+ggplot(stat.results, aes(x=thresh, color=alg, y=stat, group=alg)) +
+  geom_line() +
+  theme_bw() +
+  geom_line(data=class.res, aes(x=thresh, y=value, color=task, group=task), size=1, linetype=6) +
+  geom_point(data=max.alg, aes(x=max.thresh, y=max.stat, color=alg, group=alg), size=2, show.legend=FALSE) +
+  geom_vline(data=max.alg, aes(xintercept=max.thresh, color=alg, group=alg), size=1, show.legend=FALSE) +
+  geom_point(data=min.task, aes(x=min.thresh, y=min.stat, color=task, group=task), size=2, show.legend=FALSE) +
+  geom_vline(data=min.task, aes(xintercept=min.thresh, color=task, group=task), size=1, show.legend=FALSE) +
+  ggtitle("Performance of Downstream Inference Task with Test-Retest Measures") +
+  xlab("Threshold") +
+  scale_color_discrete(name="") +
+  guides(linetype=FALSE) +
+  ylab("Statistic")
+```
+
+# dMRI Figure
+
+```{r}
+dmri.results <- readRDS('./data/real/knn_dmri_results.rds')
+stat.results <- dmri.results$statistics
+classifier.results <- dmri.results$problem
+```
+
+```{r}
+max.alg <- data.frame(max.thresh=c(), max.stat=c(), alg=c())
+for(un in unique(stat.results$alg)) {
+  ss <- stat.results[stat.results$alg == un,]
+  ss$stat <- (ss$stat - min(ss$stat))/(max(ss$stat) - min(ss$stat))
+  stat.results$stat[stat.results$alg == un] <- ss$stat
+  min.pt <- which(ss$stat == max(ss$stat))[1]
+  max.alg <- rbind(max.alg, data.frame(max.thresh=ss$thresh[min.pt], max.stat=ss$stat[min.pt], alg=un))
+}
+
+class.res <- subset(classifier.results, k == 7 & Metric %in% c("RMSE", "Accuracy") & task != "Lifestyle")
+class.res$value[class.res$Metric == "Accuracy"] <- 1 - class.res$value[class.res$Metric=="Accuracy"]
+min.task <- data.frame(min.thresh=c(), min.stat=c(), task=c())
+for (un in unique(class.res$task)) {
+  ss <- class.res[class.res$task == un,]
+  ss$value <- (ss$value - min(ss$value))/(max(ss$value) - min(ss$value))
+  class.res$value[class.res$task == un] <- ss$value
+  min.pt <- which(ss$value == min(ss$value))[1]
+  min.task <- rbind(min.task, data.frame(min.thresh=ss$thresh[min.pt], min.stat=ss$value[min.pt], task=un))
+}
+
+```
+
+```{r}
+ggplot(stat.results, aes(x=thresh, color=alg, y=stat, group=alg)) +
+  geom_line() +
+  theme_bw() +
+  geom_line(data=class.res, aes(x=thresh, y=value, color=task, group=task), size=1, linetype=6) +
+  geom_point(data=max.alg, aes(x=max.thresh, y=max.stat, color=alg, group=alg), size=2, show.legend=FALSE) +
+  geom_vline(data=max.alg, aes(xintercept=max.thresh, color=alg, group=alg), size=1, show.legend=FALSE) +
+  geom_point(data=min.task, aes(x=min.thresh, y=min.stat, color=task, group=task), size=2, show.legend=FALSE) +
+  geom_vline(data=min.task, aes(xintercept=min.thresh, color=task, group=task), size=1, show.legend=FALSE) +
+  ggtitle("(B) dMRI Inference Tasks") +
+  xlab("Threshold") +
+  scale_color_discrete(name="") +
+  guides(linetype=FALSE) +
+  ylab("Statistic")
+```

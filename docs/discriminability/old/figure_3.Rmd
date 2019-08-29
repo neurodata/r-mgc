@@ -1,0 +1,133 @@
+---
+title: "Figure 3"
+author: "Eric Bridgeford"
+date: "December 3, 2018"
+output: html_document
+---
+
+```{r setup, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(lolR)
+require(dplyr)
+require(tidyr)
+require(tidyverse)
+```
+
+```{r}
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+acols <- c("#FF0000", "#BBBBBB", "#BBBBBB", "#9997c9", "#778899", "#778899", "#387DC3")
+linetypes <- c(1, 1, 2, 1, 1, 2, 1)
+names(linetypes) <- names(acols) <- c("Discr", "ICC, best", "ICC, worst", "I2C2", "ANOVA, best",
+                                      "ANOVA, worst", "MANOVA")
+```
+
+
+# One Sample Results
+
+```{r}
+alpha = 0.05
+one.sample.results <- readRDS('data/sims/discr_sims_os.rds') %>%
+  dplyr::mutate(outcome = as.numeric(p.value < alpha), n=as.numeric(n))
+
+one.sample.powers <- one.sample.results %>%
+  group_by(alg, n, sim.name) %>%
+  summarize(power=mean(outcome))
+sim.names <- unique(one.sample.powers$sim.name)
+abbr <- c("(A)", "(B)", "(C)", "(D)", "(E)")
+```
+
+```{r}
+plots <- list()
+for (i in 1:length(sim.names)) {
+  plots[[i]] <- ggplot(subset(one.sample.powers, sim.name == sim.names[i]), 
+                       aes(x=n, y=power, linetype=alg, group=alg, color=alg)) +
+    geom_line(size=1.2) +
+    scale_x_continuous() +
+    theme_bw() +
+    scale_color_manual(name="Statistic", values=acols) +
+    scale_linetype_manual(name="Statistic", values=linetypes) +
+    ggtitle(paste(abbr[i], sim.names[i])) +
+    xlab("Number of Samples") +
+    ylab("Statistical Power") +
+    ylim(0, 1)
+}
+```
+
+```{r, fig.width=12, fig.height=2}
+leg <- g_legend(plots[[1]] + theme(legend.position="bottom"))
+
+plots <- lapply(1:length(plots), function(i) {
+  if (i != 1) {
+    return(plots[[i]] +
+             xlab("") + ylab("") + theme(legend.position=NaN) +
+      theme(axis.text.x=element_text(color="#FFFFFF"),
+            axis.text.y=element_text(color="#FFFFFF"))
+    )
+  } else {
+    return(plots[[i]] + theme(legend.position=NaN)) 
+  }
+})
+grid.arrange(arrangeGrob(grobs=(plots), nrow=1), leg, top=textGrob("One Sample Results"), nrow=2, heights=c(0.9, 0.1))
+```
+
+# Two Sample Results
+
+```{r}
+alpha = 0.05
+two.sample.results <- readRDS('data/sims/discr_sims_ts.rds') %>%
+  mutate(outcome = as.numeric(p.value < alpha), n=as.numeric(n))
+
+two.sample.powers <- two.sample.results %>%
+  group_by(alg, n, sim.name) %>%
+  summarize(power=mean(outcome))
+
+sim.names <- unique(two.sample.powers$sim.name)
+abbr <- c("(A)", "(B)", "(C)", "(D)", "(E)")
+```
+
+```{r}
+plots <- list()
+for (i in 1:length(sim.names)) {
+  plots[[i]] <- ggplot(subset(two.sample.powers, sim.name == sim.names[i]), 
+                       aes(x=n, y=power, linetype=alg, group=alg, color=alg)) +
+    geom_line(size=1.2) +
+    scale_x_continuous() +
+    theme_bw() +
+    scale_color_manual(name="Statistic", values=acols) +
+    scale_linetype_manual(name="Statistic", values=linetypes) +
+    ggtitle(paste(abbr[i], sim.names[i])) +
+    xlab("Number of Samples") +
+    ylab("Statistical Power") +
+    ylim(0, 1)
+}
+```
+
+```{r, fig.width=12, fig.height=2}
+leg <- g_legend(plots[[1]] + theme(legend.position="bottom"))
+
+plots <- lapply(1:length(plots), function(i) {
+  if (i != 1) {
+    return(plots[[i]] +
+             xlab("") + ylab("") + theme(legend.position=NaN) +
+      theme(axis.text.x=element_text(color="#FFFFFF"),
+            axis.text.y=element_text(color="#FFFFFF"))
+    )
+  } else {
+    return(plots[[i]] + theme(legend.position=NaN))
+  }
+})
+
+grid.arrange(arrangeGrob(grobs=(plots), nrow=1), leg, top=textGrob("Two Sample Results"), nrow=2, heights=c(0.9, 0.1))
+```

@@ -78,7 +78,7 @@ visualizing the `MGC` image with 100 replicates:
 
 ```{r, fig.width=5, fig.height=4}
 set.seed(12345)
-res <- mgc.test(data$X, data$Y, rep=20)  # 100 permutations test
+res <- mgc.test(data$X, data$Y, nperm=20)  # 100 permutations test
 
 plot_mtx(res$localCorr, main.title="Local Correlation Map")
 
@@ -96,7 +96,7 @@ In the below demo, we show the result of `MGC` to determine the relationship bet
 
 ```{r, fig.width=5, fig.height=4}
 set.seed(12345)
-res <- mgc.test(iris[,1], iris[,3], rep=20)
+res <- mgc.test(iris[,1,drop=FALSE], iris[,3,drop=FALSE], nperm=20)
 plot_mtx(res$localCorr, main.title="Local Correlation Map",
          xlab.title="Sepal Length Neighbors", ylab.title="Petal Length Neighbors")
 

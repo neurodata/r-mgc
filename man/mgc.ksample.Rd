@@ -15,22 +15,22 @@ mgc.ksample(X, Y, mgc.opts = list(), ...)
 
 \item{Y}{\code{[n]} the labels of the samples with \code{K} unique labels.}
 
-\item{mgc.opts}{Arguments to pass to MGC. See \code{\link{mgc.test}} for details.}
+\item{mgc.opts}{Arguments to pass to MGC, as a named list. See \code{\link{mgc.test}} for details. Do not pass arguments for
+\code{is.dist.Y}, \code{dist.xfm.Y}, \code{dist.params.Y}, nor \code{dist.return.Y}, as they will be ignored.}
 
 \item{...}{trailing args.}
 }
 \value{
 A list containing the following:
-\item{\code{pMGC}}{P-value of MGC}
-\item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
+\item{\code{p.value}}{P-value of MGC}
+\item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
 \item{\code{pLocalCorr}}{P-value of the local correlations by double matrix index}
 \item{\code{localCorr}}{the local correlations}
 \item{\code{optimalScale}}{the optimal scale identified by MGC}
 }
 \description{
 MGC K Sample Testing provides a wrapper for MGC Sample testing under the constraint that the Ys here are
-categorical labels with K possible sample ids. This function uses a 0-1 loss for the Ys. To use a custom distance
-function, use \code{mgc.test} with your custom distance function as \code{Y}.
+categorical labels with K possible sample ids. This function uses a 0-1 loss for the Ys (one-hot-encoding)).
 }
 \examples{
 
@@ -41,8 +41,11 @@ n = 100; d = 2
 data <- mgc.sims.joint(n, d)
 data_mtx <- rbind(data$X, data$Y)
 labels <- c(replicate(n, 0), replicate(n, 1))
-result <- mgc.ksample(data_mtx, labels, mgc.opts=list(rep=10))
+result <- mgc.ksample(data_mtx, labels, mgc.opts=list(nperm=10))
 
+}
+\references{
+Youjin Lee, et al. "Network Dependence Testing via Diffusion Maps and Distance-Based Correlations." ArXiv (2019).
 }
 \author{
 Eric Bridgeford

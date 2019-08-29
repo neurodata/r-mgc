@@ -1,217 +1,208 @@
 #' Discriminability One Sample Permutation Test
 #'
-#' A function that permutes the labels of a distance matrix to obtain an empirical pvalue associated with whether the raw score is due to random chance.
+#' A function that performs a one-sample test for whether the discriminability differs from random chance.
 #'
-#' @param D is interpreted as:
+#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
+#' @importFrom parallel mclapply detectCores
+#' @param X is interpreted as:
 #' \describe{
-#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}
+#'    \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
 #' }
-#' @param ids \code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.
+#' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples.
+#' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.
+#' @param dist.xfm if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+#' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+#' as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.
+#' @param dist.params a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+#' Defaults to \code{list(method='euclidean')}.
+#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
+#' \describe{
+#'     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#' }
+#' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
+#' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
 #' @param nperm the number of permutations to perform. Defaults to \code{100}.
-#' @param verbose whether to print the itereation numbers. Defaults to \code{FALSE}.
+#' @param no_cores the number of cores to use for permutation test. Defaults to \code{1}.
 #' @return A list containing the following:
-#' \item{\code{srel}}{the relative, unpermuted discriminability you want to see is significant.}
-#' \item{\code{null}}{the discriminability scores of the permuted data.}
-#' \item{\code{pval}}{the pvalue associated with the permutation test.}
-#' @author Shangsi Wang and Eric Bridgeford
+#' \item{\code{stat}}{the discriminability of the data.}
+#' \item{\code{null}}{the discriminability scores under the null, computed via permutation.}
+#' \item{\code{p.value}}{the pvalue associated with the permutation test.}
+#' @author Eric Bridgeford
+#'
+#' @section Details:
+#'
+#' Performs a test of whether an observed discriminability is significantly different from chance, as described in Bridgeford et al. (2019).
+#' With \eqn{\hat D_X}{Dhatx} the sample discriminability of \eqn{X}{X}:
+#' \deqn{H_0: D_X = D_0}{H0: Dx = D0} and:\deqn{H_A: D_X > D_0}{Ha: Dx > D0} where \eqn{D_0}{D0}
+#' is the discriminability that would be observed by random chance.
+#'
+#'
+#' @examples
+#'
+#' require(mgc)
+#' n = 100; d=5
+#'
+#' # simulation with a large difference between the classes
+#' # meaning they are more discriminable
+#' sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10)
+#' X <- sim$X; Y <- sim$Y
+#'
+#' # p-value is small
+#' discr.test.one_sample(X, Y, nperm=100)$p.value
+#'
 #' @export
-discr.test.one_sample <- function(D, ids, nperm=100, verbose=FALSE) {
-  D <- as.matrix(D)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(D) != ncol(D) | sum(diag(D)^2) > 0){
-    D <- discr.distance(D)
-  }
-  # test whether discriminability differs from 0.5
-  N <- dim(D)[1]
-  if (is.null((N))) {
-    stop('Invalid datatype for N')
-  }
-  tr <- discr.mnr(discr.rdf(D, ids))
+discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
+                                  dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
 
-  nr <- rep(0,nperm)
-  for (i in 1:nperm){
-    if (verbose) {
-      print(i)
-    }
-    nr[i] <- discr.mnr(discr.rdf(D, ids[sample(N)]))
+  validated <- discr.validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                               remove.isolates=remove.isolates)
+
+  D <- validated$D; Y <- validated$Y; N <- nrow(D)
+  if (no_cores > detectCores()) {
+    stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
+  } else if (no_cores >= 0.8*detectCores()) {
+    warning("You have requested a number of cores near your machine's core count. Expected decreased performance.")
   }
+  tr <- discr.stat(D, Y, is.dist=TRUE)$discr
+  nr <- unlist(mclapply(1:nperm, function(i) {
+    return(discr.stat(D, Y[sample(N)], is.dist=TRUE)$discr)
+    }, mc.cores=no_cores), use.names=FALSE)
   result <- list()
-  result$srel <- tr
+  result$stat <- tr
   result$null <- sort(nr)
-  result$pval <- (sum(nr>tr) + 1)/(nperm + 1)
+  result$p.value <- (sum(nr>tr) + 1)/(nperm + 1)
   return(result)
 }
 
 #' Discriminability Two Sample Permutation Test
 #'
-#' A function that takes two distance matrices and produces a p-value associated with whether or not the distance matrices differ significantly.
+#' A function that takes two sets of paired data and tests of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
 #'
-#' @param D1 is interpreted as:
+#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
+#' @importFrom parallel mclapply detectCores
+#' @param X1 is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.
+#' @param X2 is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.
+#' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples. Should be matched such that \code{Y[i]} is the corresponding label for \code{X1[i,]} and \code{X2[i,]}.
+#' @param dist.xfm if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+#' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+#' as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.
+#' @param dist.params a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+#' Defaults to \code{list(method='euclidean')}.
+#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
 #' \describe{
-#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+#'     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 #' }
-#' @param D2 is interpreted as:
-#' \describe{
-#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
-#' }
-#' @param ids \code{n} the labels of each of the \code{n} samples, in the same ordering as elements of the distance matrix. Label 1 should correspond to the first column, 2 the second, and so on.
-#' @param nperm the number of permutations to perform. Defaults to \code{100}.
-#' @param verbose whether to print the itereation numbers. Defaults to \code{FALSE}.
-#' @return the pvalue associated with the permutation test.
-#' @author Shangsi Wang and Eric Bridgeford
+#' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
+#' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
+#' @param nperm the number of permutations for permutation test. Defualts to \code{100}.
+#' @param no_cores the number of cores to use for the permutations. Defaults to \code{1}.
+#' @param alt the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
+#' or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.
+#' @return A list containing the following:
+#' \item{\code{stat}}{the observed test statistic. the test statistic is the difference in discriminability of X1 vs X2.}
+#' \item{\code{discr}}{the discriminabilities for each of the two data sets, as a list.}
+#' \item{\code{null}}{the null distribution of the test statistic, computed via permutation.}
+#' \item{\code{p.value}}{The p-value associated with the test.}
+#' \item{\code{alt}}{The alternative hypothesis for the test.}
+#' @author Eric Bridgeford
+#'
+#' @section Details:
+#'
+#' A function that performs a two-sample test for whether the discriminability is different for that of
+#' one dataset vs another, as described in Bridgeford et al. (2019). With \eqn{\hat D_{X_1}}{Dhatx1} the sample discriminability of one approach, and \eqn{\hat D_{X_2}}{Dhatx2} the sample discriminability of another approach:
+#'
+#' \deqn{H_0: D_{X_1} = D_{X_2}}{H0: Dx1 = Dx2} and:\deqn{H_A: D_{X_1} > D_{X_2}}{Ha: Dx1 > Dx2}.
+#' Also implemented are tests of \eqn{<}{<} and \eqn{\neq}{!=}.
+#'
+#'
+#' @examples
+#' require(mgc)
+#' require(MASS)
+#'
+#' n = 100; d=5
+#'
+#' # generate two subjects truths; true difference btwn
+#' # subject 1 (column 1) and subject 2 (column 2)
+#' mus <- cbind(c(0, 0), c(1, 1))
+#' Sigma <- diag(2)  # dimensions are independent
+#'
+#' # first dataset X1 contains less noise than X2
+#' X1 <- do.call(rbind, lapply(1:dim(mus)[2],
+#'   function(k) {mvrnorm(n=50, mus[,k], 0.5*Sigma)}))
+#' X2 <- do.call(rbind, lapply(1:dim(mus)[2],
+#'   function(k) {mvrnorm(n=50, mus[,k], 2*Sigma)}))
+#' Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
+#'
+#' # X1 should be more discriminable, as less noise
+#' discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
 #' @export
-discr.test.two_sample <- function(D1, D2, ids, nperm=100, verbose=FALSE){
-  D2 <- as.matrix(D2)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(D2) != ncol(D2) | sum(diag(D2)^2) > 0){
-    D2 <- discr.distance(D2)
+discr.test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
+                                  dist.params=list(method="euclidian"), dist.return=NULL,
+                                  remove.isolates=TRUE, nperm=100,
+                                  no_cores=1, alt="greater") {
+
+  validated1 <- discr.validator(X1, Y, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                                remove.isolates=remove.isolates)
+  validated2 <- discr.validator(X2, Y, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                                remove.isolates=remove.isolates)
+  D1 <- validated1$D; D2 <- validated2$D; Y1 <- validated1$Y; Y2 <- validated2$Y; N <- nrow(D1)
+  if (!all(Y1 == Y2)) {
+    stop("The ids are not equal after removal of isolates from X1 and X2.")
   }
-  D1 <- as.matrix(D1)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(D1) != ncol(D1) | sum(diag(D1)^2) > 0){
-    D1 <- discr.distance(D1)
+  if (nrow(D1) != nrow(D2) || nrow(D1) != length(Y1) || nrow(D1) != ncol(D1)) {
+    stop("The distance matrices do not have the same number of elements.")
   }
-  # test two discriminability are the same
-  N1 <- dim(D1)[1]
-  N2 <- dim(D2)[1]
-
-  if (is.null(N1) || is.null(N2) ) {
-    stop('Invalid datatype for D1 or D2')
+  if (no_cores > detectCores()) {
+    stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
+  } else if (no_cores >= 0.8*detectCores()) {
+    warning("You have requested a number of cores near your machine's core count. Expected decreased performance.")
   }
-  if (N1 != N2) {
-    stop('The dimension of D1 and D2 do not match')
+  # get observed D1.hat and D2.hat
+  D1.hat <- discr.mnr(discr.rdf(D1, Y1)); D2.hat <- discr.mnr(discr.rdf(D2, Y1))
+
+  null.discrs <- mclapply(1:nperm, function(i) {
+    # generate null dataset for X1
+    idx1 <- t(sapply(1:N, function(j) sample(N, size=2)))
+    lambda1 <- runif(N)
+    Xn1 <- lambda1*X1[idx1[,1],] + (1 - lambda1)*X1[idx1[,2],]  # convex combination of elements of X1
+
+    # generate null dataset for X2
+    idx2 <- t(sapply(1:N, function(j) sample(N, size=2)))
+    lambda2 <- runif(N)
+    Xn2 <- lambda2*X2[idx2[,1],] + (1 - lambda2)*X2[idx2[,2],]  # convex combination of elements of X2
+
+    # compute discriminability under the null
+    D1.null <- discr.stat(Xn1, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                          remove.isolates=remove.isolates)$discr
+    D2.null <- discr.stat(Xn2, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                          remove.isolates=remove.isolates)$discr
+    return(list(D1hat=D1.null, D2hat=D2.null))
+  }, mc.cores=no_cores)
+
+  # compute null distribution of difference between discriminabilities
+  null.diff <- do.call(c, sapply(1:(nperm-1), function(j) {
+    as.vector(sapply((j+1):nperm, function(j.p) {
+      return(c(null.discrs[[j]]$D1hat - null.discrs[[j.p]]$D2hat, null.discrs[[j]]$D2hat - null.discrs[[j.p]]$D1hat))
+    }))
+  }))
+  stat <- D1.hat - D2.hat
+  if (alt == 'greater') {
+    # p-value is fraction of times observed statistic is less
+    # than under null
+    p.value <- mean(stat < null.diff)
+  } else if (alt == 'less') {
+    # p-value is fraction of times observed statistic is greater
+    # than under null
+    p.value <- mean(stat > null.diff)
+  } else if (alt == 'neq') {
+    # p-value is fraction of times observed statistic is less extreme
+    # than under null
+    p.value <- mean(abs(stat) < abs(null.diff))
+  } else {
+    stop("You have not entered a valid alternative.")
   }
-
-  disct1 <- matrix(0,N1,2)
-  disct2 <- matrix(0,N1,2)
-
-  for (i in 1:N1){
-    disct1[i,] <- discr.test.dis_vec(D1[i,],i,ids)
-    disct2[i,] <- discr.test.dis_vec(D2[i,],i,ids)
-  }
-
-  disct1 <- disct1[!is.na(disct1[,1]),]
-  disct2 <- disct2[!is.na(disct2[,1]),]
-  N1 <- dim(disct1)[1]
-  N2 <- dim(disct2)[1]
-
-  if (N1 != N2) {
-    stop('The dimensions of D1 and D2 do not match')
-  }
-
-  tcount <- sum(disct1[,2])
-  tdif <- (sum(disct1[,1] * disct1[,2]) - sum(disct2[,1] * disct2[,2])) / tcount
-
-  ndif <- rep(0,nperm)
-  ndisct1 <- matrix(0,N1,2)
-  ndisct2 <- matrix(0,N1,2)
-  for (i in 1:nperm){
-    if (verbose) {
-      print(i)
-    }
-    ind <- rbinom(N1,1,0.5) == 1
-    for (j in 1:N1){
-      ndisct1[ind,] <- disct1[ind,]
-      ndisct1[!ind,] <- disct2[!ind,]
-      ndisct2[ind,] <- disct2[ind,]
-      ndisct2[!ind,] <- disct1[!ind,]
-    }
-    ndif[i] <- (sum(ndisct1[,1] * ndisct1[,2]) - sum(ndisct2[,1] * ndisct2[,2])) / tcount
-  }
-  pvalue <- (sum(ndif > abs(tdif)) + 0.5 * sum(ndif == abs(tdif))) / nperm
-  return (list(pval=pvalue))
-}
-
-discr.test.dis_vec<-function(distvec,i,ids){
-  N <- length(distvec)
-  ind <- which(grepl(ids[i],ids))
-  rdf <- c()
-  count <- 0
-  for (j in ind) {
-    if (j != i) {
-      di <- distvec
-      d <- di[j]
-      di[ind] <- Inf
-      count <- count + 1
-      rdf[count] <- 1 - (sum(di[!is.nan(di)] < d) + 0.5*sum(di[!is.nan(di)] == d)) / (N-length(ind))
-    }
-  }
-  return(c(mean(rdf),count))
-}
-
-discr.test.reliability_bootstrap<-function(ids1,obs1,nrep=100){
-  # test two discriminability are the same
-  N <- length(ids1)
-  if (is.null(N) ) {
-    stop('Invalid datatype for D1 or D2')
-  }
-
-  rels <- rep(0,nrep)
-  uids1 <- unique(ids1)
-  bobs <- obs1
-  pduct <- obs1 %*% t(obs1)
-
-
-
-  for (i in 1:nrep){
-    bids1 <- c()
-    cind <- 1
-
-    ind1v<-c()
-    ind2v<-c()
-    tv<-c()
-
-    for (m in 1:(length(uids1))){
-      t <- runif(1)
-      nmeas <- length(which(grepl(uids1[m],ids1)))
-      nmeas1<-0
-      nmeas2<-0
-      while(min(nmeas1,nmeas2)<nmeas){
-        twoids <- sample(uids1,2)
-        nmeas1 <- length(which(grepl(twoids[1],ids1)))
-        nmeas2 <- length(which(grepl(twoids[2],ids1)))
-      }
-      ind1<-sample(which(grepl(twoids[1],ids1)),nmeas)
-      ind2<-sample(which(grepl(twoids[2],ids1)),nmeas)
-      ind1v<-c(ind1v,ind1)
-      ind2v<-c(ind2v,ind2)
-      tv <- c(tv,rep(t,nmeas))
-
-      nobs <- obs1[ind1,]*t + obs1[ind2,] * (1-t)
-      bobs[cind:(cind+nmeas-1),] <- nobs
-      cind <- cind + nmeas
-      bids1 <- c(bids1, rep(paste('pseudo',m+10000,sep=""),nmeas))
-    }
-
-
-    distmat1 <- matrix(0,N,N)
-
-
-
-    if (ncol(obs1) > 1){
-      for (j in 1:N){
-        for(k in j:N){
-          dv <- rep(0,N)
-          dv[ind1v[j]] <- dv[ind1v[j]] + tv[j]
-          dv[ind2v[j]] <- dv[ind2v[j]] + (1-tv[j])
-          dv[ind1v[k]] <- dv[ind1v[k]] - tv[k]
-          dv[ind2v[k]] <- dv[ind2v[k]] - (1-tv[k])
-          distmat1[j,k] <- t(dv) %*% pduct %*% dv
-        }
-      }
-      distmat1 <- sqrt(distmat1)
-      distmat1<-distmat1 + t(distmat1)
-    } else {
-      bO <- obs1[ind1v,] * tv +  obs1[ind2v,] *(1-tv)
-      distmat1 <- as.matrix(dist(bO,diag = T, upper = T))
-      distmat1 <- distmat1+ t(distmat1)
-    }
-
-
-    rels[i] <- mean(discr.rdf(distmat1,bids1))
-  }
-  return(rels)
+  return(list(p.value=p.value, stat=stat, discr=list(X1=D1.hat, X2=D2.hat), null=null.diff, alt=alt))
 }

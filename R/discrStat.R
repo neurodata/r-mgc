@@ -1,110 +1,98 @@
-#' Reliability Density Function
-#'
-#' A function for computing the reliability density function of a dataset.
-#'
-#' @param D \code{[n, n]} a distance matrix for n samples.
-#' @param ids \code{[n]} a vector containing the label ids for each sample.
-#' @return \code{[n]} vector of the reliability per sample.
-#' @author Eric Bridgeford
-discr.rdf <- function(D, ids) {
-  N <- dim(D)[1]
-  if (is.null((N))) {
-    stop('Invalid datatype for N')
-  }
-
-  uniqids <- unique(as.character(ids))
-  countvec <- vector(mode="numeric",length=length(uniqids))
-
-  for (i in 1:length(uniqids)) {
-    countvec[i] <- sum(uniqids[i] == ids) # total number of scans for the particular id
-  }
-
-  scans <- max(countvec) # assume that we will worst case have the most
-  rdf <- array(NaN, N*(scans-1)) # initialize empty ra
-
-  count <- 1
-  for (i in 1:N) {
-    ind <- which(ids[i] == ids) # all the indices that are the same subject, but different scan
-    for (j in ind) {
-      if (!isTRUE(all.equal(j, i))) { # if j != i, then we want j to have a close distance to i, and estimate where it ranks
-        di <- D[i,] # get the entire ra for the particular scan
-        di[ind] <- Inf # don't want to consider the particular scan itself
-        d <- D[i,j] # the distance between the particular scan of a subject and another scan of the subject
-        rdf[count] <- 1 - (sum(di[!is.nan(di)] < d) + 0.5*sum(di[!is.nan(di)] == d)) / (N-length(ind)) # 1 for less than, .5 if equal, then average
-        count <-  count + 1
-      }
-    }
-  }
-  return(rdf[1:count-1]) # return only the occupied portion
-}
-
-#' Mean Normalized Rank
-#'
-#' A function for computing the mnr from an rdf.
-#'
-#' @param rdf \code{[n]} the reliability density function for \code{n} samples.
-#' @param remove_outliers boolean indicating whether to ignore samples with rdf below a certain cutoff. Defaults to \code{FALSE}.
-#' @param thresh the threshold below for \code{rdf} which to ignore samples. Defaults to \code{0}.
-#' @param output a boolean indicating whether to ignore output. Defaults to \code{False}.
-#' @return \code{discr} the discriminability statistic.
-#' @author Eric Bridgeford
-discr.mnr <- function(rdf, remove_outliers=FALSE, thresh=0, output=FALSE) {
-  if (remove_outliers) {
-    discr <- mean(rdf[which(rdf[!is.nan(rdf)] > thresh)]) # mean of the rdf
-    ol <- length(which(rdf<thresh))
-    if (output) {
-      print(paste('Graphs with reliability <',thresh,'(outliers):', ol))
-    }
-  } else {
-    ol <- 0
-    discr <- mean(rdf[!is.nan(rdf)])
-  }
-  nopair <- length(rdf[is.nan(rdf)])
-  if (output) {
-    print(paste('Graphs with unique ids:',nopair))
-    print(paste('Graphs available for reliability analysis:', length(rdf)-ol-nopair))
-    print(paste('discr:', discr))
-  }
-  return(discr)
-}
-
 #' Discriminability Statistic
 #'
 #' A function for computing the discriminability from a distance matrix and a set of associated labels.
 #'
 #' @param X is interpreted as:
 #' \describe{
-#'    \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
+#'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}
+#'    \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist=TRUE}.}
 #' }
-#' @param ids \code{[n]} a vector containing the labels for our \code{n} samples.
-#' @param remove_outliers boolean indicating whether to ignore observations with rdf below a certain cutoff. Defaults to \code{FALSE}.
-#' @param thresh the threshold below which to ignore observations. If thresh > 0, ignores observations where the rdf is < thresh in the discriminability computation. Defaults to \code{0}.
-#' @param verbose a boolean indicating whether to print output. Defaults to \code{FALSE}.
-#' @return discr the discriminability statistic.
+#' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples.
+#' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.
+#' @param dist.xfm if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+#' it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+#' as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.
+#' @param dist.params a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
+#' Defaults to \code{list(method='euclidean')}.
+#' @param dist.return the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
+#' \describe{
+#'     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
+#' }
+#' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
+#' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
+#' @return A list containing the following:
+#' \item{\code{discr}}{the discriminability statistic.}
+#' \item{\code{rdf}}{the rdfs for each sample.}
 #'
 #' @section Details:
 #' For more details see the help vignette:
 #' \code{vignette("discriminability", package = "mgc")}
 #'
 #' @examples
-#'
-#' nsrc <- 5
-#' nobs <- 10
-#' d <- 20
-#' set.seed(12345)
-#' src_id <- array(1:nsrc)
-#' labs <- sample(rep(src_id, nobs))
-#' dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
-#' discr.stat(dat, labs)
+#' sim <- discr.sims.linear(100, 10, K=2)
+#' X <- sim$X; Y <- sim$Y
+#' discr.stat(X, Y)$discr
 #'
 #' @author Eric Bridgeford
 #' @export
-discr.stat <- function(X, ids, remove_outliers=FALSE, thresh=0, verbose=FALSE) {
-  X <- as.matrix(X)
-  # Use the data size and diagonal element to determine if the given data is a distance matrix or not
-  if (nrow(X) != ncol(X) | sum(diag(X)^2) > 0){
-    X <- discr.distance(X)
+discr.stat <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
+                       dist.return=NULL, remove.isolates=TRUE) {
+  validated <- discr.validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+                               remove.isolates=remove.isolates)
+  D <- validated$D; Y <- validated$Y
+  rdf <- discr.rdf(D, Y)
+  return(list(discr=discr.mnr(rdf), rdf=rdf))
+}
+
+
+#' Reliability Density Function
+#'
+#' A function for computing the reliability density function of a dataset.
+#'
+#' @param X \code{[n, n]} a distance matrix for n samples.
+#' @param ids \code{[n]} a vector containing the label ids for each sample.
+#' @return \code{[n]} vector of the reliability per sample.
+#' @author Eric Bridgeford
+discr.rdf <- function(X, ids) {
+  N <- length(ids)  # number of scans total
+  K <- unique(ids)  # unique subjects
+  # some basic checks
+  # valid valid N
+  if (is.null((N))) {
+    stop('Invalid datatype for N')
   }
-  return(discr.mnr(discr.rdf(X, ids), remove_outliers=remove_outliers, thresh=thresh, output=(verbose)))
+  # validate X is a distance matrix
+  if (!all.equal(dim(X), c(N, N))) {
+    stop('You have not passed a valid datatype for X.')
+  }
+
+  # loop over scans
+  rdf <- sapply(1:length(ids), function(i) {
+    ind <- which(ids[i] == ids) # all the indices that are the same subject
+    di <- X[i,]
+    Dii <- di[ind[ind != i]]  # indices of D corresponding to between scan i subject of scan i, excluding scan i
+    Dij <- di[-c(ind)]  # indices of D corresponding to between i and those of other subjects, excluding scans of this subject
+    # if there exist scans associated with this subject other than current scan and
+    # other subjects in dataset
+    if (length(Dii) > 0 & length(Dij) > 0) {
+      # return discriminability local rdfs as an array
+      return(unlist(sapply(Dii, function(d) {
+        # discriminability is (1 - count(< d) + 0.5*(count == d))/(N) where N is number of samples with different sample ids
+        1 - (sum(as.numeric(Dij < d)) + 0.5*sum(Dij == d))/length(Dij)
+      })))
+    } else {
+      warning(sprintf("Id %s is isolated in your dataset. Consider setting 'remove.isolates = TRUE'.", ids[i]))
+      return(NaN)
+    }
+  })
+
+  return(unlist(rdf))
+}
+
+#' Discriminability Mean Normalized Rank
+#' @param rdf the reliability densities.
+#' @return the mnr.
+discr.mnr <- function(rdf) {
+  mean(rdf, is.nan=FALSE)
 }

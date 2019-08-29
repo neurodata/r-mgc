@@ -1,0 +1,266 @@
+---
+title: "figure_2"
+author: "Eric Bridgeford"
+date: "November 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(lolR)
+require(plyr)
+require(scales)
+```
+
+```{r}
+w=.8
+h=.2
+mcols <- c("#FF8C00", "#0e3ec1","#469990", "#FF0000", "#8A2BE2") #"#8B4513")
+names(mcols) <- c("1", "2", "3", "4", "5")
+sim_twod_scatter <- function(X, Y, title="", xlab="", ylab="", nbreaks=4, outlier=NULL, d=c(1, 2)) {
+  reorder <- c()
+  for (y in unique(Y)) {
+    reorder <- c(reorder, sample(1:dim(X[Y == y,])[1], size=dim(X[Y==y,])[1], replace=FALSE))
+  }
+  # for (i in 1:length(d)) {
+  #   dd <- d[i]
+  #   X[, dd] <- (X[, dd] - min(X[, dd]))/(max(X[, dd]) - min(X[, dd]))
+  # }
+  #X <- (X - min(abs(X)))/(max(abs(X)) - min(abs(X)))
+  #xlims <- c(0, 1); ylims <- c(0, 1)
+  df.dat <- data.frame(d1=X[, d[1]], d2=X[, d[2]], class=as.factor(Y))
+  plot_sims <- ggplot(df.dat, aes(x=d1, y=d2, color=class)) +
+    geom_point(alpha=0.7) +
+    #xlab(paste("Dimension", d[1])) +
+    #ylab(paste("Dimension", d[2])) +
+    xlab(xlab) +
+    ylab(ylab) +
+    ggtitle(title) +
+    theme_bw() +
+    #xlim(xlims) +
+    #ylim(ylims) +
+    theme() +
+    theme(plot.margin = unit(c(h,w,h,h), "cm")) +
+    scale_color_manual(values=mcols)#, guide=guide_legend(title.position="top", title.hjust = .5))
+  return(plot_sims)
+}
+
+# redefine sothat the IO is the same for ICC/I2C2
+iccadj <- function(X, Y) {
+  Xr <- lol.project.pca(X, r=1)$Xr
+  data <- data.frame(x=Xr, y=Y)
+  fit <- anova(aov(x ~ y, data=data))
+  MSa <- fit$"Mean Sq"[1]
+  MSw <- var.w <- fit$"Mean Sq"[2]
+  a <- length(unique(Y))
+  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
+  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
+  var.a <- (MSa - MSw)/k
+  r <- var.a/(var.w + var.a)
+  p = fit[["Pr(>F)"]][1]
+  return(r)
+}
+
+i2c2adj <- function(X, Y) {
+  return(i2c2(X, Y, visit=rep(1, length(Y)))$lambda)
+}
+
+plot_dat <- function(X, Y, title="", xlab="", ylab="") {
+  icc <- iccadj(X, Y)
+  i2c <- i2c2adj(X, Y)
+  discr <- discr.stat(X, Y)
+  
+  datplot <- sim_twod_scatter(X, Y, title=title, xlab=xlab, ylab=ylab) + theme(legend.position='none')
+  bar.df <- data.frame(Statistic=c("Discr", "ICC", "I2C2"), Value=c(discr$discr, icc, i2c))
+  acols <- c("#FF0000", "#BBBBBB", "#888888")
+  names(acols) <- c("Discr", "ICC", "I2C2")
+  bplot <- ggplot(bar.df, aes(x=Statistic, y=Value, fill=Statistic)) +
+    geom_col() +
+    scale_fill_manual(values=acols, guide='none') +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(0,1)) +
+    theme_bw() +
+    theme_minimal() +
+    theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+    xlab("") +
+    ylab("") +
+    ggtitle("")
+  #rplot <- ggdraw() +
+  #  draw_plot(datplot + theme(legend.position='none')) +
+  #  draw_plot(bplot, x=.75, y=.73, width=.15, height=.25)
+  return(datplot)
+}
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+```
+
+## Data Plots
+
+```{r}
+n = 100; d = 2
+
+# simulations and options as a list
+sims <- list(discr.sims.linear, discr.sims.linear, #sim.linear,# discr.sims.exp,
+             discr.sims.cross, discr.sims.radial)#, discr.sims.beta)
+sims.opts <- list(list(n, d, K=2, signal.lshift=0), list(n, d, K=2, signal.lshift=1),
+                  #list(d=d, K=5, mean.scale=1, cov.scale=20),#list(n=n, d=d, K=2, cov.scale=4),
+                  list(n, d, K=2, signal.scale=5, mean.scale=1), list(n, d, K=2))#,
+sims.names <- c("No Signal", "Linear, 2 Class", #"Linear, 5 Class",
+                "Cross", "Radial")
+sims.titles = c("i. No Signal", "ii. 2 Class, Linear", #"(B) 5 Class, Linear", #"(C) 5 Class, Exponential",
+                "iii. 2 Class, Cross", "iv. 2 Class, Radial")#, "(F) 5 Class, Beta")
+dat.plots <- list()
+for (i in 1:length(sims)) {
+  sim <- do.call(sims[[i]], sims.opts[[i]])
+  X <- sim$X; Y <- sim$Y
+  dat.plots[[i]] <- plot_dat(X, Y, title=sims.titles[i], xlab="", ylab="")
+}
+```
+
+```{r, fig.width=10, fig.height=2}
+i=2
+sim <- do.call(sims[[3]], sims.opts[[3]])
+X <- sim$X; Y <- sim$Y
+sim_leg <- g_legend(
+  sim_twod_scatter(X, Y, title="", xlab="", ylab="") +
+    scale_color_manual(name="Class", values=mcols) + theme(legend.position='right')
+)
+
+dplots <- arrangeGrob(arrangeGrob(grobs=dat.plots, left="(A)", ncol=length(sims)), sim_leg, widths=c(0.9, .15))
+```
+## One and Two Sample Plots
+
+```{r}
+al=0.05  # alpha for the power testing
+one.sample.results <- readRDS('./data/sims/discr_sims_os.rds') %>%
+  mutate(outcome = p.value < al)
+two.sample.results <- readRDS('./data/sims/discr_sims_ts.rds') %>%
+  mutate(outcome = p.value < al)
+one.sample.results$alg <- revalue(one.sample.results$alg, c("Discr" = "Discriminability"))
+two.sample.results$alg <- revalue(two.sample.results$alg, c("Discr" = "Discriminability"))
+
+alg.colors <- c("#c70000", "#a7aec5", "#a7aec5", "#6d7694", "#6d7694", "#989898", "#4f4f4f")
+names(alg.colors) <- c("Discriminability", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+line.types <- c(1, 1, 2, 1, 2, 1, 1)
+names(line.types) <- c("Discriminability", "ANOVA, best", "ANOVA, worst", "ICC, best", "ICC, worst", "MANOVA", "I2C2")
+```
+
+### Convergence of Discriminability
+
+```{r}
+discr.os.results <- subset(one.sample.results, alg=="Discriminability")
+
+conv.plots <- lapply(unique(discr.os.results$sim.name), function(simn) {
+  sim.ss <- subset(discr.os.results, sim.name == simn)
+  dtheo <- mean(sim.ss$tstat)
+  sim.ss$diff <- sim.ss$tstat - dtheo
+  agg <- abs(aggregate(diff ~ n, data=sim.ss, FUN=mean)$diff) + aggregate(diff ~ n, data=sim.ss, FUN=var)$diff
+  l <- ceiling(100*max(agg))/100 + .01
+  ggplot(sim.ss, aes(x=n, y=diff)) +
+    stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
+    stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=1) +
+    geom_hline(yintercept=0, linetype=2, size=1.5) +
+    xlab("") +
+    ylab("") +
+    coord_cartesian(ylim=c(-.02, .02)) +
+    scale_x_continuous(trans=log2_trans()) +
+    theme_bw()
+})
+
+convplot <- arrangeGrob(grobs=conv.plots, left="(B)", ncol=length(conv.plots))
+```
+
+### One Sample Plot
+
+```{r}
+os.plots <- lapply(unique(one.sample.results$sim.name), function(simn) {
+  one.sample.powers <- one.sample.results %>%
+    filter(sim.name == simn) %>%
+    group_by(alg, n, sim.name) %>%
+    summarize(power=mean(outcome))
+  ggplot(one.sample.powers, aes(x=n, y=power, color=alg, linetype=alg)) +
+    geom_line(size=1) +
+    scale_color_manual(name="Algorithm", values=alg.colors) +
+    scale_linetype_manual(name="Algorithm", values=line.types) +
+    scale_x_continuous(trans=log2_trans()) +
+    coord_cartesian(ylim=c(0, 1)) +
+    xlab("") +
+    ylab("") +
+    theme_bw()
+})
+
+os.plots.leg <- g_legend(os.plots[[1]])
+os.plots <- lapply(os.plots, function(plot) {
+  plot +
+    guides(color=FALSE, linetype=FALSE)
+})
+
+
+osplot <- arrangeGrob(grobs=os.plots, left="(C)", ncol=length(os.plots))
+```
+
+### Two Sample Plot
+
+```{r}
+ts.plots <- lapply(unique(two.sample.results$sim.name), function(simn) {
+  two.sample.powers <- two.sample.results %>%
+    filter(sim.name == simn) %>%
+    group_by(alg, n, sim.name) %>%
+    summarize(power=mean(outcome))
+  ggplot(two.sample.powers, aes(x=n, y=power, color=alg, linetype=alg)) +
+    geom_line(size=1) +
+    scale_color_manual(name="Algorithm", values=alg.colors) +
+    scale_linetype_manual(name="Algorithm", values=line.types) +
+    scale_x_continuous(trans=log2_trans()) +
+    coord_cartesian(ylim=c(0, 1)) +
+    xlab("") +
+    ylab("") +
+    theme_bw()
+})
+
+ts.plots.leg <- g_legend(ts.plots[[1]])
+ts.plots <- lapply(ts.plots, function(plot) {
+  plot +
+    guides(color=FALSE, linetype=FALSE)
+})
+
+tsplot <- arrangeGrob(grobs=ts.plots, left="(D)", ncol=length(ts.plots))
+```
+
+### Combined Plot
+
+```{r}
+result.plot <- arrangeGrob(arrangeGrob(convplot, osplot, tsplot, nrow=3), os.plots.leg, widths=c(.9, .15))
+```
+
+# Full Plot
+
+Output as 10x7.5 and edit in inkscape
+
+```{r, height=20, width=20}
+full.plot <- arrangeGrob(dplots, result.plot, nrow=2, heights=c(.25, .75))
+grid.arrange(full.plot)
+```
+
+

@@ -1,0 +1,261 @@
+---
+title: "Figure 5"
+author: "Eric Bridgeford"
+date: "February 28, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(ggplot2)
+require(scales)
+require(lme4)
+require(reshape2)
+require(plyr)
+require(dplyr)
+library(tidyr)
+require(ggbeeswarm)
+require(latex2exp)
+require(ggExtra)
+require(ggpubr)
+require(grid)
+require(gridExtra)
+require(stringr)
+require(data.table)
+require(abind)
+require(tidyverse)
+```
+
+
+```{r}
+fmri.results <- readRDS('./data/real/discr_fmri_results.rds')
+fmri.pvals <- readRDS('./data/real/fmri_pval_results.rds')
+```
+
+# fMRI Multiplot
+
+```{r}
+reg_opts <- c("A", "F")
+names(reg_opts) <- c("ANTs", "FSL")
+freq_opts <- c("F", "N")
+names(freq_opts) <- c(TRUE, FALSE)
+scrub_opts <- c("S", "X")
+names(scrub_opts) <- c(TRUE, FALSE)
+gsr_opts <- c("G", "X")
+names(gsr_opts) <- c(TRUE, FALSE)
+atlas_opts <- c("A", "C", "D", "H")
+names(atlas_opts) <- c("AAL", "CC200", "Desikan", "HO")
+dsets <- unique(fmri.results$Dataset)
+
+fmri.results <- do.call(rbind, lapply(1:dim(fmri.results)[1], function(i) {
+  dat <- fmri.results[i,]
+  name <- paste(dat$Reg, dat$FF, dat$Scr, dat$GSR, dat$Parcellation,
+                dat$xfm, sep="")
+  return(cbind(data.frame(Name=name), dat))
+}))
+```
+
+Leave only the "best" NKI Pipeline, where the "best" pipeline is the one that has the highest average discriminability across all pipelines:
+
+```{r}
+nki.discr <- subset(fmri.results, grepl("NKI", Dataset)) %>%
+  group_by(Dataset) %>%
+  dplyr::summarise(avg.discr=mean(discr))
+nki.worst <- as.character(nki.discr$Dataset[nki.discr$avg.discr != max(nki.discr$avg.discr)])
+nki.best <- as.character(nki.discr$Dataset[nki.discr$avg.discr == max(nki.discr$avg.discr)])
+
+fmri.results <- mutate(subset(fmri.results, !(Dataset %in% nki.worst)),
+                       Dataset=revalue(Dataset, c("NKI24_mx645" = "NKI24")))
+fmri.results$Dataset <- factor(fmri.results$Dataset, levels=unique(as.character(fmri.results$Dataset)))
+```
+
+
+```{r}
+nan.mean <- function(x) {
+  mean(x, na.rm=TRUE)
+}
+
+fmri.summarized <- fmri.results %>%
+  group_by(Name, Reg, FF, Scr, GSR, Parcellation, xfm) %>%
+  dplyr::summarise(wt.discr=sum(discr*nsub)/sum(nsub))
+```
+
+```{r}
+fmri.best.pipe <- as.character(fmri.summarized[which.max(fmri.summarized$wt.discr),]$Name)
+pv.mtx <- lapply(fmri.pvals, function(fm.dset) fm.dset$pvals)
+dset.pvals <- abind(pv.mtx, along=3)
+pvals.best <- apply(dset.pvals[fmri.best.pipe,,], c(1), function(x) median(x, na.rm=TRUE))
+pvals.best.dat <- data.frame(Name=names(pvals.best), pval=as.numeric(pvals.best))
+fmri.pvals <- merge(fmri.summarized, pvals.best.dat, by="Name")
+```
+
+
+```{r}
+fmri.results$Name <- factor(fmri.results$Name, 
+                                levels=as.character(fmri.pvals$Name[order(fmri.pvals$pval, decreasing = TRUE)]),
+                                ordered=TRUE)
+```
+
+```{r, fig.height=8, fig.width=12}
+
+ggplot() +
+  geom_point(data=subset(fmri.results, xfm=="P"), aes(x=Name, y=discr, color=Dataset, size=nscans)) +
+  xlab("Preprocessing Strategy") +
+  ylab("Discriminability") +
+  theme_bw() +
+  ggtitle("Comparing Discriminability Across 64 Preprocessing Strategies") +
+  theme(axis.text.x=element_text(angle=90, size=8), axis.title.x=element_text(size=14),
+        axis.title.y=element_text(size=14), plot.title=element_text(size=16),
+        panel.grid.major.x = element_blank()) +
+  geom_point(data=subset(fmri.pvals, xfm=="P"), aes(x=Name, y=wt.discr), shape="triangle", size=2) +
+  guides(color=guide_legend(ncol=2)) +
+  scale_size(range=c(0.5, 3), name="#Scans")
+# 9.5x5.5
+```
+
+```{r}
+# Registration
+reg.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, FF=fmri.results$FF,
+                             Scr=fmri.results$Scr, GSR=fmri.results$GSR,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+reg.result <- do.call(rbind, lapply(1:dim(reg.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==reg.sum$Dataset[i] & FF==reg.sum$FF[i] & Scr==reg.sum$Scr[i] &
+                   GSR==reg.sum$GSR[i] & Parcellation==reg.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- reg.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$Reg == "F"] - rows$discr[rows$Reg == "A"]
+  } else {
+    print()
+  }
+  return(reslt)
+}))
+
+# Freq Filtering
+freq.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             Scr=fmri.results$Scr, GSR=fmri.results$GSR,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+freq.result <- do.call(rbind, lapply(1:dim(freq.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==freq.sum$Dataset[i] & Reg==freq.sum$Reg[i] & Scr==freq.sum$Scr[i] &
+                   GSR==freq.sum$GSR[i] & Parcellation==freq.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- reg.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$FF == "N"] - rows$discr[rows$FF == "F"]
+  } else {
+    print()
+  }
+  return(reslt)
+}))
+
+
+# Scrubbing
+scr.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, GSR=fmri.results$GSR,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+scr.result <- do.call(rbind, lapply(1:dim(scr.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==scr.sum$Dataset[i] & Reg==scr.sum$Reg[i] & FF==scr.sum$FF[i] &
+                   GSR==scr.sum$GSR[i] & Parcellation==scr.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- reg.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$Scr == "N"] - rows$discr[rows$Scr == "S"]
+  } else {
+    print()
+  }
+  return(reslt)
+}))
+
+# Scrubbing
+gsr.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, Scr=fmri.results$Scr,
+                             Parcellation=fmri.results$Parcellation, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+gsr.result <- do.call(rbind, lapply(1:dim(gsr.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==gsr.sum$Dataset[i] & Reg==gsr.sum$Reg[i] & FF==gsr.sum$FF[i] &
+                   Scr==gsr.sum$Scr[i] & Parcellation==gsr.sum$Parcellation[i] & xfm==reg.sum$xfm[i])
+  reslt <- gsr.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$GSR == "G"] - rows$discr[rows$GSR == "N"]
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+
+# Parcellation
+parcel.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, Scr=fmri.results$Scr,
+                             GSR=fmri.results$GSR, xfm=fmri.results$xfm), FUN=function(x) {NaN})
+parcel.result <- do.call(rbind, lapply(1:dim(parcel.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==parcel.sum$Dataset[i] & Reg==parcel.sum$Reg[i] & FF==parcel.sum$FF[i] &
+                   Scr==parcel.sum$Scr[i] & GSR==parcel.sum$GSR[i] & xfm==reg.sum$xfm[i])
+  reslt <- parcel.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$Parcellation == "C"] - max(rows$discr[rows$Parcellation != "C"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+# Edge
+edge.sum <- aggregate(list(discr=fmri.results$discr), 
+                     by=list(Dataset=fmri.results$Dataset, Reg=fmri.results$Reg,
+                             FF=fmri.results$FF, Scr=fmri.results$Scr,
+                             GSR=fmri.results$GSR, Parcellation=fmri.results$Parcellation), FUN=function(x) {NaN})
+edge.result <- do.call(rbind, lapply(1:dim(edge.sum)[1], function(i) {
+  rows <- subset(fmri.results, Dataset==edge.sum$Dataset[i] & Reg==edge.sum$Reg[i] & FF==edge.sum$FF[i] &
+                   Scr==edge.sum$Scr[i] & GSR==edge.sum$GSR[i] & Parcellation==edge.sum$Parcellation[i])
+  reslt <- parcel.sum[i,]
+  if (dim(rows)[1] > 1) {
+    reslt$discr <- rows$discr[rows$xfm == "P"] - max(rows$discr[rows$xfm != "P"])
+  } else {
+    print("")
+  }
+  return(reslt)
+}))
+
+result <- rbind(data.frame(discr=reg.result$discr, Option="FSL - ANTs"), 
+                data.frame(discr=freq.result$discr, Option="NFF - FF"), 
+                data.frame(discr=scr.result$discr, Option="NSC - SCR"), 
+                data.frame(discr=gsr.result$discr, Option="GSR - NGS"), 
+                data.frame(discr=parcel.result$discr, Option="CC200 - max(others)"),
+                data.frame(discr=edge.result$discr, Option="PTR - max(others)"))
+```
+
+# Significance Analysis
+
+```{r}
+sig.test <- lapply(as.character(unique(result$Option)), function(opt) {
+  res.opt <- subset(result, Option == as.character(opt))
+  # wilcox signed-rank paired test on the difference btwn best and second best option
+  test.res <- wilcox.test(res.opt$discr, rep(0, length(res.opt$discr)), alternative = "two.sided")
+  # multiple hypothesis correction
+  test.res$p.value <- test.res$p.value * length(as.character(unique(result$Option)))
+  return(test.res)
+})
+names(sig.test) <- as.character(unique(result$Option))
+print(sig.test)
+```
+
+```{r}
+set.seed(1234)
+ggplot(result, aes(x=Option, y=discr, color=Option)) +
+  geom_quasirandom(data=result[sample(dim(result)[1], 2000),],
+                   alpha=0.6, size=0.25, bandwidth=1) +
+  geom_violin(color="black", fill="transparent") +
+  stat_summary(fun.y="mean", geom="point", color="black", size=2) +
+  theme_bw() +
+  xlab("") +
+  geom_hline(yintercept = 0, linetype=1, size=0.8) +
+  ylab(TeX("$\\hat{D}_{best} - max(\\hat{D}_{others})$")) +
+  ggtitle("(A) Impact of fMRI Preprocessing Options on Discriminability") +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank()) +
+  guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
+```

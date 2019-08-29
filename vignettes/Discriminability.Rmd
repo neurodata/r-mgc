@@ -42,23 +42,72 @@ nobs <- 10
 d <- 20
 set.seed(12345)
 src_id <- array(1:nsrc)
-labs <- sample(rep(src_id, nobs))
-dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
-discr.stat(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 1
+Y <- sample(rep(src_id, nobs))
+X <- t(sapply(Y, function(lab) rnorm(d, mean=lab, sd=1)))
+discr.stat(X, Y)$discr  # expect high discriminability since measurements taken at a source have the same mean and sd of only 1
 ```
+
+## Using a user-specified distance matrix
 
 we may find it useful to view the distance matrix, ordered by source label, to show that objects from the same source have a lower distance than objects from a different source:
 
 ```{R, fig.width=5, fig.height=4}
-Dx <- as.matrix(dist(dat[sort(labs, index=TRUE)$ix,]), method='euclidian')
+Dx <- as.matrix(dist(X[sort(Y, index=TRUE)$ix,]), method='euclidian')
 plot_mtx(Dx)
 ```
 
-as we can see, the ordering of the data elements does not matter, and users can pass in the data as either an $[n, d]$ array, or a $[n, n]$ distance matrix:
+as we can see, users can pass in either an $[n, d]$ array, or a $[n, n]$ distance matrix:
 
 ```{r}
-discr.stat(Dx, sort(labs))
+discr.stat(Dx, sort(Y), is.dist=TRUE)$discr
 ```
+
+This enables flexibility if, for instance, you wish to use a custom distance function.
+
+### Using a user-specified distance function
+
+Note that we could also write our own distance function, and then use it with the discriminability driver. For a function to be a valid distance function for discriminability, it must accept an $[n, d]$ array as the leading argument. Since our distance function returns the distance matrix as the only argument and requires no further parameters, we specify `dist.return=NULL` and `dist.params=NULL`. Note that the default for discriminability is the two-norm (euclidian distance) so we should expect the same result as previously:
+
+```{r}
+# two norm between pairs of points
+dist.fxn <- function(X) {
+  n <- nrow(X)
+  D <- array(0, dim=c(n, n))
+  for (i in 1:(n - 1)) {
+    for (j in i:n) {
+      D[i,j] <- sum(abs(X[i,] - X[j,])^2)
+    }
+  }
+  D <- D + t(D)
+  return(D)
+}
+
+discr.stat(X, Y, dist.xfm=dist.fxn, dist.params=NULL, dist.return=NULL)$discr
+```
+
+Additionally, we can specify leading arguments as required to the distance function, and grab the appropriate return argument from the distance function that corresponds to the distance matrix. We can do this by specifying `dist.params=list(method="2")` and `dist.return="Distance"` in the below example:
+
+```{r}
+# two norm between pairs of points
+dist.fxn <- function(X, method="2") {
+  if (method == "2") {
+    n <- nrow(X)
+    D <- array(0, dim=c(n, n))
+    for (i in 1:(n - 1)) {
+      for (j in i:n) {
+        D[i,j] <- sum(abs(X[i,] - X[j,])^2)
+      }
+    }
+    D <- D + t(D)
+  } else {
+    stop("Mistakes were made.")
+  }
+  return(list(Distance=D))
+}
+
+discr.stat(X, Y, dist.xfm=dist.fxn, dist.params=list(method="2"), dist.return="Distance")$discr
+```
+
 ## Real Data
 
 Below, we show how discriminability might be used on real data, by demonstrating its usage on the first $4$ dimensions of the `iris` dataset, to determine the relationship between the flower species and the distances between the different dimensions of the iris dataset (sepal width/length and petal width/length):
@@ -72,7 +121,7 @@ plot_mtx(Dx)
 we expect a high discriminability since the within-species relationship is clearly strong (the distances are low for same-species):
 
 ```{r}
-discr.stat(iris[,c(1,2,3,4)], as.vector(iris$Species))
+discr.stat(iris[,c(1,2,3,4)], as.vector(iris$Species))$discr
 ```
 
 which is reflected in the high discriminability score.

@@ -1,0 +1,138 @@
+---
+title: "Discriminability 1d"
+author: "Eric Bridgeford"
+date: "September 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+require(grid)
+require(gridExtra)
+require(ggplot2)
+require(reshape2)
+require(mgc)
+require(latex2exp)
+require(I2C2)
+require(ICC)
+require(scales)
+```
+
+```{r}
+plot_sim <- function(X, Y, name="") {
+  data <- data.frame(x1=X[,1], x2=X[,2], ID=Y)
+  ggplot(data, aes(x=x1, y=x2, color=ID)) +
+    geom_point() +
+    xlab(TeX("$x_1$")) +
+    ylab(TeX("$x_2$")) +
+    ggtitle(name) +
+    theme_bw() +
+    theme(panel.grid.major=element_blank(), panel.grid.minor = element_blank())
+}
+
+plot_dist <- function(D, name="") {
+  # rescale on 0-1
+  D <- (D - min(D))/(max(D) - min(D))
+  Ddf <- melt(D)
+  colnames(Ddf) <- c("S1", "S2", "Distance")
+  ggplot(Ddf, aes(x=S1, y=S2, fill=Distance)) +
+    geom_tile() +
+    xlab(TeX("$S_1$")) +
+    ylab(TeX("$S_2$")) +
+    ggtitle(TeX(name)) +
+    scale_fill_continuous(name=TeX("$||S_1 - S_2||^2$"), high="#3f007d",
+                          low="#fcfbfd") +
+    scale_y_reverse() +
+    theme_bw() +
+    theme(panel.grid.major=element_blank(), panel.grid.minor = element_blank())
+}
+
+plot_rdf <- function(rdfs, name="") {
+  rdf.df <- data.frame(R=rdfs)
+  ggplot(rdf.df, aes(x=R, y=..ncount..)) +
+    geom_histogram(color='black', fill='blue') +
+    xlab(TeX("Reliability")) +
+    ylab("Relative Frequency") +
+    ggtitle(TeX(name)) +
+    theme_bw() +
+    theme(panel.grid.minor = element_blank())
+}
+
+min.f1f2 <- function(x, mu1, mu2, sd1, sd2) {
+    f1 <- dnorm(x, mean=mu1, sd=sd1)
+    f2 <- dnorm(x, mean=mu2, sd=sd2)
+    pmin(f1, f2)
+}
+
+theoretical_discr <- function(mus, Sigmas, d=1) {
+  mu.class <- mus[d,]
+  Sigmas.class <- Sigmas[d,d,]
+  ov <- integrate(min.f1f2, -Inf, Inf, mu1=mu.class[1], mu2=mu.class[2], sd1=Sigmas.class[1], sd2=Sigmas.class[2])
+}
+```
+
+# Figure 1
+
+```{r}
+sim_simp <- discr.sims.linear(200, 2, 2, signal.lshift=2)
+srt <- sort(as.numeric(sim_simp$Y), index.return=TRUE)$ix
+sim_simp$X <- sim_simp$X[srt,]; sim_simp$Y <- sim_simp$Y[srt]
+plot_sim_fig1 <- plot_sim(sim_simp$X, sim_simp$Y, name="(A) Data")
+
+Dmtx <- mgc:::discr.distance(sim_simp$X)
+plot_dist_fig1 <- plot_dist(Dmtx, name="(B) Distance Matrix")
+
+rdfs <- mgc:::discr.rdf(Dmtx, sim_simp$Y)
+discr <- mean(rdfs)
+plot_discr_fig1 <- plot_rdf(rdfs, name=sprintf("(C) $\\hat{D} = %.3f$", discr))
+```
+
+```{r}
+# Convergence of Dhat to Truth
+niter <- 100
+n.min <- 20; n.max <- 1000
+rlen <- 10
+log.seq <- function(from=0, to=30, length=rlen) {
+  round(exp(seq(from=log(from), to=log(to), length.out=length)))
+}
+
+ns <- log.seq(from=n.min, to=n.max)
+result <- data.frame(dhat=c(), n=c(), i=c())
+for (n in ns) {
+  for (i in 1:niter) {
+    sim_res <- discr.sims.linear(n, 2, 2, signal.lshift=2)
+    Dhat <- discr.stat(sim_res$X, sim_res$Y)$discr
+    result <- rbind(result, data.frame(dhat=Dhat, n=n, i=i))
+  }
+}
+```
+
+```{r}
+theoretical_d <- mean(result[result$n == max(result$n),]$dhat)
+result$diff <- result$dhat - theoretical_d
+agg <- abs(aggregate(diff ~ n, data=result, FUN=mean)$diff) + 
+  aggregate(diff ~ n, data=result, FUN=var)$diff
+l <- ceiling(100*max(agg))/100 + .01
+plot_conv <- ggplot(result, aes(x=n, y=diff)) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "ribbon", alpha=0.5) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "line", color="red", size=1) +
+  geom_hline(yintercept=0, linetype=1, size=1) +
+  xlab("Number of Samples") +
+  ylab(TeX("\\hat{D} - D")) +
+  coord_cartesian(ylim=c(-l, l)) +
+  scale_x_continuous(trans=log2_trans()) +
+  ggtitle(TeX("(D) Convergence of $\\hat{D}$ to $D$")) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank())
+```
+
+```{r, fig.width=10, fig.height=3}
+grid.arrange(arrangeGrob(grobs=list(plot_sim_fig1, plot_dist_fig1, plot_discr_fig1, plot_conv), widths=c(0.3, 0.35, 0.24, 0.32), nrow=1))
+# 11x2.3
+```
+
+# Figure 2
+

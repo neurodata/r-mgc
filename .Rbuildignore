@@ -3,3 +3,7 @@
 ^docs$
 ^LICENSE$
 ^README\.md$
+^\.travis\.yml$
+^citation\.bib$
+^codecov\.yml$
+^codecov\.R$

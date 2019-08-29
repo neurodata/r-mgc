@@ -18,7 +18,7 @@ Smoothing(localCorr, m, n, R)
 }
 \value{
 A list contains the following:
-\item{\code{statMGC}}{is the sample MGC statistic within \code{[-1,1]}}
+\item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
 \item{\code{optimalScale}}{the estimated optimal scale as a list.}
 }
 \description{

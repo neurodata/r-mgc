@@ -4,7 +4,7 @@
 \alias{mgc.sims.2ball}
 \title{Sample from Unit 2-Ball}
 \usage{
-mgc.sims.2ball(n, d, r = 1, sig.scale = 0)
+mgc.sims.2ball(n, d, r = 1, cov.scale = 0)
 }
 \arguments{
 \item{n}{the number of samples.}
@@ -13,8 +13,11 @@ mgc.sims.2ball(n, d, r = 1, sig.scale = 0)
 
 \item{r}{the radius of the 2-ball. Defaults to \code{1}.}
 
-\item{sig.scale}{if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
+\item{cov.scale}{if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
 which has no noise.}
+}
+\value{
+the points sampled from the ball, as a \code{[n, d]} array.
 }
 \description{
 Sample from the 2-ball in d-dimensions.
@@ -22,7 +25,7 @@ Sample from the 2-ball in d-dimensions.
 \examples{
 library(mgc)
 # sample 100 points from 3-d 2-ball with radius 2
-X <- mgc.sims.rball(100, 3, 2)
+X <- mgc.sims.2ball(100, 3, 2)
 }
 \author{
 Eric Bridgeford

@@ -1,0 +1,126 @@
+---
+title: "null_discriminability"
+author: "Eric Bridgeford"
+date: "January 17, 2019"
+header-includes:
+  - \usepackage{ericmath}
+  - \usepackage[ruled]{algorithm2e}
+in_header:
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+Given the following $K$-class problem:
+
+\begin{align*}
+  X_i \distas{d} \Norm{\mu_i^{(x)}, \Sigma_i^{(x)}}
+\end{align*}
+
+with $\mu_i^{(x)} \in \realn^p, \Sigma_i^{(x)} \in \realn^{p \times p}$, then in the two-class case, the goal is the distribution of $\norm{Y} = \norm{X_1 - X_2}$, where:
+\begin{align*}
+  Y = X_1 - X_2 \distas{d} \Norm{\mu^{(y)} = \mu_1^{(x)} - \mu_2^{(x)}, \Sigma^{(y)} = \Sigma_1^{(x)} + \Sigma_2^{(x)}}
+\end{align*}
+To simplify the math, assume that $\Sigma_{i, j}^{(x)} = \sigma_{i}^{(x)}$ when $i=j$, and $0$ otherwise. That is, observations between dimensions are assumed to be independent. Let $Y = (Y_i)_{i = 1}^p$, so $Y_i$ is a random variable for each dimension, where $\Sigma_{i, j}^{(y)} = \sigma_{i}^{(y)}$ when $i = j$ and zero otherwise. That is, $Y_i \indep Y_j$ for all $i \neq j$. Note:
+\begin{align*}
+  \norm{Y}^2 &= \sum_{i = 1}^p Y_i
+\end{align*}
+and:
+\begin{align*}
+  \norm{Y} &= \sqrt{\sum_{i = 1}^p Y_i}
+\end{align*}
+
+# Theoretical Approach
+
+## Approach 1
+
+Note that for $A = Z_1 + \mu$ where $A \distas{d} \Norm{\mu, 1}$ and $Z_1$ is the standard gaussian, we can find the MGF:
+\begin{align*}
+  M_A(t) = \expect{}{e^{tA^2}} &= \expect{}{e^{t\parens*{Z + \mu}^2}} \\
+  &= \integral{-\infty}{\infty}{e^{t(z + \mu)^2} \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}z^2}}{z} \\
+  &= \integral{-\infty}{\infty}{e^{t(z + \mu)^2} \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}z^2}}{z} \\
+  &= \frac{1}{\sqrt{2\pi}} \integral{-\infty}{\infty}{\exp\parens*{-\parens*{\frac{1}{2} - t}z^2 + 2\mu t z + \mu^2 t}}{z} \\
+  &= \frac{1}{\sqrt{2\pi}} \integral{-\infty}{\infty}{\exp\parens*{-\parens*{\frac{1}{2} - t}\parens*{z - \frac{2\mu t}{1 - 2t}}^2 + \mu^2 t + \frac{2\mu^2 t^2}{1 - 2t}}}{z} \\
+  &= \frac{\sqrt{1 - 2t}}{\sqrt{2\pi}\sqrt{1 - 2t}} \exp\parens*{\mu^2 t + \frac{2\mu^2 t^2}{1 - 2t}}\integral{-\infty}{\infty}{\exp\parens*{-\parens*{\frac{1}{2} - t}\parens*{z - \frac{2\mu t}{1 - 2t}}^2}}{z} \\
+  &= \frac{\sqrt{1 - 2t}}{\sqrt{2\pi}\sqrt{1 - 2t}} \exp\parens*{\mu^2 t + \frac{2\mu^2 t^2}{1 - 2t}}\integral{-\infty}{\infty}{\exp\parens*{-\frac{\parens*{z - \frac{2\mu t}{1 - 2t}}^2}{2(1 - 2t)^{-1}}}}{z} \\
+  &= \frac{1}{\sqrt{1 - 2t}}\exp\parens*{\mu^2 t + \frac{2\mu^2 t^2}{1 - 2t}}\frac{\sqrt{1 - 2t}}{\sqrt{2\pi}} \integral{-\infty}{\infty}{\exp\parens*{-\frac{1}{2}\parens*{z - \frac{2\mu t}{1 - 2t}}^2(1 - 2t)}}{z} \\
+  &= \frac{1}{\sqrt{1 - 2t}}\exp\parens*{\mu^2 t + \frac{2\mu^2 t^2}{1 - 2t}} \undereq \textrm{pdf of Gaussian} \\
+  &= \frac{1}{\sqrt{1 - 2t}}\exp\parens*{\frac{\mu^2 t}{1 - 2t}}
+\end{align*}
+which is the MGF of the non-central chi-squared distribution with non-centrality parameter $\mu^2$. Then:
+\begin{align*}
+  \parens*{\frac{Y_i}{\sigma_{y, i}}}^2 \distas{d} \nchis{1}{\lambda_i^{(y)}},\; \lambda_i^{(y)} = \parens*{\frac{\mu_i^{(y)}}{\sigma_{i}^{(y)}}}^2
+\end{align*}
+is non-central chi-squared with $1$ degree of freedom and non-centrality parameter $\lambda_i^{(y)} = \parens*{\frac{\mu_i^{(y)}}{\sigma_{i}^{(y)}}}^2$. Then we can write:
+\begin{align*}
+  \norm{Y}^2 &= \sum_{i = 1}^p \sigma_i^2 \parens*{\frac{Y_i}{\sigma_i^{(y)}}}^2
+\end{align*}
+which is a linear combination of non-central chi-squareds, which is the definition of the generalized chi-squared distribution. Then $\norm{Y}$ is distributed as generalized chi.
+
+## Approach 2
+
+Let $Z_p \distas{d} \Norm{0, I_p}$, the standard isotropic gaussian with $p$ dimensions. Then by definition with $Y \distas{d} \Norm{\mu^{(y)}, \Sigma^{(y)}}$, since $\Sigma^{(y)} \succ 0$, $\Sigma$ has the eigendecomposition $\Sigma = Q'\Lambda Q$ where $Q$ is the orthonormal matrix of eigenvectors and $\Lambda$ the square diagonal matrix of positive eigenvalues, where $\Lambda = W'W$ and $W = \Lambda^{\frac{1}{2}}$. Then $\Sigma = (WQ)'(WQ) = L'L$ is a cholesky decomposition of $\Sigma$. Then it is clear that $Y = L Z_p + \mu^{(y)}$, so:
+\begin{align*}
+  \norm{Y}^2 = Y'Y &= \parens*{L Z_p + \mu^{(y)}}'\parens*{L Z_p + \mu^{(y)}} \\
+   &= \parens*{Z_p + L^{-1}\mu^{(y)}}'\Sigma\parens*{Z_p + L^{-1}\mu^{(y)}} \\
+   &= \parens*{Z_p + L^{-1}\mu^{(y)}}'\Sigma\parens*{Z_p + L^{-1}\mu^{(y)}}
+\end{align*}
+Then with $S = QZ_p$, $S$ is also multivariate normal since it is a full-rank linear transformation of $Z_p$ (recall $Q$ is full-rank by definition of the eigendecomposition of $\Sigma \succ 0$). Note also that it is $S \distas{d} \Norm{0, I_p}$ since $Q'Q = QQ' = I_p$ by definition of orthonormal. Then it is clear that:
+\begin{align*}
+  Y'Y &= \parens*{Z_p + L^{-1}\mu^{(y)}}'Q'\Lambda Q\parens*{Z_p + L^{-1}\mu^{(y)}} \\
+  &= \parens*{QZ_p + QL^{-1}\mu^{(y)}}'\Lambda \parens*{QZ_p + QL^{-1}\mu^{(y)}} \\
+  &= \parens*{S + QL^{-1}\mu^{(y)}}'\Lambda \parens*{S + QL^{-1}\mu^{(y)}} \\
+  &= \parens*{S + u}'\Lambda \parens*{S + u} \\
+  &= \sum_{i = 1}^p (S_i + u_i)^2 \lambda_i
+\end{align*}
+where $u = QL^{-1}\mu^{(y)}$. Then $u_i = Q\frac{\mu^{(y)}}{\sigma_i^{(y)}}$, since $L_{i, i} = \sigma^{(y)}_i$ as $\Sigma$ is diagonal and $0$ otherwise. Note then that by definition, $(S_i + u_i)^2$ is non-central chi-squared distributed, so again we see that $\norm{Y}^2$ is a linear combination of independent non-central chi-squareds, which is the generalized chi distribution.
+
+Then by both of the above approaches, it is clear that $\norm{Y}$ is distributed as the generalized chi distribution.
+
+## Special Cases
+
+
+### One Dimensional
+
+
+### Scaled Identity Covariance
+
+
+### Zero Mean
+
+
+### Diagonal Covariance
+
+
+# Empirical Approach
+
+\begin{algorithm}
+\caption{Empirical Discriminability}
+\KwData{$\mu_i \in \realn^{p}$ the means of our $2$ classes. \newline
+$\Sigma_i \in \realn^{p \times p}$ the covariances of our classes. \newline
+$n_i$ the number of elements in each class.\newline
+$n$ the number of realizations to empirically sample, per-class.}
+\KwResult{$D$ the theoretical discriminability using an empirical approximation.}
+\For{$l = 1:n$}{
+  \For{$i = 1:p$}{
+    \For{$j = 1:p$}{
+      sample $x_i$ from $\Norm{\mu_i, \Sigma_i}$.\\
+      sample $x_j$ from $\Norm{\mu_j, \Sigma_j}$.\\
+      Let $d_{l, i, j} = \norm{x_i - x_j}$
+    }
+  }
+}
+\For{$i = 1:p$}{
+  \For{$j = 1:p$}{
+    Let $P_{i, j}$ be the relative mass of $d_{:, i, i} < d_{:, i, j}$.
+  }
+}
+Let $D = \sum_{i = 1}^p \pi_i \pi_j P_{i, j}$, where $\pi_i = \frac{n_i}{n}$.
+\end{algorithm}

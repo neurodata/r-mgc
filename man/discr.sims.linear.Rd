@@ -4,19 +4,23 @@
 \alias{discr.sims.linear}
 \title{Discriminability Linear Simulation}
 \usage{
-discr.sims.linear(n, d, K, sig.scale = 1, mean.scale = 1, rotate = FALSE,
-  class.equal = TRUE, ind = FALSE)
+discr.sims.linear(n, d, K, signal.scale = 1, signal.lshift = 1,
+  non.scale = 1, rotate = FALSE, class.equal = TRUE, ind = FALSE)
 }
 \arguments{
 \item{n}{the number of samples.}
 
-\item{d}{the number of dimensions.}
+\item{d}{the number of dimensions. The first dimension will be the signal dimension; the remainders noise.}
 
 \item{K}{the number of classes in the dataset.}
 
-\item{sig.scale}{the scaling for the class-variance. Defaults to \code{1}.}
+\item{signal.scale}{the scaling for the signal dimension. Defaults to \code{1}.}
 
-\item{mean.scale}{the scaling for the class-means. Defaults to \code{1}.}
+\item{signal.lshift}{the location shift for the signal dimension between the classes. Defaults to \code{1}.}
+
+\item{non.scale}{the scaling for the non-signal dimensions. Defaults to \code{1}.}
+
+\item{rotate}{whether to apply a random rotation. Defaults to \code{TRUE}.}
 
 \item{class.equal}{whether the number of samples/class should be equal, with each
 class having a prior of 1/K, or inequal, in which each class obtains a prior
@@ -25,7 +29,8 @@ of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
 \item{ind}{whether to sample x and y independently. Defaults to \code{FALSE}.}
 }
 \description{
-A function to simulate multi-class data with a linear class-mean trend.
+A function to simulate multi-class data with a linear class-mean trend. The signal dimension is the dimension carrying all of the
+between-class difference, and the non-signal dimensions are noise.
 }
 \author{
 Eric Bridgeford
