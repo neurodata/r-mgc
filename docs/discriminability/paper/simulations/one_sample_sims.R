@@ -91,18 +91,19 @@ sim_gmm <- function(mus, Sigmas, n) {
 sim.no_signal <- function(n, d, sigma=1) {
   # classes are from same distribution, so signal should be detected w.p. alpha
   samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
-  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d)), Y=samp$Y))
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y))
 }
 
 ## Linear Signal Difference
 # a simulation where classes are linearly distinguishable
 # 2 classes
 sim.linear_sig <- function(n, d, sigma=0) {
+  S.class <- diag(d)
   Sigma <- diag(d)
   Sigma[1, 1] <- 2
   Sigma[-c(1), -c(1)] <- 1
   Sigma[1,1] <- 2
-  mus=cbind(rep(0, d), c(1, rep(0, d-1))) # with a mean signal shift between the classes
+  mus=t(mvrnorm(n=2, c(0, 0), S.class)) # with a mean signal shift between the classes
   samp <- sim_gmm(mus=mus, Sigmas=abind(Sigma, Sigma, along=3), n)
   return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y))
 }

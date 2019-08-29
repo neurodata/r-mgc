@@ -119,9 +119,9 @@ sim_gmm <- function(mus, Sigmas, n) {
 # 2 classes
 sim.no_signal <- function(n, d, sigma=0) {
   # samples 1 and 2 have classes are from same distribution, so no signal should be detected w.p. alpha
-  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=sigma*abind(diag(d), diag(d), along=3), n)
-  samp2 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=sigma*abind(diag(d), diag(d), along=3), n)
-  return(list(X1=samp1$X, X2=samp2$X, Y=samp1$Y))
+  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
+  samp2 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
+  return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
 ## Linear Signal Difference
@@ -242,11 +242,11 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
 ## --------------------------------------
 n <- 128; d <- 2
 nrep <- 500
-n.sigma <- 8
+n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(10, 2, 2, 4, 1)
+sims.sig.max <- c(10, 2, 2, 2, 1)
 sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Linear", "Cross", "Gaussian", "Annulus/Disc")
