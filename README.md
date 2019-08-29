@@ -17,8 +17,6 @@ This R repo is a development branch, the actively developed repo is in Python at
 - [Instructions for Use](#instructions-for-use)
 - [License](./LICENSE)
 - [Issues](https://github.com/neurodata/mgc/issues)
-- [Pseudocode](#pseudocode)
-- [Matlab code](https://github.com/neurodata/mgc-paper/tree/master/Code/MGC)
 - [Citation](#citation)
 - [Reproducibility](#reproducibility)
 
