@@ -3,7 +3,7 @@ r_packages:
     covr
 
 after_success:
-    - Rscript -e 'library(covr); codecov()'
+    - travis wait 30 Rscript codecov.R
 
 language: R
 sudo: false
