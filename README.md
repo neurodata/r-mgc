@@ -20,6 +20,8 @@ This R repo is a development branch, the actively developed repo is in Python at
 - [Pseudocode](#pseudocode)
 - [Matlab code](https://github.com/neurodata/mgc-paper/tree/master/Code/MGC)
 - [Citation](#citation)
+- [Reproducibility](#reproducibility)
+
 # Overview
 
 In modern scientific discovery, it is becoming increasingly critical to uncover whether one property of a dataset is related to another. The `MGC` (pronounced *magic*), or Multiscale Graph Correlation, provides a framework for investigation into the relationships between properties of a dataset and the underlying geometries of the relationships, all while requiring sample sizes feasible in real data scenarios.
