@@ -6,7 +6,7 @@ This R repo is a development branch, the actively developed repo is in Python at
 [![arXiv shield](https://img.shields.io/badge/arXiv-1609.05148-red.svg?style=flat)](https://arxiv.org/abs/1609.05148)
 [![Downloads badge](https://cranlogs.r-pkg.org/badges/mgc)](https://cranlogs.r-pkg.org/badges/mgc)
 [![DOI](https://zenodo.org/badge/103285533.svg)](https://zenodo.org/badge/latestdoi/103285533)
-
+[![Travis](https://travis-ci.org/neurodata/r-mgc.svg?branch=master)](https://travis-ci.org/neurodata/r-mgc)
 
 ## Contents
 
