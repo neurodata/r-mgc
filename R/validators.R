@@ -23,6 +23,7 @@
 #'     \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
 #'     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 #' }
+#' @param remove.isolates whether to remove isolated samples, or samples with only a single instance in the \code{Y} vector.
 #' @return A list containing the following:
 #' \item{\code{DX}}{The X distance matrix, as a \code{[n x n]} matrix.}
 #' \item{\code{Y}}{The sample ids, with isolates removed..}
