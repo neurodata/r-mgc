@@ -21,3 +21,4 @@ A list contains the following:
 \description{
 An auxiliary function that properly transforms the distance matrix X
 }
+\keyword{internal}

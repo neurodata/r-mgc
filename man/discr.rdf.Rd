@@ -20,3 +20,4 @@ A function for computing the reliability density function of a dataset.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}

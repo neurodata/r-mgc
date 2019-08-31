@@ -23,3 +23,4 @@ A function to remove isolates from a dataset, given a data matrix or a distance 
 \author{
 Eric Bridgeford
 }
+\keyword{internal}

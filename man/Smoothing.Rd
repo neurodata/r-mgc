@@ -28,3 +28,4 @@ If area of R is too small, return the last local corr otherwise take the maximum
 \author{
 C. Shen
 }
+\keyword{internal}

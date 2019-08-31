@@ -204,5 +204,6 @@ discr.test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
   } else {
     stop("You have not entered a valid alternative.")
   }
-  return(list(p.value=p.value, stat=stat, discr=list(X1=D1.hat, X2=D2.hat), null=null.diff, alt=alt))
+  return(list(p.value=p.value*(nperm)/(nperm + 1) + 1/(nperm + 1), stat=stat,
+              discr=list(X1=D1.hat, X2=D2.hat), null=null.diff, alt=alt))
 }

@@ -13,10 +13,11 @@ vignette: >
 
 In this notebook, we will discuss the basics of the discriminability statistic in a real dat simulated and real data context, and demonstrate some of the useful plots that users may want to visualize the results with.
 
-```{r}
+```{r, message=FALSE}
 library(mgc)
 library(reshape2)
 library(ggplot2)
+library(dplyr)
 
 plot_mtx <- function(Dx, main.title="Distance Matrix", xlab.title="Sample Sorted by Source", ylab.title="Sample Sorted by Source") {
   data <- melt(Dx)
@@ -43,7 +44,23 @@ d <- 20
 set.seed(12345)
 src_id <- array(1:nsrc)
 Y <- sample(rep(src_id, nobs))
-X <- t(sapply(Y, function(lab) rnorm(d, mean=lab, sd=1)))
+X <- t(sapply(Y, function(lab) rnorm(2, mean=lab, sd=1/2)))
+```
+
+Plotting the data:
+```{r, fig.height=4, fig.width=5}
+(X.dat <- data.frame(x1=X[,1], x2=X[,2], Individual=factor(Y), Dataset="First Dataset")) %>%
+  ggplot(aes(x=x1, y=x2, color=Individual)) +
+    geom_point() +
+    xlab("First Dimension") +
+    ylab("Second Dimension") +
+    ggtitle("Plot of Simulated Data") +
+    theme_bw()
+```
+
+As evident from the figure, repeated measurements from the same individual tend to be closer than measurements from other individuals within the sample of subjects. This is indicated by the fact that measurements for each individual tend to be in a proximal ball of measurements from the same individual, and are farther away from measurements of other individuals. The discriminability is relatively high:
+
+```{r}
 discr.stat(X, Y)$discr  # expect high discriminability since measurements taken at a source have the same mean and sd of only 1
 ```
 
@@ -62,7 +79,7 @@ as we can see, users can pass in either an $[n, d]$ array, or a $[n, n]$ distanc
 discr.stat(Dx, sort(Y), is.dist=TRUE)$discr
 ```
 
-This enables flexibility if, for instance, you wish to use a custom distance function.
+This enables flexibility if, for instance, you wish to use a custom distance function that provides more utility for your problem of interest than the provided implementations.
 
 ### Using a user-specified distance function
 
@@ -107,6 +124,41 @@ dist.fxn <- function(X, method="2") {
 
 discr.stat(X, Y, dist.xfm=dist.fxn, dist.params=list(method="2"), dist.return="Distance")$discr
 ```
+
+To investigate whether this discriminability exceeds that observed by random chance, we can use the `one sample` test of goodness-of-fit:
+
+```{r}
+discr.test.one_sample(X, Y)$p.value
+```
+
+The low $p$-value for a single test indicates that the discriminability exceeds that which would be observed via random chance.
+
+Had we a second set of data, we could consider whether the discriminability of one dataset exceeds that of another. Consider a second dataset:
+```{r, fig.height=3, fig.width=6}
+X2 <- t(sapply(Y, function(lab) rnorm(2, mean=lab, sd=2)))
+
+rbind(X.dat, data.frame(x1=X2[,1], x2=X2[,2], Individual=factor(Y), Dataset="Second Dataset")) %>%
+  ggplot(aes(x=x1, y=x2, color=Individual)) +
+    geom_point() +
+    xlab("First Dimension") +
+    ylab("Second Dimension") +
+    ggtitle("Plot of Simulated Data") +
+    theme_bw() +
+    facet_grid(. ~ Dataset)
+```
+Note that the second dataset has a variance of $4$ instead of $1$, and therefore, appears less homogeneous than the first dataset. The "proximal balls" of measurements from each individual are now less pronounced. Therefore, we would expect the discriminability to be lower, as there is higher variance between measurements for a single subject:
+
+```{r}
+discr.stat(X2, Y)$discr
+```
+
+To formalize this notion, we can consider a test of whether the first dataset has a higher discriminability than the second dataset. This test can be performed using the `two sample` test of equality:
+
+```{r}
+discr.test.two_sample(X, X2, Y, alt="greater")$p.value
+```
+
+The low $p$-value indicates that we can conclude that the first dataset is more discriminable than the second dataset.
 
 ## Real Data
 

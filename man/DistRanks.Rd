@@ -19,3 +19,4 @@ An auxiliary function that sorts the entries within each column by ascending ord
 For ties, the minimum ranking is used,
 e.g. if there are repeating distance entries, the order is like 1,2,3,3,4,..,n-1.
 }
+\keyword{internal}

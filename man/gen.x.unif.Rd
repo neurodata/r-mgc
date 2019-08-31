@@ -23,3 +23,4 @@ A helper function to generate n samples of a d-dimensional uniform vector.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}

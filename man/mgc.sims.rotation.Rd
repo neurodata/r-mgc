@@ -18,3 +18,4 @@ A helper function for estimating a random rotation matrix.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}
