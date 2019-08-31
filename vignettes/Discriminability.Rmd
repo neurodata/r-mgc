@@ -17,7 +17,6 @@ In this notebook, we will discuss the basics of the discriminability statistic i
 library(mgc)
 library(reshape2)
 library(ggplot2)
-library(dplyr)
 
 plot_mtx <- function(Dx, main.title="Distance Matrix", xlab.title="Sample Sorted by Source", ylab.title="Sample Sorted by Source") {
   data <- melt(Dx)
@@ -49,8 +48,8 @@ X <- t(sapply(Y, function(lab) rnorm(2, mean=lab, sd=1/2)))
 
 Plotting the data:
 ```{r, fig.height=4, fig.width=5}
-(X.dat <- data.frame(x1=X[,1], x2=X[,2], Individual=factor(Y), Dataset="First Dataset")) %>%
-  ggplot(aes(x=x1, y=x2, color=Individual)) +
+X.dat <- data.frame(x1=X[,1], x2=X[,2], Individual=factor(Y), Dataset="First Dataset")
+  ggplot(X.dat, aes(x=x1, y=x2, color=Individual)) +
     geom_point() +
     xlab("First Dimension") +
     ylab("Second Dimension") +
@@ -136,15 +135,14 @@ The low $p$-value for a single test indicates that the discriminability exceeds 
 Had we a second set of data, we could consider whether the discriminability of one dataset exceeds that of another. Consider a second dataset:
 ```{r, fig.height=3, fig.width=6}
 X2 <- t(sapply(Y, function(lab) rnorm(2, mean=lab, sd=2)))
-
-rbind(X.dat, data.frame(x1=X2[,1], x2=X2[,2], Individual=factor(Y), Dataset="Second Dataset")) %>%
-  ggplot(aes(x=x1, y=x2, color=Individual)) +
-    geom_point() +
-    xlab("First Dimension") +
-    ylab("Second Dimension") +
-    ggtitle("Plot of Simulated Data") +
-    theme_bw() +
-    facet_grid(. ~ Dataset)
+X.dat.both <- rbind(X.dat, data.frame(x1=X2[,1], x2=X2[,2], Individual=factor(Y), Dataset="Second Dataset"))
+ggplot(X.dat.both, aes(x=x1, y=x2, color=Individual)) +
+  geom_point() +
+  xlab("First Dimension") +
+  ylab("Second Dimension") +
+  ggtitle("Plot of Simulated Data") +
+  theme_bw() +
+  facet_grid(. ~ Dataset)
 ```
 Note that the second dataset has a variance of $4$ instead of $1$, and therefore, appears less homogeneous than the first dataset. The "proximal balls" of measurements from each individual are now less pronounced. Therefore, we would expect the discriminability to be lower, as there is higher variance between measurements for a single subject:
 
