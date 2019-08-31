@@ -18,3 +18,4 @@ A helper function to generate a d-dimensional linear transformation matrix.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}

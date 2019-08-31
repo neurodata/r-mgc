@@ -19,3 +19,4 @@ A helper function for applying a random rotation to gaussian parameter set.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}

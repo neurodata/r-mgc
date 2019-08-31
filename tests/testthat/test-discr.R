@@ -86,7 +86,7 @@ test_that("One Sample Test is Valid", {
     sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=0); X <- sim$X; Y <- sim$Y
     set.seed(seed.idx[i])
     return(discr.test.one_sample(X, Y, nperm=100)$p.value < alpha)
-  }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
+  }, mc.cores=1), use.names=FALSE)
   # check power is near alpha
   expect_lt(abs(mean(res) - alpha), 0.1)
 })
@@ -101,7 +101,7 @@ test_that("One Sample Test Detects Relationship", {
     sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=3); X <- sim$X; Y <- sim$Y
     set.seed(seed.idx[i])
     return(discr.test.one_sample(X, Y, nperm=50)$p.value < alpha)
-  }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
+  }, mc.cores=1), use.names=FALSE)
   # check power is near 1
   expect_lt(abs(mean(res) - 1), 0.1)
 })
@@ -122,7 +122,7 @@ test_that("Two Sample Test is Valid and Detects Relationship", {
       set.seed(seed.idx[i])
       pval <- discr.test.two_sample(sim$X1, sim$X2, sim$Y, alt=sim.opt$alt, nperm=50)$p.value
       return(pval < alpha)
-    }, mc.cores=parallel::detectCores() - 1), use.names=FALSE)
+    }, mc.cores=1), use.names=FALSE)
     # check power accordingly
     expect_lte(abs(mean(res) - sim.opt$outcome), 0.15)
   })

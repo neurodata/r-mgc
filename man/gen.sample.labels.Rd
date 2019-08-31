@@ -16,3 +16,4 @@ of k/sum(K) for k=1:K. Defaults to \code{TRUE}.}
 \description{
 A helper function for simulating sample labels
 }
+\keyword{internal}

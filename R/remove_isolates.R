@@ -10,7 +10,7 @@
 #' @param Y \code{[n]} a vector containing the sample ids for our \code{n} samples.
 #' @param is.dist a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.
 #' @author Eric Bridgeford
-#' @export
+#' @keywords internal
 remove.isolates <- function(X, Y, is.dist=FALSE) {
 
   un.y <- as.character(unique(Y))

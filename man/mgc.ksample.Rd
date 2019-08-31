@@ -8,10 +8,10 @@ mgc.ksample(X, Y, mgc.opts = list(), ...)
 }
 \arguments{
 \item{X}{is interpreted as:
-\itemize{
-   \item{\code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal}
-   \item{\code{[n x d]} data matrix}{Otherwise}
- }}
+\describe{
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist.X=FALSE}.}
+   \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist.X=TRUE}.}
+}}
 
 \item{Y}{\code{[n]} the labels of the samples with \code{K} unique labels.}
 

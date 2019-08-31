@@ -38,3 +38,4 @@ A utility to validate a distance matrix.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}

@@ -640,6 +640,7 @@ discr.sims.radial <- function(n, d, K, er.scale=0.1, r=1, class.equal=TRUE, ind=
 #' @param class.equal whether the number of samples/class should be equal, with each
 #' class having a prior of 1/K, or inequal, in which each class obtains a prior
 #' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @keywords internal
 gen.sample.labels <- function(K, class.equal=TRUE) {
   if (isTRUE(class.equal)) {
     priors <- array(1/K, dim=c(K)) # prior is just 1/K for all k
@@ -656,6 +657,7 @@ gen.sample.labels <- function(K, class.equal=TRUE) {
 #' @param d the number of dimensions.
 #' @return A \code{[d]} the coefficient vector.
 #' @author Eric Bridgeford
+#' @keywords internal
 gen.coefs <- function(d) {
   A = as.array(1/1:d, dim=c(d, 1))
   return(A)
@@ -669,6 +671,7 @@ gen.coefs <- function(d) {
 #' @param x \code{[n, d]} the simulated data matrix.
 #' @author Eric Bridgeford
 #' @importFrom stats runif
+#' @keywords internal
 gen.x.unif <- function(n, d, a=-1, b=1) {
   x <- array(runif(n=(n*d), min=a, max=b), dim=c(n, d))
   return(x)
@@ -687,6 +690,7 @@ gen.x.unif <- function(n, d, a=-1, b=1) {
 #' \item{priors}{\code{[K]} the priors for each class.}
 #' @author Eric Bridgeford
 #' @importFrom MASS mvrnorm
+#' @keywords internal
 mgc.sims.sim_gmm <- function(mus, Sigmas, n, priors) {
   K <- dim(mus)[2]
   labs <- sample(1:K, size=n, prob=priors, replace=TRUE)
@@ -706,6 +710,7 @@ mgc.sims.sim_gmm <- function(mus, Sigmas, n, priors) {
 #' @param d dimensions to generate a rotation matrix for.
 #' @return the rotation matrix
 #' @author Eric Bridgeford
+#' @keywords internal
 mgc.sims.rotation <- function(d) {
   Q <- qr.Q(qr(array(rnorm(d*d), dim=c(d, d))))
   if (det(Q) < -.99) {
@@ -721,6 +726,7 @@ mgc.sims.rotation <- function(d) {
 #' @param Sigmas covariances per class.
 #' @param Q rotation to use, if any
 #' @author Eric Bridgeford
+#' @keywords internal
 mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
   dimm <- dim(mus)
   K <- dimm[2]

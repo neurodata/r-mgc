@@ -56,3 +56,4 @@ A list containing the following:
 \description{
 A script that validates that data inputs are correct, and returns a X distance and Y distance matrix for MGC.
 }
+\keyword{internal}

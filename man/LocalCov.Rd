@@ -21,3 +21,4 @@ covXY is all local covariances computed iteratively.
 \description{
 An auxiliary function that computes all local correlations simultaneously in O(n^2).
 }
+\keyword{internal}

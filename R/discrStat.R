@@ -53,6 +53,7 @@ discr.stat <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=l
 #' @param X \code{[n, n]} a distance matrix for n samples.
 #' @param ids \code{[n]} a vector containing the label ids for each sample.
 #' @return \code{[n]} vector of the reliability per sample.
+#' @keywords internal
 #' @author Eric Bridgeford
 discr.rdf <- function(X, ids) {
   N <- length(ids)  # number of scans total
@@ -92,6 +93,7 @@ discr.rdf <- function(X, ids) {
 
 #' Discriminability Mean Normalized Rank
 #' @param rdf the reliability densities.
+#' @keywords internal
 #' @return the mnr.
 discr.mnr <- function(rdf) {
   mean(rdf, is.nan=FALSE)

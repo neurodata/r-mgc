@@ -15,3 +15,4 @@ the mnr.
 \description{
 Discriminability Mean Normalized Rank
 }
+\keyword{internal}

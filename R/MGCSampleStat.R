@@ -85,9 +85,10 @@ mgc.stat <- function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params
 #'    \item{\code{'mantel'}}{use the mantel global correlation.}
 #'    \item{\code{'rank'}}{use the rank global correlation.}
 #' }
+#' @keywords internal
 mgc.stat.driver <- function(DX, DY, option='mgc') {
   # compute local correlation map
-  localCorr <- mgc.localcorr(DX, DY, option)$corr # compute all localCorr
+  localCorr <- mgc.localcorr.driver(DX, DY, option)$corr # compute all localCorr
   m <- nrow(localCorr)
   n <- ncol(localCorr)
 
@@ -115,6 +116,7 @@ mgc.stat.driver <- function(DX, DY, option='mgc') {
 #' @return R is a binary matrix of size m and n, with 1's indicating the significant region.
 #' @author Eric Bridgeford and C. Shen
 #' @importFrom SDMTools ConnCompLabel
+#' @keywords internal
 Thresholding <- function(localCorr,m,n,sz){
   # A threshold is estimated based on normal distribution approximation from Szekely2013
   prt=1-0.02/sz # percentile to consider as significant
@@ -161,6 +163,7 @@ Thresholding <- function(localCorr,m,n,sz){
 #' \item{\code{optimalScale}}{the estimated optimal scale as a list.}
 #'
 #' @author C. Shen
+#' @keywords internal
 Smoothing <- function(localCorr,m,n,R){
   stat=localCorr[m,n] # default sample mgc to local corr at maximal scale
   optimalScale=list(x=m, y=n) # default the optimal scale to maximal scale

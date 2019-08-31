@@ -27,11 +27,10 @@
 #' n=200; d=2
 #' data <- mgc.sims.linear(n, d)
 #' Dx <- as.matrix(dist(data$X), nrow=n); Dy <- as.matrix(dist(data$Y), nrow=n)
-#' dt <- mgc.distTransform(Dx, Dy)
+#' dt <- mgc.dist.xfm(Dx, Dy)
 #'
 #' @export
-#'
-mgc.distTransform <- function(X, Y, option='mgc', optionRk=TRUE){
+mgc.dist.xfm <- function(X, Y, option='mgc', optionRk=TRUE){
   if (option=='rank') {
     optionRk=TRUE # do ranking or not, 0 to no ranking
   }
@@ -54,6 +53,7 @@ mgc.distTransform <- function(X, Y, option='mgc', optionRk=TRUE){
 #' \item{\code{A}}{is the centered distance matrices}
 #' \item{\code{RX}}{is the column rank matrices of X.}
 #'
+#' @keywords internal
 DistCentering<-function(X,option,optionRk){
   n=nrow(X)
   if (optionRk!=0){
@@ -97,6 +97,7 @@ DistCentering<-function(X,option,optionRk){
 #'
 #' @return \code{disRank} is the column rank matrices of \code{X}.
 #'
+#' @keywords internal
 DistRanks <- function(dis) {
   n=nrow(dis)
   disRank=matrix(0,n,n)

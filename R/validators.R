@@ -26,7 +26,8 @@
 #' @param remove.isolates whether to remove isolated samples, or samples with only a single instance in the \code{Y} vector.
 #' @return A list containing the following:
 #' \item{\code{DX}}{The X distance matrix, as a \code{[n x n]} matrix.}
-#' \item{\code{Y}}{The sample ids, with isolates removed..}
+#' \item{\code{Y}}{The sample ids, with isolates removed.}
+#' @keywords internal
 discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                             dist.return=NULL, remove.isolates=TRUE) {
 
@@ -92,6 +93,7 @@ discr.validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
 #' @return A list containing the following:
 #' \item{\code{D}}{The distance matrix, as a \code{[n x n]} matrix.}
 #' \item{\code{Y}}{the sample ids, as a \code{[n]} vector.}
+#' @keywords internal
 mgc.validator <- function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
                           dist.return.X=NULL, is.dist.Y=FALSE, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
                           dist.return.Y=NULL) {
@@ -129,6 +131,7 @@ mgc.validator <- function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.p
 #' }
 #' @return A distance matrix.
 #' @author Eric Bridgeford
+#' @keywords internal
 mgc.dist.validator <- function(X, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                                dist.return=NULL) {
   if (is.dist) {

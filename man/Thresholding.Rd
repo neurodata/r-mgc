@@ -24,3 +24,4 @@ An auxiliary function that finds a region of significance in the local correlati
 \author{
 Eric Bridgeford and C. Shen
 }
+\keyword{internal}

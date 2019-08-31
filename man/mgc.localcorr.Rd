@@ -4,19 +4,53 @@
 \alias{mgc.localcorr}
 \title{MGC Local Correlations}
 \usage{
-mgc.localcorr(X, Y, option = "mgc")
+mgc.localcorr(X, Y, is.dist.X = FALSE, dist.xfm.X = mgc.distance,
+  dist.params.X = list(method = "euclidean"), dist.return.X = NULL,
+  is.dist.Y = FALSE, dist.xfm.Y = mgc.distance,
+  dist.params.Y = list(method = "euclidean"), dist.return.Y = NULL,
+  option = "mgc")
 }
 \arguments{
 \item{X}{is interpreted as:
-\itemize{
-   \item{a \code{[n x n]} distance matrix}{X is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions.}
- }}
+\describe{
+   \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist.X=FALSE}.}
+   \item{a \code{[n x n]} distance matrix}{X is a distance matrix. Use flag \code{is.dist.X=TRUE}.}
+}}
 
 \item{Y}{is interpreted as:
 \describe{
-   \item{a \code{[n x n]} distance matrix}{Y is a square matrix with zeros on diagonal for \code{n} samples.}
-   \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions.}
+   \item{a \code{[n x d]} data matrix}{Y is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist.Y=FALSE}.}
+   \item{a \code{[n x n]} distance matrix}{Y is a distance matrix. Use flag \code{is.dist.Y=TRUE}.}
+}}
+
+\item{is.dist.X}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
+
+\item{dist.xfm.X}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.}
+
+\item{dist.params.X}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm.X}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return.X}{the return argument for the specified \code{dist.xfm.X} containing the distance matrix. Defaults to \code{FALSE}.
+\describe{
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm.X[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
+}}
+
+\item{is.dist.Y}{a boolean indicating whether your \code{Y} input is a distance matrix or not. Defaults to \code{FALSE}.}
+
+\item{dist.xfm.Y}{if \code{is.dist == FALSE}, a distance function to transform \code{Y}. If a distance function is passed,
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
+as the \code{dist.return.Y} return argument. See \link[mgc]{mgc.distance} for details.}
+
+\item{dist.params.Y}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm.Y}.
+Defaults to \code{list(method='euclidean')}.}
+
+\item{dist.return.Y}{the return argument for the specified \code{dist.xfm.Y} containing the distance matrix. Defaults to \code{FALSE}.
+\describe{
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm.Y(Y)} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm.Y(Y)[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 }}
 
 \item{option}{is a string that specifies which global correlation to build up-on. Defaults to \code{'mgc'}.

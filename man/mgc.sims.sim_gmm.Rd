@@ -27,3 +27,4 @@ A helper function for simulating from Gaussian Mixture.
 \author{
 Eric Bridgeford
 }
+\keyword{internal}
