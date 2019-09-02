@@ -69,13 +69,13 @@
 #'
 #'
 #' @examples
-#'
+#' \dontrun{
 #' library(mgc)
 #'
 #' n = 100; d = 2
 #' data <- mgc.sims.linear(n, d)
 #' result <- mgc.test(data$X, data$Y, nperm=10)
-#'
+#'}
 #' @export
 mgc.test <-function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
                     dist.return.X=NULL, is.dist.Y=FALSE, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),

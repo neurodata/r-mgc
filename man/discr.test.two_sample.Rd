@@ -61,6 +61,7 @@ Also implemented are tests of \eqn{<}{<} and \eqn{\neq}{!=}.
 }
 
 \examples{
+\dontrun{
 require(mgc)
 require(MASS)
 
@@ -81,8 +82,9 @@ Y <- do.call(c, lapply(1:2, function(i) rep(i, 50)))
 # X1 should be more discriminable, as less noise
 discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
 }
+}
 \references{
-Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
+Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." Bioarxiv (2019).
 }
 \author{
 Eric Bridgeford

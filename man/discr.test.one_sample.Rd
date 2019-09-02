@@ -58,7 +58,7 @@ is the discriminability that would be observed by random chance.
 }
 
 \examples{
-
+\dontrun{
 require(mgc)
 n = 100; d=5
 
@@ -68,11 +68,11 @@ sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10)
 X <- sim$X; Y <- sim$Y
 
 # p-value is small
-discr.test.one_sample(X, Y, nperm=100)$p.value
-
+discr.test.one_sample(X, Y)$p.value
+}
 }
 \references{
-Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
+Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." Bioarxiv (2019).
 }
 \author{
 Eric Bridgeford

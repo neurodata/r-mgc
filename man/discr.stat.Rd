@@ -55,6 +55,9 @@ X <- sim$X; Y <- sim$Y
 discr.stat(X, Y)$discr
 
 }
+\references{
+Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." Bioarxiv (2019).
+}
 \author{
 Eric Bridgeford
 }

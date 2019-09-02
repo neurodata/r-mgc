@@ -92,13 +92,13 @@ For details on usage see the help vignette:
 }
 
 \examples{
-
+\dontrun{
 library(mgc)
 
 n = 100; d = 2
 data <- mgc.sims.linear(n, d)
 result <- mgc.test(data$X, data$Y, nperm=10)
-
+}
 }
 \references{
 Joshua T. Vogelstein, et al. "Discovering and deciphering relationships across disparate data modalities." eLife (2019).

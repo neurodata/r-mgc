@@ -2,7 +2,7 @@
 #'
 #' A function that performs a one-sample test for whether the discriminability differs from random chance.
 #'
-#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
+#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." Bioarxiv (2019).
 #' @importFrom parallel mclapply detectCores
 #' @param X is interpreted as:
 #' \describe{
@@ -40,7 +40,7 @@
 #'
 #'
 #' @examples
-#'
+#' \dontrun{
 #' require(mgc)
 #' n = 100; d=5
 #'
@@ -50,8 +50,8 @@
 #' X <- sim$X; Y <- sim$Y
 #'
 #' # p-value is small
-#' discr.test.one_sample(X, Y, nperm=100)$p.value
-#'
+#' discr.test.one_sample(X, Y)$p.value
+#'}
 #' @export
 discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                                   dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
@@ -80,7 +80,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #'
 #' A function that takes two sets of paired data and tests of whether or not the data is more, less, or non-equally discriminable between the set of paired data.
 #'
-#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." ArXiv (2019).
+#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." Bioarxiv (2019).
 #' @importFrom parallel mclapply detectCores
 #' @param X1 is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.
 #' @param X2 is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.
@@ -119,6 +119,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #'
 #'
 #' @examples
+#' \dontrun{
 #' require(mgc)
 #' require(MASS)
 #'
@@ -138,6 +139,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #'
 #' # X1 should be more discriminable, as less noise
 #' discr.test.two_sample(X1, X2, Y, alt="greater")$p.value  # p-value is small
+#' }
 #' @export
 discr.test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
                                   dist.params=list(method="euclidian"), dist.return=NULL,

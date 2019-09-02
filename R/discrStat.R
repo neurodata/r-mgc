@@ -2,6 +2,7 @@
 #'
 #' A function for computing the discriminability from a distance matrix and a set of associated labels.
 #'
+#' @references Eric W. Bridgeford, et al. "Optimal Decisions for Reference Pipelines and Datasets: Applications in Connectomics." Bioarxiv (2019).
 #' @param X is interpreted as:
 #' \describe{
 #'    \item{a \code{[n x d]} data matrix}{X is a data matrix with \code{n} samples in \code{d} dimensions, if flag \code{is.dist=FALSE}.}

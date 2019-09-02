@@ -33,16 +33,19 @@ MGC K Sample Testing provides a wrapper for MGC Sample testing under the constra
 categorical labels with K possible sample ids. This function uses a 0-1 loss for the Ys (one-hot-encoding)).
 }
 \examples{
-
+\dontrun{
 library(mgc)
+library(MASS)
 
 n = 100; d = 2
-# simulate 200 samples which are jointly dependent in 10 dimensions
-data <- mgc.sims.joint(n, d)
-data_mtx <- rbind(data$X, data$Y)
-labels <- c(replicate(n, 0), replicate(n, 1))
-result <- mgc.ksample(data_mtx, labels, mgc.opts=list(nperm=10))
-
+# simulate 100 samples, where first 50 have mean [0,0] and second 50 have mean [1,1]
+Y <- c(replicate(n/2, 0), replicate(n/2, 1))
+X <- do.call(rbind, lapply(Y, function(y) {
+    return(rnorm(d) + y)
+}))
+# p value is small
+mgc.ksample(X, Y, mgc.opts=list(nperm=100))$p.value
+}
 }
 \references{
 Youjin Lee, et al. "Network Dependence Testing via Diffusion Maps and Distance-Based Correlations." ArXiv (2019).
