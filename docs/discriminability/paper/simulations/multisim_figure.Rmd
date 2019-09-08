@@ -167,9 +167,10 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
 ```{r, fig.width=10, fig.height=2}
 n <- 256; d <- 2
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
-                    sim.multiclass_gaussian, sim.multiclass_ann_disc)
-names(simulations) <- c("(i) No Signal", "(ii) Linear", "(iii) Cross", "(iv) Gaussian", "(v) Annulus/Disc")
+simulations <- list(sim.linear_sig, sim.multiclass_gaussian, sim.crossed_sig,
+                    sim.multiclass_ann_disc,  sim.no_signal)
+names(simulations) <- c("(i) Linear", "(ii) Gaussian", "(iii) Cross", "(iv) Annulus/Disc",
+                        "(v) No Signal")
 
 colors <- c('#e6194b','#4363d8', '#ffe119', '#3cb44b', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff')
 
@@ -192,11 +193,11 @@ sim.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$data)) %>%
   ggplot(aes(x=x1, y=x2, color=y, shape=z)) +
     geom_point() +
     facet_grid(plot.name ~ sim.name, scales="free") +
-    xlab(TeX("$x_1$")) +
-    ylab(TeX("$x_2$")) +
+    xlab("First Dimension") +
+    ylab("Second Dimension") +
     scale_color_manual(values=colors, guide=FALSE) +
     theme_bw() +
-    scale_shape_discrete(name="Gender") +
+    #scale_shape_discrete(name="Gender") +
     theme(axis.text=element_text(color="#FFFFFF"),
           axis.ticks=element_blank())
 
@@ -207,6 +208,8 @@ dmtx.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$dmtx)) %>%
     geom_tile() +
   xlab("Sample 1") +
   ylab("Sample 2") +
+  scale_x_continuous(labels=c(1, 128), breaks=c(1, 256), expand=c(0,0)) +
+  scale_y_continuous(labels=c(1, 128), breaks=c(1, 256), expand=c(0,0)) +
   theme_bw() +
   scale_fill_gradient(name="Distance", low="#FFFFFF", high="#9900FF") +
   facet_grid(plot.name ~ sim.name, scales="free") +
@@ -225,30 +228,30 @@ dmtx.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$dmtx)) %>%
 ```{r}
 al=0.05  # alpha for the power testing
 one.sample.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
-  mutate(outcome = p.value < al,
+  dplyr::mutate(outcome = p.value < al,
          stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
          test.name="(C) One Sample Test",
-        sim.name=recode_factor(sim.name, "No Signal" = "(i) No Signal",
-                               "Linear" = "(ii) Linear",
+        sim.name=recode_factor(sim.name, "No Signal" = "(v) No Signal",
+                               "Linear" = "(i) Linear",
+                               "Gaussian" = "(ii) Gaussian",
                                "Cross" = "(iii) Cross",
-                               "Gaussian" = "(iv) Gaussian",
-                               "Annulus/Disc" = "(v) Annulus/Disc"))
+                               "Annulus/Disc" = "(iv) Annulus/Disc"))
 two.sample.results <- readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
-  mutate(outcome = p.value < al,
+ dplyr::mutate(outcome = p.value < al,
         stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
         test.name="(D) Two Sample Test",
-        sim.name=recode_factor(sim.name, "No Signal" = "(i) No Signal",
-                               "Linear" = "(ii) Linear",
+        sim.name=recode_factor(sim.name, "No Signal" = "(v) No Signal",
+                               "Linear" = "(i) Linear",
+                               "Gaussian" = "(ii) Gaussian",
                                "Cross" = "(iii) Cross",
-                               "Gaussian" = "(iv) Gaussian",
-                               "Annulus/Disc" = "(v) Annulus/Disc"))
+                               "Annulus/Disc" = "(iv) Annulus/Disc"))
 
 sample.test.results <- rbind(one.sample.results, two.sample.results) %>%
-  mutate(test.name=factor(test.name),
+  dplyr::mutate(test.name=factor(test.name),
          sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
          stat.name=factor(stat.name, levels=c("I2C2", "ICC o PCA", "Discr"), ordered=TRUE)) %>%
-  group_by(test.name, sim.name, n, d, stat.name) %>%
-  mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma)))
+  dplyr::group_by(test.name, sim.name, n, d, stat.name) %>%
+  dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma)))
 
 alg.colors <- c("#c70000", "#a7aec5", "#6699cc")
 line.types <- c(1, 1, 1)
@@ -263,18 +266,21 @@ sample.plots <- sample.test.results %>%
   dplyr::summarise(power=mean(outcome)) %>%
   ggplot(aes(x=sigma.wt, y=power, color=stat.name)) +
     geom_line() +
-    scale_color_manual(values=alg.colors, name="Reference Statistic") +
+    scale_color_manual(values=alg.colors, name="Statistic") +
     facet_grid(test.name ~ sim.name, scales="free_x") +
     theme_bw() +
     scale_y_continuous(limits=c(0, 1)) +#, expand=c(0, 0)) +
+    scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
     geom_hline(yintercept=0.05, color="black") +
-    xlab(TeX("$\\sigma$")) +
+    xlab("Normalized Variance") +
     ylab("Statistical Power") +
     theme(strip.background.x = element_blank(),
            strip.text.x=element_blank())
 ```
 
 # Full Plot
+
+9.3 x 6.66
 
 ```{r}
 plot.objs <- list(sim.plots, dmtx.plots,

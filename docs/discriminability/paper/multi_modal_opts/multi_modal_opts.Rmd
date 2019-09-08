@@ -241,12 +241,12 @@ edge.result <- do.call(rbind, lapply(1:dim(edge.sum)[1], function(i) {
   return(reslt)
 }))
 
-result <- rbind(data.frame(discr=reg.result$discr, Option="FSL - ANTs"), 
-                data.frame(discr=freq.result$discr, Option="NFF - FF"), 
-                data.frame(discr=scr.result$discr, Option="NSC - SCR"), 
-                data.frame(discr=gsr.result$discr, Option="GSR - NGS"), 
-                data.frame(discr=parcel.result$discr, Option="CC200 - max(others)"),
-                data.frame(discr=edge.result$discr, Option="PTR - max(others)"))
+result <- rbind(data.frame(discr=reg.result$discr, Option="FSL"), 
+                data.frame(discr=freq.result$discr, Option="No Freq. Filter"), 
+                data.frame(discr=scr.result$discr, Option="No Scrub"), 
+                data.frame(discr=gsr.result$discr, Option="Global Sig. Reg."), 
+                data.frame(discr=parcel.result$discr, Option="CC200"),
+                data.frame(discr=edge.result$discr, Option="Rank"))
 ```
 
 ```{r}
@@ -271,8 +271,9 @@ f5.fmri <- ggplot(result, aes(x=Option, y=discr)) +#, color=Option)) +
   stat_summary(fun.y="mean", geom="point", color="black", size=2) +
   theme_bw() +
   xlab("") +
+  scale_y_continuous(limits=c(-.1, .4)) +
   geom_hline(yintercept = 0, linetype=1, size=0.8) +
-  ylab(TeX("$\\hat{D}_{opt} - max(\\hat{D}_{others})$")) +
+  ylab("Difference in Discriminability") +
   ggtitle("(A) Impact of fMRI Preprocessing Options on Discriminability") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank()) +
   guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
@@ -290,7 +291,7 @@ f5.dmri2 <- ggplot(subset(dmri.results, Dataset == "SWU4"), aes(x=nroi, y=discr,
   theme_bw() +
   ylab("Discriminability") +
   theme(panel.grid.minor.y = element_blank()) +
-  ggtitle("(B.ii) Impact of ROI Count on dMRI Discriminability") +
+  ggtitle("(C.ii) Impact of ROI Count on dMRI Discriminability") +
   guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
 ```
 
@@ -334,9 +335,9 @@ xfmlp.dm.result <- do.call(rbind, lapply(1:dim(xfmlp.dm.sum)[1], function(i) {
   return(reslt)
 }))
 
-xfmp.dm.result$Option = "PTR - Raw"
+xfmp.dm.result$Option = "Rank - Raw"
 xfm.dm.result$Option = "Log - Raw"
-xfmlp.dm.result$Option = "Log - PTR"
+xfmlp.dm.result$Option = "Log - Rank"
 
 xfm.result <- rbind(xfmp.dm.result, xfm.dm.result, xfmlp.dm.result)
 ```
@@ -348,9 +349,10 @@ f5.dmri1 <- ggplot(xfm.result, aes(x=Option, y=discr)) +# , color=Option)) +
   theme_bw() +
   xlab("Edge Transform") +
   geom_hline(yintercept = 0, linetype=1, size=0.8) +
+  scale_y_continuous(limits=c(-.2, .1)) +
   #scale_color_discrete() +
   ylab(TeX("Difference in Discriminability")) +
-  ggtitle("(B.i) Edge Transform for dMRI Connectome") +
+  ggtitle("(C.i) Edge Transform for dMRI Connectome") +
   theme_bw() +
   theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank()) +
   guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
@@ -501,12 +503,12 @@ mm.dat <- merge(fmri.results %>%
   ggplot(aes(x=Parcellation, y=discr.y-discr.x, color=Dataset, size=nscans.x)) +
     geom_point() +
     xlab("Parcellation") +
-    ylab(TeX("$\\hat{D}_{dMRI} - \\hat{D}_{fMRI}$")) +
+    ylab(TeX("Difference in Discriminability")) +
     scale_color_manual(values=dset.cols) +
     theme_bw() +
     geom_hline(yintercept=0) +
     scale_size(range=c(0.5, 3), name="#Scans") +
-    ggtitle("(C) Multimodal MRI Comparison") +
+    ggtitle("(B) Comparing dMRI to fMRI Discriminability") +
     theme(legend.position = NaN)
 ```
 
@@ -515,8 +517,10 @@ grid.arrange(fmri.scan.params, dmri.scan.params, mm.dat, mm.leg,
              layout_matrix=cbind(c(1, 2, 3), c(4, 4, 4)), widths=c(0.8, 0.2))
 ```
 
+11.3 x 6.5
+
 ```{r}
-grid.arrange(f5.fmri, arrangeGrob(f5.dmri1, f5.dmri2, widths=c(0.5, 0.7), nrow=1), mm.dat, heights=c(0.5, 0.5, 0.5), nrow=3)
+grid.arrange(arrangeGrob(f5.fmri, mm.dat, widths=c(0.5, 0.5)), arrangeGrob(f5.dmri1, f5.dmri2, widths=c(0.5, 0.5), nrow=1), heights=c(0.5, 0.5), nrow=2)
 ```
 
 
