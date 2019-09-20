@@ -12,90 +12,74 @@ require(abind)
 require(emdbook)
 no_cores = detectCores() - 1
 
+
 ## ------------------------------------------
 # Simulations
 ## ------------------------------------------
-sim_gmm <- function(mus, Sigmas, n) {
+sim_gmm <- function(mus, Sigmas, n, priors) {
   K <- dim(mus)[2]
-  ni <- round(n/K)
-  labs <- c(sapply(1:K, function(k) rep(k, ni)))
-  ylabs <- as.vector(sort(unique(labs)))
-  res <- sapply(ylabs, function(y) mvrnorm(n=sum(labs == y), mus[,y], Sigmas[,,y]), USE.NAMES=TRUE, simplify=FALSE)
-  X <- array(0, dim=c(n, dim(Sigmas)[1]))
-  for (y in ylabs) {
-    X[labs == y,] <- res[[y]]
-  }
-  return(list(X=X, Y=labs))
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
+  Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
+  return(list(X=X, Y=Y))
 }
 
+sim.no_signal.bayes <- function(n=10000, d, sigma=1, npts=100) {
+  # classes are from same distribution, so signal should be detected w.p. alpha
+  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
+  samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
+  samp$Z <- samp$Y
+
+  range.x <- c(min(samp$X[,1]), max(samp$X[,1]))
+  range.y <- c(min(samp$X[,2]), max(samp$X[,2]))
+
+  probs <- sapply(1:2, function(y) mean(samp$Z == y))
+  test.first=kde2d(samp$X[samp$Z == 1,1], samp$X[samp$Z == 1,2], lims=c(range.x, range.y), n=npts)
+  test.first$z <- test.first$z/sum(test.first$z)
+  test.sec=kde2d(samp$X[samp$Z == 2,1], samp$X[samp$Z == 2,2], lims=c(range.x, range.y), n=npts)
+  test.sec$z <- test.sec$z/sum(test.sec$z)
+
+  integration_reg <- array(NaN, dim=c(npts, npts))
+
+  bayes <- sum(pmin(test.first$z, test.sec$z))*0.5
+
+  return(bayes)
+}
+
+## ------------------------------------------
+# Simulations
+## ------------------------------------------
+sim_gmm <- function(mus, Sigmas, n, priors) {
+  K <- dim(mus)[2]
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
+  Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
+  return(list(X=X, Y=Y))
+}
 
 ## No Signal
 # a simulation where no distinguishable signal present
 # 2 classes
 sim.no_signal <- function(n, d, sigma=1) {
   # classes are from same distribution, so signal should be detected w.p. alpha
-  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
-  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d)), Y=samp$Y,
-              Z=c(rep(1, n/2), rep(2, n/2))))
+  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y, Z=samp$Y))
 }
 
 ## Linear Signal Difference
 # a simulation where classes are linearly distinguishable
 # 2 classes
-sim.linear_sig <- function(n, d, sigma=0) {
-  S.class <- diag(d)*2
-
+sim.linear_sig <- function(n, d, n.bayes=10000, n.pts=100,sigma=0) {
+  S.class <- diag(d)
   Sigma <- diag(d)
   Sigma[1, 1] <- 2
   Sigma[-c(1), -c(1)] <- 1
   Sigma[1,1] <- 2
-  mus=t(mvrnorm(n=2, c(0, 0), S.class)) # with a mean signal shift between the classes
-  samp <- sim_gmm(mus=mus, Sigmas=abind(Sigma, Sigma, along=3), n)
-  samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
-
-  D <- discr.stat(samp$X, samp$Y)$discr
-  S <- cov(samp$X)
-  sigma.2 <- sqrt(sum(S.class))
-  # approximate error
-  E <- samp$X - t(mus[,samp$Y])
-  sigma.1 <- sqrt(sum(diag(cov(E))))
-
-  Y <- samp$Y
-
-  # approximate the quantity | ||Eit - Eit'|| - ||Eit - Ei't''|| |
-  dists <- as.vector(sapply(unique(Y), function(y) {
-    y.idx <- which(Y == y)
-    as.vector(sapply(y.idx, function(t) {
-      as.vector(sapply(y.idx[y.idx != t], function(tp) {
-        sapply(which(Y != y), function(tpp) {
-          return(abs(sum((E[t,] - E[tp,])^2) - sum((E[t,] - E[tpp,])^2)))
-        })
-      }))
-    }))
-  }))
-
-  # Paley-Zigmund bound
-  b <- mean(dists^2)^2/mean(dists^4)
-  a <- sqrt(mean(dists^2)/sigma.1^2)
-
-  # derived result from paper
-  lambda.star <- sqrt(2)*sigma.2/(a*(1 - ((2 - 2*D)/b)^(1/3)))
-
-  # Sigma.star is the weighted combination of var(X | Y == y) for y = 1, 2
-  Sigma.star <- 0.5*cov(samp$X[Y == 1,]) + 0.5*cov(samp$X[Y == 2,])
-
-  dmu <- mus[,1] - mus[,2]
-  bound <- 2*0.5*0.5/(1 + 0.5*0.5*dmu %*% ginv(Sigma.star) %*% dmu)
-
-  # approximate bayes error
-  Yhat <- sapply(1:dim(samp$X)[1], function(i) {
-    return(which.max(c(dmvnorm(samp$X[i,], mu=mus[,1], Sigma=Sigma),
-                       dmvnorm(samp$X[i,], mu=mus[,2], Sigma=Sigma))))
-  })
-
-  true <- mean(Yhat != Y)
-
-  return(list(true=true, bound=bound))
+  mus.class <- mvrnorm(n=2, c(0,0), S.class)
+  pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
+  samp <- mgc:::mgc.sims.sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n,
+                                 priors=c(pi.k, pi.k))
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y, Z=samp$Y))
 }
 
 ## Crossed Signal Difference
@@ -104,123 +88,79 @@ sim.linear_sig <- function(n, d, sigma=0) {
 # 2 classes
 sim.crossed_sig <- function(n, d, K=16, sigma=0) {
   # class mus
-  mu.class.1 <- rep(0, d)
-  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)
+  mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
-  mus.class <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
-                       mvrnorm(n=K/2, mu.class.2, S.class)))
+  mus.class <- t(mvrnorm(n=K, mu.class, S.class))
   ni <- n/K
 
   # crossed signal
   Sigma.1 <- cbind(c(2,0), c(0,0.1))
-  Sigma.2 <- cbind(c(0.1,0), c(0,2))
+  Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
   mus=cbind(rep(0, d), rep(0, d))
 
   X <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
     Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
-    rho <- runif(1, min=-1, max=1)*sqrt(2*0.1)
+    rho <- runif(1, min=-1, max=1)*sqrt(sum(diag(Sigma.1)))
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
-    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni)
+    # sample from crossed gaussians w p=0.5, 0.5 respectively
+    sim <- mgc:::mgc.sims.sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas,
+                                  ni, priors=c(0.5, 0.5))
+    # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
 
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
   Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
-
-
-  D <- discr.stat(samp$X, samp$Y)$discr
-  S <- cov(samp$X)
-  sigma.2 <- sqrt(sum(S.class))
-  # approximate error
-  E <- samp$X - t(mus[,samp$Y])
-  sigma.1 <- sqrt(sum(diag(cov(E))))
-
-  Y <- samp$Y
-
-  # approximate the quantity | ||Eit - Eit'|| - ||Eit - Ei't''|| |
-  dists <- as.vector(sapply(unique(Y), function(y) {
-    y.idx <- which(Y == y)
-    as.vector(sapply(y.idx, function(t) {
-      as.vector(sapply(y.idx[y.idx != t], function(tp) {
-        sapply(which(Y != y), function(tpp) {
-          return(abs(sum((E[t,] - E[tp,])^2) - sum((E[t,] - E[tpp,])^2)))
-        })
-      }))
-    }))
-  }))
-
-  # Paley-Zigmund bound
-  b <- mean(dists^2)^2/mean(dists^4)
-  a <- sqrt(mean(dists^2)/sigma.1^2)
-
-  # derived result from paper
-  lambda.star <- sqrt(2)*sigma.2/(a*(1 - ((2 - 2*D)/b)^(1/3)))
-
-  # Sigma.star is the weighted combination of var(X | Y == y) for y = 1, 2
-  Sigma.star <- 0.5*cov(samp$X[Y == 1,]) + 0.5*cov(samp$X[Y == 2,])
-
-  dmu <- mus[,1] - mus[,2]
-  bound <- 2*0.5*0.5/(1 + 0.5*0.5*dmu %*% ginv(Sigma.star) %*% dmu)
-
-  # approximate bayes error
-  Yhat <- sapply(1:dim(samp$X)[1], function(i) {
-    return(which.max(c(dmvnorm(samp$X[i,], mu=mus[,1], Sigma=Sigma),
-                       dmvnorm(samp$X[i,], mu=mus[,2], Sigma=Sigma))))
-  })
-
-  true <- mean(Yhat != Y)
-
-  return(list(X=X, Y=Y, Z=c(rep(1, n/2), rep(2, n/2))))
+  return(list(X=X, Y=Y))
 }
 
 ## Samples from Multiclass Gaussians
 # a simulation where there are multiple classes present, and a correlation structure
 # 2 classes
 sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
-  S.k <- diag(d)*1
-  S.k[upper.tri(S.k)] <- 0.5  # correlated
-  S.k[lower.tri(S.k)] <- 0.5
-
-  mu.class.1 <- rep(0, d)
-  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)*1.25
+  # centers for the individuals
+  mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
-  mus <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
-                 mvrnorm(n=K/2, mu.class.2, S.class)))
+  # sample the individual centers
+  mus.class <- t(mvrnorm(n=K, mu.class, S.class))
+
+  # individual covariances
+  S.k <- diag(d)
+  S.k[upper.tri(S.k)] <- 0.5  # correlated
+  S.k[lower.tri(S.k)] <- 0.5
   Sigmas <- abind(lapply(1:K, function(k) S.k), along=3)
 
-  samp <- sim_gmm(mus=mus, Sigmas=Sigmas, n)
-  return(list(X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=samp$Y,
-              Z=c(rep(1, n/2), rep(2, n/2))))
+  # sample individuals w.p. 1/K
+  samp <- mgc:::mgc.sims.sim_gmm(mus=mus, Sigmas=Sigmas, n, priors=rep(1/K, K))
+  return(list(X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=samp$Y))
 }
 
 # 8 pairs of annulus/discs
 sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
   # centers
-  K.cent <- K/2
   mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
-  mu.class.1 <- rep(0, d)
-  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)*1.25
-  S.class <- diag(d)*sqrt(K)
+  mus <- t(rbind(mvrnorm(n=K/2, mu.class, S.class)))
 
-  mus <- t(rbind(mvrnorm(n=K.cent/2, mu.class.1, S.class),
-                 mvrnorm(n=K.cent/2, mu.class.2, S.class)))
+  # probability of being each individual is 1/K
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
 
-  ni <- n/K
-
-  X <- do.call(rbind, lapply(1:K.cent, function(k) {
-    X <- array(NaN, dim=c(ni*2, d))
-    X[1:ni,] <- sweep(mgc.sims.2ball(ni, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
-    X[(ni + 1):(2*ni),] <- sweep(mgc.sims.2sphere(ni, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
+  # individuals are either (1) a ball, or (2) a disc, around means
+  X <- do.call(rbind, lapply(1:(K/2), function(k) {
+    n.ball <- ni[2*(k-1)+1]; n.disc <- ni[2*k]
+    X <- array(NaN, dim=c((n.ball + n.disc), d))
+    X[1:n.ball,] <- sweep(mgc.sims.2ball(n.ball, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
+    X[(n.ball + 1):(n.ball + n.disc),] <- sweep(mgc.sims.2sphere(n.disc, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
     return(X)
   }))
 
-  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
-  return(list(X=X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=Y, Z=c(rep(1, n/2), rep(2, n/2))))
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
+  return(list(X=X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=Y))
 }
+
