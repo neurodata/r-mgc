@@ -175,7 +175,7 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
   ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
 
   # individuals are either (1) a ball, or (2) a disc, around means
-  X <- do.call(rbind, lapply(1:K.cent, function(k) {
+  X <- do.call(rbind, lapply(1:(K/2), function(k) {
     n.ball <- ni[2*(k-1)+1]; n.disc <- ni[2*k]
     X <- array(NaN, dim=c((n.ball + n.disc), d))
     X[1:n.ball,] <- sweep(mgc.sims.2ball(n.ball, d, r=1, cov.scale=0.1), 2, mus[,k], "+")

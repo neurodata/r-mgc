@@ -101,26 +101,29 @@ test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
 ## ------------------------------------------
 # Simulations
 ## ------------------------------------------
-sim_gmm <- function(mus, Sigmas, n) {
+sim_gmm <- function(mus, Sigmas, n, priors=NULL, ni=NULL) {
   K <- dim(mus)[2]
-  ni <- round(n/K)
-  labs <- c(sapply(1:K, function(k) rep(k, ni)))
-  ylabs <- as.vector(sort(unique(labs)))
-  res <- sapply(ylabs, function(y) mvrnorm(n=sum(labs == y), mus[,y], Sigmas[,,y]), USE.NAMES=TRUE, simplify=FALSE)
-  X <- array(0, dim=c(n, dim(Sigmas)[1]))
-  for (y in ylabs) {
-    X[labs == y,] <- res[[y]]
+  if (!is.null(priors)) {
+    ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+    X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
+    Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
+  } else if (!is.null(ni)) {
+    X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
+    Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
   }
-  return(list(X=X, Y=labs))
+  return(list(X=X, Y=Y))
 }
 
 ## No Signal
 # a simulation where both pipelines are equally discriminable
 # 2 classes
 sim.no_signal <- function(n, d, sigma=0) {
+  pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
   # samples 1 and 2 have classes are from same distribution, so no signal should be detected w.p. alpha
-  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
-  samp2 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
+  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(pi.k, pi.k))
+  # second sample is from same distribution with same numbers of each subject
+  samp2 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n,
+                   ni=sapply(sort(unique(samp1$Y)), function(y) sum(samp1$Y == y)))
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
@@ -129,14 +132,17 @@ sim.no_signal <- function(n, d, sigma=0) {
 # than pipeline 2
 # 2 classes
 sim.linear_sig <- function(n, d, sigma=0) {
-  S <- diag(d)
-  S[1, 1] <- 2
-  S[-c(1), -c(1)] <- 1
-  S2 <- S; S2[1,1] <- sigma  # sample 2 has greater covariance in signal dimension
-  mus=cbind(rep(0, d), c(1, rep(0, d-1))) # with the same mean signal shift between the classes
+  S.class <- diag(d)
+  Sigma <- diag(d)
+  Sigma[1, 1] <- 2
+  Sigma[-c(1), -c(1)] <- 1
+  Sigma[1,1] <- 2
+  mus.class <- mvrnorm(n=2, c(0,0), S.class)
+  pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
   # sample 1 should be more discriminable than sample 2
-  samp1 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n)
-  samp2 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n)
+  samp1 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n, priors=c(pi.k, pi.k))
+  samp2 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n,
+    ni=sapply(sort(unique(samp1$Y)), function(y) sum(samp1$Y == y)))
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
