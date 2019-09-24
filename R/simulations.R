@@ -762,10 +762,10 @@ mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
-  Y <- mvrnorm(n=n, mu=array(0, dim=c(d, 1)), Sigma=diag(d))
+  Y <- matrix(mvrnorm(n=n, mu=array(0, dim=c(d, 1)), Sigma=diag(d)), nrow=n)
   u <- runif(n)
   r <- r * u^(1/d)
-  X <- r * Y/sqrt(apply(Y^2, 1, sum)) + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d))
+  X <- r * Y/sqrt(apply(Y^2, 1, sum)) + matrix(mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d)), nrow=n)
   return(X)
 }
 
@@ -787,9 +787,9 @@ mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
 #' @author Eric Bridgeford
 #' @export
 mgc.sims.2sphere <- function(n, d, r, cov.scale=0) {
-  u <- mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=diag(d))
+  u <- matrix(mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=diag(d)), nrow=n)
   unorm <- diag(sqrt(apply(u^2, 1, sum)))
   pts <- r*(ginv(unorm) %*% u)
-  pts <- pts + mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d))
+  pts <- pts + matrix(mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d)), nrow=n)
   return(pts)
 }
