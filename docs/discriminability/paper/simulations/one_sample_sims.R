@@ -1,45 +1,19 @@
 ##----------------------------------------------
 # One Sample Tests
 ##----------------------------------------------
-require(lolR)
-require(MASS)
-library(parallel)
-require(mgc)
-require(ICC)
-require(I2C2)
-require(lolR)
-require(abind)
+# should have current directory of this script as working directory
+source('./shared_scripts.R')
 no_cores = detectCores() - 1
-
-
-# one-way ICC
-icc.os <- function(x, y) {
-  data <- data.frame(x=x, y=y)
-  fit <- anova(aov(x ~ y, data=data))
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(y))
-  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
-  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-  var.a <- (MSa - MSw)/k
-  r <- var.a/(var.w + var.a)
-  return(r)
-}
-
-# I2C2 wrapper
-i2c2.os <- function(X, Y) {
-  return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
-}
 
 
 ## One Sample Driver
 test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                             dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
 
-  validated <- mgc:::discr.validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+  validated <- validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                                      remove.isolates=remove.isolates)
 
-  D <- validated$D; Y <- validated$Y; N <- nrow(D)
+  D <- validated$D; Y <- validated$Y; X <- validated$X; N <- nrow(D)
   if (no_cores > detectCores()) {
     stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
   } else if (no_cores >= 0.8*detectCores()) {
@@ -68,25 +42,14 @@ test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
   })))
 }
 
-
-## ------------------------------------------
-# Simulations
-## ------------------------------------------
-sim_gmm <- function(mus, Sigmas, n, priors) {
-  K <- dim(mus)[2]
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
-  X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
-  Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
-  return(list(X=X, Y=Y))
-}
-
 ## No Signal
 # a simulation where no distinguishable signal present
 # 2 classes
-sim.no_signal <- function(n, d, sigma=1) {
+sim.no_signal <- function(n=128, d=2, sigma=1) {
   # classes are from same distribution, so signal should be detected w.p. alpha
   samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
-  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y))
+  samp$X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
+  return(list(X=samp$X, Y=samp$Y))
 }
 
 ## Linear Signal Difference
@@ -100,9 +63,9 @@ sim.linear_sig <- function(n, d, sigma=0) {
   Sigma[1,1] <- 2
   mus.class <- mvrnorm(n=2, c(0,0), S.class)
   pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
-  samp <- mgc:::mgc.sims.sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n,
-                                 priors=c(pi.k, pi.k))
-  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y))
+  samp <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(pi.k, pi.k))
+  samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
+  return(list(X=samp$X, Y=samp$Y))
 }
 
 ## Crossed Signal Difference
@@ -115,29 +78,29 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
   S.class <- diag(d)*sqrt(K)
 
   mus.class <- t(mvrnorm(n=K, mu.class, S.class))
-  ni <- n/K
 
   # crossed signal
   Sigma.1 <- cbind(c(2,0), c(0,0.1))
   Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
   mus=cbind(rep(0, d), rep(0, d))
 
+  # probability of being each individual is 1/K
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  rhos <- runif(K, min=-.2, max=.2)
   X <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
     Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
-    rho <- runif(1, min=-1, max=1)*sqrt(sum(diag(Sigma.1)))
-    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
-    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
+    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
+    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
     # sample from crossed gaussians w p=0.5, 0.5 respectively
-    sim <- mgc:::mgc.sims.sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas,
-                                  ni, priors=c(0.5, 0.5))
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
     # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
 
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
-  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
   return(list(X=X, Y=Y))
 }
 
@@ -159,8 +122,9 @@ sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
   Sigmas <- abind(lapply(1:K, function(k) S.k), along=3)
 
   # sample individuals w.p. 1/K
-  samp <- mgc:::mgc.sims.sim_gmm(mus=mus, Sigmas=Sigmas, n, priors=rep(1/K, K))
-  return(list(X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=samp$Y))
+  samp <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n, priors=rep(1/K, K))
+  samp$X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d))
+  return(list(X=samp$X, Y=samp$Y))
 }
 
 # 8 pairs of annulus/discs
@@ -182,9 +146,10 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
     X[(n.ball + 1):(n.ball + n.disc),] <- sweep(mgc.sims.2sphere(n.disc, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
     return(X)
   }))
+  X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
   Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
-  return(list(X=X + array(rnorm(n*d)*sigma, dim=c(n, d)), Y=Y))
+  return(list(X=X, Y=Y))
 }
 
 ## -------------------------
@@ -204,16 +169,27 @@ names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
                         length.out=n.sigma), function(sigma) {
-    lapply(1:nrep, function(i) {
-      return(list(i=i, sim=simulations[[sim.name]], sim.name=sim.name, sigma=sigma))
-    })
-  }))
+                          lapply(1:nrep, function(i) {
+                            return(list(i=i, sim=simulations[[sim.name]], sim.name=sim.name, sigma=sigma))
+                          })
+                        }))
 }))
 
 
-list.results.os <- mclapply(experiments, function(exper) {
-  sim <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
-  res <- test.one_sample(sim$X, sim$Y)
+list.results.os <- mclapply(1:length(experiments), function(i) {
+  exper <- experiments[[i]]
+  sim <- simpleError("Fake Error"); att = 0
+  while(inherits(sim, "error") && att <= 50) {
+    sim <- tryCatch({
+      simu <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
+      if (dim(simu$X)[1] != length(simu$Y)) {
+        stop("Error")
+      }
+      simu
+    }, error=function(e) e)
+    att <- att + 1
+  }
+  res <- test.one_sample(sim$X, sim$Y, nperm=6)
   res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
   res$sigma <- exper$sigma
   return(res)

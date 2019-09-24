@@ -3,6 +3,7 @@
 ##----------------------------------------------
 
 require(MASS)
+require(mvtnorm)
 library(parallel)
 require(mgc)
 require(ICC)
@@ -11,24 +12,9 @@ require(lolR)
 require(abind)
 no_cores = detectCores() - 1
 
-# one-way ICC
-icc.os <- function(x, y) {
-  data <- data.frame(x=x, y=y)
-  fit <- anova(aov(x ~ y, data=data))
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(y))
-  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
-  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-  var.a <- (MSa - MSw)/k
-  r <- var.a/(var.w + var.a)
-  return(r)
-}
+setwd(getSrcDirectory()[1])
+source('./shared_scripts.R')
 
-# I2C2 wrapper
-i2c2.os <- function(X, Y) {
-  return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
-}
 
 ## Two Sample Driver
 
@@ -98,32 +84,13 @@ test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
   )
 }
 
-## ------------------------------------------
-# Simulations
-## ------------------------------------------
-sim_gmm <- function(mus, Sigmas, n, priors=NULL, ni=NULL) {
-  K <- dim(mus)[2]
-  if (!is.null(priors)) {
-    ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
-    X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
-    Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
-  } else if (!is.null(ni)) {
-    X <- do.call(rbind, lapply(1:K, function(k) mvrnorm(n=ni[k], mus[,k], Sigmas[,,k])))
-    Y <- do.call(c, sapply(1:K, function(k) rep(k, ni[k])))
-  }
-  return(list(X=X, Y=Y))
-}
-
 ## No Signal
-# a simulation where both pipelines are equally discriminable
+# a simulation where no distinguishable signal present
 # 2 classes
-sim.no_signal <- function(n, d, sigma=0) {
-  pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
-  # samples 1 and 2 have classes are from same distribution, so no signal should be detected w.p. alpha
-  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(pi.k, pi.k))
-  # second sample is from same distribution with same numbers of each subject
-  samp2 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n,
-                   ni=sapply(sort(unique(samp1$Y)), function(y) sum(samp1$Y == y)))
+sim.no_signal <- function(n=128, d=2, n.bayes=10000, sigma=1) {
+  # classes are from same distribution, so signal should be detected w.p. alpha
+  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
+  samp2 <- sim_gmm_match(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), samp1$Y)
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
@@ -139,10 +106,9 @@ sim.linear_sig <- function(n, d, sigma=0) {
   Sigma[1,1] <- 2
   mus.class <- mvrnorm(n=2, c(0,0), S.class)
   pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
-  # sample 1 should be more discriminable than sample 2
-  samp1 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n, priors=c(pi.k, pi.k))
-  samp2 <- sim_gmm(mus=mus, Sigmas=abind(S, S, along=3), n,
-    ni=sapply(sort(unique(samp1$Y)), function(y) sum(samp1$Y == y)))
+  samp1 <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(pi.k, pi.k))
+
+  samp2 <- sim_gmm_match(mus.class, Sigmas=abind(Sigma, Sigma, along=3), samp1$Y)
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
@@ -153,28 +119,31 @@ sim.linear_sig <- function(n, d, sigma=0) {
 # 2 classes
 sim.crossed_sig <- function(n, d, K=16, sigma=0) {
   # class mus
-  mu.class.1 <- rep(0, d)
-  mu.class.2 <- c(1, rep(0, d-1))*sqrt(K)
+  mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
-  mus.class <- t(rbind(mvrnorm(n=K/2, mu.class.1, S.class),
-                       mvrnorm(n=K/2, mu.class.2, S.class)))
-  ni <- n/K
+  mus.class <- t(mvrnorm(n=K, mu.class, S.class))
 
   # crossed signal
   Sigma.1 <- cbind(c(2,0), c(0,0.1))
-  Sigma.2 <- cbind(c(0.1,0), c(0,2))
+  Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
   mus=cbind(rep(0, d), rep(0, d))
 
+  # probability of being each individual is 1/K
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  rhos <- runif(K, min=-1, max=1)
   X1 <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
     Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
-    rho <- runif(1, min=-1, max=1)*sqrt(2*0.1)
-    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
-    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
-    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni)
+    Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
+    Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
+    # sample from crossed gaussians w p=0.5, 0.5 respectively
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
+    # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
+
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
 
   X2 <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
@@ -182,11 +151,10 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
     rho <- runif(1, min=-1, max=1)*sqrt(2*0.1)
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
-    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni)
+    sim <- sim_gmm(mus=mus, Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   })) + array(rnorm(n*d), dim=c(n, d))*sigma
 
-  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
   return(list(X1=X1, X2=X2, Y=Y))
 }
 
@@ -247,7 +215,7 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 500
+nrep <- 1
 n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
@@ -266,8 +234,16 @@ experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   }))
 }))
 
-list.results.ts <- mclapply(experiments, function(exper) {
-  sim <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
+list.results.ts <- mclapply(1:length(experiments), function(i) {
+  print(i)
+  exper <- experiments[[i]]
+  er = 0
+  while(er <= 50) {
+    tryCatch({
+      sim <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
+      er <- 51
+    }, error=function(e) {er <- er + 1})
+  }
   res <- test.two_sample(sim$X1, sim$X2, sim$Y)
   res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
   res$sigma <- exper$sigma
