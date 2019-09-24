@@ -45,7 +45,7 @@ sim_gmm <- function(mus, Sigmas, n, priors=NULL) {
 sim_gmm_match <- function(mus, Sigmas, Ys) {
   K <- length(sort(unique(Ys)))
   ni <- sapply(sort(unique(Ys)), function(y) sum(Ys == y))
-  X <- do.call(rbind, lapply(1:K, function(k) matrix(mvrnorm(n=ni[k], mus[,k], Sigmas[,,k]), nrow=ni[i])))
+  X <- do.call(rbind, lapply(1:K, function(k) matrix(mvrnorm(n=ni[k], mus[,k], Sigmas[,,k]), nrow=ni[k])))
   return(list(X=X, Y=Ys))
 }
 
@@ -71,7 +71,7 @@ validator <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=li
     DX <- purged$X; Y <- purged$Y
     purged.X <- mgc:::remove.isolates(X, Y, is.dist=FALSE)
     X <- purged$X; Y.p <- purged$Y
-    if (Y != Y.p) {
+    if (!all(Y == Y.p)) {
       stop("Something went amuck.")
     }
   }

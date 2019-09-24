@@ -189,7 +189,7 @@ list.results.os <- mclapply(1:length(experiments), function(i) {
     }, error=function(e) e)
     att <- att + 1
   }
-  res <- test.one_sample(sim$X, sim$Y, nperm=6)
+  res <- test.one_sample(sim$X, sim$Y, nperm=100)
   res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
   res$sigma <- exper$sigma
   return(res)
