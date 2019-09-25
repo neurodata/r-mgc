@@ -8,6 +8,7 @@ require(ICC)
 require(I2C2)
 require(lolR)
 require(abind)
+require(emdbook)
 
 # one-way ICC
 icc.os <- function(x, y) {
