@@ -103,7 +103,7 @@ From an `R` session, type:
 
 ```
 require(devtools)
-install_github('neurodata/mgc', build_vignettes=TRUE)  # install mgc with the vignettes
+install_github('neurodata/r-mgc', build_vignettes=TRUE)  # install mgc with the vignettes
 require(mgc)  # source the package now that it is set up
 vignette("MGC", package="mgc")  # view one of the basic vignettes
 ```
