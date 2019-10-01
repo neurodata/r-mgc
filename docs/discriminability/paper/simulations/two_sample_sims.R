@@ -3,7 +3,7 @@
 ##----------------------------------------------
 # should have current directory of this script as working directory
 source('./shared_scripts.R')
-no_cores = detectCores() - 1
+no_cores = 20
 
 
 ## Two Sample Driver
@@ -103,6 +103,31 @@ sim.linear_sig <- function(n, d, sigma=0) {
 }
 
 
+sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
+  # class mus
+  mu.class <- rep(0, d)
+  S.class <- diag(d)*sqrt(K)
+
+  mus.class <- t(mvrnorm(n=K, mu.class, S.class))
+
+  # crossed signal
+  Sigma.1 <- cbind(c(2,0), c(0,0.1))
+  Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
+  mus=cbind(rep(0, d), rep(0, d))
+
+  rho <- runif(1, min=-.2, max=.2)
+
+  # add random correlation
+  Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
+  Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
+  Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
+  # sample from crossed gaussians w p=0.5, 0.5 respectively
+  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n, priors=c(0.5, 0.5))
+  samp2 <- sim_gmm_match(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, samp1$Y)
+
+  return(list(X=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
+}
+
 ## Crossed Signal Difference
 # a simulation where classes are crossed but distinguishable
 # also contains correlation btwn dimensions
@@ -200,6 +225,27 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
   return(list(X1=X1, X2=X2 + array(rnorm(n*d), dim=c(n, d))*sigma, Y=Y))
 }
 
+# 8 pairs of annulus/discs
+sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
+
+  mus <- cbind(c(0, 0))
+
+  # probability of being each individual is 1/K
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/2, 2)))
+
+  X <- array(NaN, dim=c(n, d))
+  X[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
+  X[(ni[1] + 1):n,] <- sweep(mgc.sims.2sphere(ni[2], r=1.5, d=d, cov.scale=0.1), 2, mus[,1], "+")
+
+  Y <- c(rep(1, ni[1]), rep(2, ni[2]))
+
+  X2 <- array(NaN, dim=c(n, d))
+  X2[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
+  X2[(ni[1] + 1):n,] <- sweep(mgc.sims.2sphere(ni[2], r=1.5, d=d, cov.scale=0.1), 2, mus[,1], "+")
+
+  return(list(X1=X, X2=X2 + array(rnorm(n*d), dim=c(n, d))*sigma, Y=Y))
+}
+
 ## --------------------------------------
 # Driver
 ## --------------------------------------
@@ -207,9 +253,9 @@ n <- 128; d <- 2
 nrep <- 500
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig,
-                    sim.multiclass_gaussian, sim.multiclass_ann_disc)
-sims.sig.max <- c(10, 2, 2, 2, 1)
+simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
+                    sim.multiclass_gaussian, sim.multiclass_ann_disc2)
+sims.sig.max <- c(10, 2, 1, 1, 1)
 sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Linear", "Cross", "Gaussian", "Annulus/Disc")
