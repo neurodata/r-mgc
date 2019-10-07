@@ -3,7 +3,7 @@
 ##----------------------------------------------
 # should have current directory of this script as working directory
 source('./shared_scripts.R')
-no_cores = detectCores() - 40
+no_cores = detectCores() - 1
 
 compute_bayes <- function(X, Z, npts=100) {
   # compute the range of the dimensions occupied across
@@ -33,6 +33,22 @@ sim.no_signal <- function(n=128, d=2, n.bayes=10000, sigma=1) {
 
   samp.bayes <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n.bayes, priors=c(0.5,0.5))
   samp.bayes$X=samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
+
+  return(list(discr=discr.stat(samp$X, samp$Y)$discr, icc=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
+              i2c2=i2c2.os(samp$X, samp$Y), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+}
+
+sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
+  S.class <- diag(d)
+  Sigma <- array(2, dim=c(d, d))
+  diag(Sigma) <- 3
+
+  mus <- cbind(c(0, 3), c(0, 0))
+  samp <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(0.5, 0.5))
+  samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
+
+  samp.bayes <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n.bayes, priors=c(0.5, 0.5))
+  samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   return(list(discr=discr.stat(samp$X, samp$Y)$discr, icc=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
               i2c2=i2c2.os(samp$X, samp$Y), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
@@ -128,6 +144,7 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
 # 2 classes
 sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
   # class mus
+  K=2
   mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
@@ -272,15 +289,15 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
 }
 
 n <- 128; d <- 2
-nrep <- 500
+nrep <- 300
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
+simulations <- list(sim.no_signal, sim.linear_sig, sim.parallel_rot_cigars, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2)
-sims.sig.max <- c(10, 2, 2, 2, 1)
-sims.sig.min <- c(0, 0, 0, 0, 0)
+sims.sig.max <- c(10, 2, 2, 2, 2, 1)
+sims.sig.min <- c(0, 0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Cross", "Gaussian", "Annulus/Disc")
+  c("No Signal", "Linear", "Rotated", "Cross", "Gaussian", "Annulus/Disc")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],

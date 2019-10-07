@@ -3,7 +3,7 @@
 ##----------------------------------------------
 # should have current directory of this script as working directory
 source('./shared_scripts.R')
-no_cores = 15
+no_cores = detectCores() - 1
 
 
 ## One Sample Driver
@@ -52,6 +52,17 @@ sim.no_signal <- function(n=128, d=2, sigma=1) {
   return(list(X=samp$X, Y=samp$Y))
 }
 
+sim.parallel_rot_cigars <- function(n=128, d=2, sigma=0) {
+  S.class <- diag(d)
+  Sigma <- array(2, dim=c(d, d))
+  diag(Sigma) <- 3
+
+  mus <- cbind(c(0, 2.5), c(0, 0))
+  samp <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(0.5, 0.5))
+
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y))
+}
+
 ## Linear Signal Difference
 # a simulation where classes are linearly distinguishable
 # 2 classes
@@ -70,6 +81,7 @@ sim.linear_sig <- function(n, d, sigma=0) {
 
 sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
   # class mus
+  K=2
   mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
@@ -198,7 +210,7 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
 # Driver
 ## -------------------------
 n <- 128; d <- 2
-nrep <- 500
+nrep <- 300
 n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
@@ -220,6 +232,7 @@ experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
 
 list.results.os <- mclapply(1:length(experiments), function(i) {
   exper <- experiments[[i]]
+  print(i)
   sim <- simpleError("Fake Error"); att = 0
   while(inherits(sim, "error") && att <= 50) {
     sim <- tryCatch({

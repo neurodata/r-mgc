@@ -3,7 +3,7 @@
 ##----------------------------------------------
 # should have current directory of this script as working directory
 source('./shared_scripts.R')
-no_cores = 20
+no_cores = detectCores() - 1
 
 
 ## Two Sample Driver
@@ -84,6 +84,19 @@ sim.no_signal <- function(n=128, d=2, sigma=1) {
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
+sim.parallel_rot_cigars <- function(n=128, d=2, sigma=0) {
+  S.class <- diag(d)
+  Sigma <- array(2, dim=c(d, d))
+  diag(Sigma) <- 3
+
+  mus <- cbind(c(0, 3), c(0, 0))
+  samp1 <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(0.5, 0.5))
+
+  samp2 <- sim_gmm_match(mus, Sigmas=abind(Sigma, Sigma, along=3), samp1$Y)
+
+  return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
+}
+
 ## Linear Signal Difference
 # a simulation where classes are linearly distinguishable, and pipeline 1 is more discriminable
 # than pipeline 2
@@ -105,6 +118,7 @@ sim.linear_sig <- function(n, d, sigma=0) {
 
 sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
   # class mus
+  K=2
   mu.class <- rep(0, d)
   S.class <- diag(d)*sqrt(K)
 
@@ -125,7 +139,7 @@ sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
   samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n, priors=c(0.5, 0.5))
   samp2 <- sim_gmm_match(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, samp1$Y)
 
-  return(list(X=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
+  return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y))
 }
 
 ## Crossed Signal Difference
@@ -250,15 +264,15 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 500
+nrep <- 300
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
+simulations <- list(sim.no_signal, sim.linear_sig, sim.parallel_rot_cigars, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2)
-sims.sig.max <- c(10, 2, 1, 1, 1)
-sims.sig.min <- c(0, 0, 0, 0, 0)
+sims.sig.max <- c(10, 2, 2, 1, 1, 1)
+sims.sig.min <- c(0, 0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Cross", "Gaussian", "Annulus/Disc")
+  c("No Signal", "Linear", "Rotated", "Cross", "Gaussian", "Annulus/Disc")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
@@ -271,6 +285,7 @@ experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
 
 list.results.ts <- mclapply(1:length(experiments), function(i) {
   exper <- experiments[[i]]
+  print(i)
   sim <- simpleError("Fake Error"); att = 0
   while(inherits(sim, "error") && att <= 50) {
     sim <- tryCatch({
