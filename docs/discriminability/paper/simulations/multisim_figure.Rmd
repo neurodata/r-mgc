@@ -217,59 +217,57 @@ dmtx.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$dmtx)) %>%
           strip.text.x=element_blank())
 ```
 
-## Bound Plots
 
-```{r}
-
-```
-
-## One and Two Sample Plots
+## Bound, One, and Two Sample Plots
 
 ```{r}
 al=0.05  # alpha for the power testing
-one.sample.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
-  dplyr::mutate(outcome = p.value < al,
-         stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
-         test.name="(C) One Sample Test",
+sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
+  mutate(test.name="(D) One Sample Test") %>%
+  rbind(
+    readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
+      dplyr::mutate(test.name="(E) Two Sample Test")
+  ) %>%
+  mutate(outcome=p.value < al) %>%
+  select(sim.name, n, d, i, stat.name, sigma, outcome, test.name) %>%
+  rbind(
+    readRDS('../data/sims/discr_sims_bound.rds')$bound.results %>%
+      dplyr::mutate(test.name="(C) Bound Results") %>%
+      dplyr::rename(stat.name=algorithm, outcome=value)
+  ) %>%
+  dplyr::group_by(n, d, stat.name, sim.name, sigma, test.name) %>%
+  dplyr::summarise(statistic=mean(outcome)) %>%
+  dplyr::group_by(n, d, stat.name, sim.name, test.name) %>%
+  dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2", "bayes"="Bayes"),
         sim.name=recode_factor(sim.name, "No Signal" = "(v) No Signal",
-                               "Linear" = "(i) Linear",
-                               "Gaussian" = "(ii) Gaussian",
-                               "Cross" = "(iii) Cross",
-                               "Annulus/Disc" = "(iv) Annulus/Disc"))
-two.sample.results <- readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
- dplyr::mutate(outcome = p.value < al,
-        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA", "i2c2" = "I2C2"),
-        test.name="(D) Two Sample Test",
-        sim.name=recode_factor(sim.name, "No Signal" = "(v) No Signal",
-                               "Linear" = "(i) Linear",
-                               "Gaussian" = "(ii) Gaussian",
-                               "Cross" = "(iii) Cross",
-                               "Annulus/Disc" = "(iv) Annulus/Disc"))
-
-sample.test.results <- rbind(one.sample.results, two.sample.results) %>%
+                             "Linear" = "(i) Linear",
+                             "Gaussian" = "(ii) Gaussian",
+                             "Cross" = "(iii) Cross",
+                             "Annulus/Disc" = "(iv) Annulus/Disc")
+      ) %>%
   dplyr::mutate(test.name=factor(test.name),
          sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
-         stat.name=factor(stat.name, levels=c("I2C2", "ICC o PCA", "Discr"), ordered=TRUE)) %>%
-  dplyr::group_by(test.name, sim.name, n, d, stat.name) %>%
-  dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma)))
+         stat.name=factor(stat.name, levels=c("I2C2", "ICC o PCA", "Discr", "Bayes"), ordered=TRUE))
 
-alg.colors <- c("#c70000", "#a7aec5", "#6699cc")
-line.types <- c(1, 1, 1)
-names(alg.colors) <- names(line.types) <- c("Discr", "ICC o PCA", "I2C2")
+
+alg.colors <- c("#c70000", "#a7aec5", "#6699cc", "#3CB371")
+line.types <- c(1, 1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr", "ICC o PCA", "I2C2", "Bayes")
 ```
 
 ### Sample Test Plot
 
 ```{r}
 sample.plots <- sample.test.results %>%
-  group_by(stat.name, sim.name, n, d, sigma, test.name, sigma.wt) %>%
-  dplyr::summarise(power=mean(outcome)) %>%
-  ggplot(aes(x=sigma.wt, y=power, color=stat.name)) +
+  ggplot(aes(x=sigma.wt, y=statistic, color=stat.name)) +
     geom_line() +
     scale_color_manual(values=alg.colors, name="Statistic") +
     facet_grid(test.name ~ sim.name, scales="free_x") +
     theme_bw() +
-    scale_y_continuous(limits=c(0, 1)) +#, expand=c(0, 0)) +
+    scale_y_continuous(limits=c(-.05, 1), breaks=c(0, 1)) +#, expand=c(0, 0)) +
     scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
     geom_hline(yintercept=0.05, color="black") +
     xlab("Normalized Variance") +
@@ -287,9 +285,9 @@ plot.objs <- list(sim.plots, dmtx.plots,
                   sample.plots)#, bound.plots, sample.plots)
 grid.arrange(
   arrangeGrob(grobs=lapply(plot.objs, function(obj) obj + theme(legend.position="none")), 
-              layout_matrix=cbind(c(1,2,3, 3))),#,4,4))),
+              layout_matrix=cbind(c(1,1,2,2,3,3,3,3,3))),#,4,4))),
   arrangeGrob(grobs=lapply(plot.objs, function(obj) g_legend(obj)), 
-              layout_matrix=cbind(c(1,2,3,3))),#4,4))),
+              layout_matrix=cbind(c(1,1,2,2,3,3,3,3,3))),#4,4))),
   ncol=2, widths=c(4, 1)
   )
 ```
