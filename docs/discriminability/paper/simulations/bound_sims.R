@@ -289,7 +289,7 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
 }
 
 n <- 128; d <- 2
-nrep <- 300
+nrep <- 500
 n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.parallel_rot_cigars, sim.crossed_sig2,
