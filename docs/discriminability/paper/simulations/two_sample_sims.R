@@ -125,11 +125,6 @@ sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
   mus.class <- t(mvrnorm(n=K, mu.class, S.class))
 
   # crossed signal
-  res <- test.one_sample(sim$X, sim$Y, nperm=100)
-  res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
-  res$sigma <- exper$sigma
-  return(res)
-}, mc.cores=no_cores)
   Sigma.1 <- cbind(c(2,0), c(0,0.1))
   Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
   mus=cbind(rep(0, d), rep(0, d))
@@ -269,7 +264,7 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 500
+nrep <- 300
 n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.parallel_rot_cigars, sim.crossed_sig2,
