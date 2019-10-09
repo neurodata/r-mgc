@@ -210,15 +210,15 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
 # Driver
 ## -------------------------
 n <- 128; d <- 2
-nrep <- 300
+nrep <- 500
 n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
-                    sim.multiclass_gaussian, sim.multiclass_ann_disc2)
-sims.sig.max <- c(20, 20, 10, 20, 10)
-sims.sig.min <- c(0, 0, 0, 0, 0)
+                    sim.multiclass_gaussian, sim.parallel_rot_cigars, sim.multiclass_ann_disc2)
+sims.sig.max <- c(20, 20, 10, 20, 20, 10)
+sims.sig.min <- c(0, 0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Cross", "Gaussian", "Annulus/Disc")
+  c("No Signal", "Linear", "Cross", "Gaussian", "Rotated", "Annulus/Disc")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
