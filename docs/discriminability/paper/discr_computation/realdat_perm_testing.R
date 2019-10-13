@@ -15,7 +15,7 @@ require(fmriutils)
 no_cores = detectCores() - 1
 
 fmri.path <- '/cis/project/ndmg/eric/discriminability/fmri_data/'
-opath <- './data/real/'
+opath <- '../data/real/'
 
 reg_opts <- c("A", "F")
 names(reg_opts) <- c("ANT", "FSL")
@@ -106,7 +106,7 @@ require(fmriutils)
 no_cores = detectCores() - 1
 
 dmri.path <- '/cis/project/ndmg/eric/discriminability/dmri_data/'
-opath <- './data/real/'
+opath <- '../data/real/'
 
 
 dsets <- list.dirs(path=dmri.path, recursive=FALSE)
