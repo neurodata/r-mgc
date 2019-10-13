@@ -132,4 +132,55 @@ For citing code or the paper, please use the citations found in [citation.bib](.
 
 # Reproducibility
 
-All the code to reproduce any figures from https://arxiv.org/abs/1609.05148 is available here https://github.com/neurodata/mgc-paper
+### MGC
+
+All the code to reproduce any figures from https://arxiv.org/abs/1609.05148 is available here https://github.com/neurodata/mgc-paper.
+
+### Discriminability
+
+Here, we describe how to reproduce the manuscript figures from the discriminability paper. To begin, clone this repository locally:
+
+```
+git clone https://github.com/neurodata/r-mgc.git
+```
+
+We assume that the directory `r-mgc` placed locally on the system is `<package_root>`. Note that all figures were stylized using [Adobe Photoshop](www.adobe.com/Photoshop) prior to submission.
+
+- [Figure 1: Multisim Figure](./docs/) This figure demonstrates the behavior of discriminability, ICC, and I2C2 under a variety of simulation benchmark settings. To execute the script with fresh data:
+
+```
+setwd('<package_root>/docs/discriminability/paper/simulations')
+source('shared_scripts.R`)
+```
+
+Note: the scripts will automatically multithread, however, the simulation benchmarks take quite a while to execute (1.5 days on a 96 core machine with 1 TB of RAM).
+
+Using the included [bound](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/data/sims/discr_sims_bound.rds), [one sample](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/data/sims/discr_sims_os.rds), and [two sample](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/data/sims/discr_sims_ts.rds) data, you can proceed to duplicate the figure by opening the R notebook [simulation plots](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/simulations/multisim_figure.Rmd), and executing the script.
+
+- [Figure 2: 64 pipelines figure](https://github.com/neurodata/r-mgc/tree/master/docs/discriminability/paper/64pipes_fig). To regenerate the source data for this portion of the manuscript, users can use the following two scripts from an R terminal:
+
+```
+setwd('<package_root>/docs/discriminability/paper/discr_computation')
+# edit lines 17 and 18, and lines 210 and 211, and set to your local path where
+# preprocessed brains are located
+source('./real_data_driver.R')  # runs the discriminability calculations
+# edit lines 17 and 18, and lines 108 and 109, to the location of the 
+# preprocessed brains
+source('./realdat_perm_testing.R')  # runs the two sample testing
+```
+Again, the scripts will multithread, but can be expected to take approximately 3 days on a 96 core, 1 TB RAM machine.
+
+To regenerate Figure 2 from the manuscript, users can execute the [64 Pipelines Figure](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/64pipes_fig/real_data.Rmd) notebook.
+
+- [Figure 3: Marginalized Options Comparison](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/multi_modal_opts') Users can regenerate the figure by using the notebook [Multi Modal Opts](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/multi_modal_opts/multi_modal_opts.Rmd).
+
+- [Figure 4: Effect Size Investigation](https://github.com/neurodata/r-mgc/edit/master/docs/discriminability/paper/dcor_fig) Users can reproduce the data collected with:
+
+```
+setwd('<package_root>/docs/discriminability/paper/dcor_fig')
+source('./dep_wt_driver.R')
+```
+
+Results can be expected to take 2 days on a 96 core, 1 TB machine.
+
+To reproduce the figure, users can use the [Effect Size Investigation](https://github.com/neurodata/r-mgc/blob/master/docs/discriminability/paper/dcor_fig/dcor_bypipe_exps.Rmd) notebook.
