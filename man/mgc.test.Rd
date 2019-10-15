@@ -8,7 +8,7 @@ mgc.test(X, Y, is.dist.X = FALSE, dist.xfm.X = mgc.distance,
   dist.params.X = list(method = "euclidean"), dist.return.X = NULL,
   is.dist.Y = FALSE, dist.xfm.Y = mgc.distance,
   dist.params.Y = list(method = "euclidean"), dist.return.Y = NULL,
-  nperm = 1000, option = "mgc", no_cores = 1)
+  nperm = 1000, option = "mgc", no_cores = 1, fast = FALSE)
 }
 \arguments{
 \item{X}{is interpreted as:
@@ -64,12 +64,15 @@ Defaults to \code{list(method='euclidean')}.}
 }}
 
 \item{no_cores}{the number of cores to use for the permutations. Defaults to \code{1}.}
+
+\item{fast}{whether to use fast MGC. Defaults to \code{FALSE}. Otherwise, an integer specifying the size
+of subsamples, with \code{1 < fast < n}, where \code{n} are the number of samples between \code{X} and \code{Y}.}
 }
 \value{
 A list containing the following:
 \item{\code{p.value}}{P-value of MGC}
 \item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
-\item{\code{p.localCorr}}{P-value of the local correlations by double matrix index}
+\item{\code{p.localCorr}}{P-value of the local correlations by double matrix index. Note: this option is not produced if fast MGC is used (ie, `fast` is not \code{FALSE}).}
 \item{\code{localCorr}}{the local correlations}
 \item{\code{optimalScale}}{the optimal scale identified by MGC}
 \item{\code{option}}{specifies which global correlation was used}
@@ -97,6 +100,8 @@ library(mgc)
 
 n = 100; d = 2
 data <- mgc.sims.linear(n, d)
+# note: on real data, one would put nperm much higher (at least 100)
+# nperm is set to 10 merely for demonstration purposes
 result <- mgc.test(data$X, data$Y, nperm=10)
 }
 }

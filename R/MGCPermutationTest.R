@@ -44,11 +44,13 @@
 #'    \item{\code{'rank'}}{use the rank global correlation.}
 #' }
 #' @param no_cores the number of cores to use for the permutations. Defaults to \code{1}.
+#' @param fast whether to use fast MGC. Defaults to \code{FALSE}. Otherwise, an integer specifying the size
+#' of subsamples, with \code{1 < fast < n}, where \code{n} are the number of samples between \code{X} and \code{Y}.
 #'
 #' @return A list containing the following:
 #' \item{\code{p.value}}{P-value of MGC}
 #' \item{\code{stat}}{is the sample MGC statistic within \code{[-1,1]}}
-#' \item{\code{p.localCorr}}{P-value of the local correlations by double matrix index}
+#' \item{\code{p.localCorr}}{P-value of the local correlations by double matrix index. Note: this option is not produced if fast MGC is used (ie, `fast` is not \code{FALSE}).}
 #' \item{\code{localCorr}}{the local correlations}
 #' \item{\code{optimalScale}}{the optimal scale identified by MGC}
 #' \item{\code{option}}{specifies which global correlation was used}
@@ -74,12 +76,14 @@
 #'
 #' n = 100; d = 2
 #' data <- mgc.sims.linear(n, d)
+#' # note: on real data, one would put nperm much higher (at least 100)
+#' # nperm is set to 10 merely for demonstration purposes
 #' result <- mgc.test(data$X, data$Y, nperm=10)
 #'}
 #' @export
 mgc.test <-function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.X=list(method='euclidean'),
                     dist.return.X=NULL, is.dist.Y=FALSE, dist.xfm.Y=mgc.distance, dist.params.Y=list(method='euclidean'),
-                    dist.return.Y=NULL, nperm=1000, option='mgc', no_cores=1) {
+                    dist.return.Y=NULL, nperm=1000, option='mgc', no_cores=1, fast=FALSE) {
   # validate input is valid and convert to distance matrices, if necessary
   validated <- mgc.validator(X, Y, is.dist.X=is.dist.X, dist.xfm.X=dist.xfm.X, dist.params.X=dist.params.X,
                              dist.return.X=dist.return.X, is.dist.Y=is.dist.Y, dist.xfm.Y=dist.xfm.Y, dist.params.Y=dist.params.Y,
@@ -90,29 +94,52 @@ mgc.test <-function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.
   if (no_cores > detectCores()) {
     stop(sprintf("Requested more cores than available. Requested %d cores; CPU has %d.", no_cores, detectCores()))
   } else if (no_cores >= 0.8*detectCores()) {
-    warning("You have requested a number of cores near your machine's core count. Expected decreased performance.")
+    cat("You have requested a number of cores near your machine's core count. Expected decreased performance.\n")
   }
   N = nrow(DY)
+
+  if (!(isFALSE(fast))) {
+    if (!(min(abs(c(fast%%1, fast%%1-1))) < 1e-5 & fast > 1 & fast < N)) {
+      stop("You have not specified a valid option for `fast`. Should be FALSE, or an integer greater than 1 and less than n.")
+    }
+  }
+
+  if (nperm < 100) {
+    warning("nperm is < 100. nperm should typically be set > 100.")
+  }
+
+  if (!min(abs(c(nperm%%1, nperm%%1-1))) < 1e-5) {
+    stop("You have not specified an integer for `nperm`.")
+  }
 
   # Compute sample MGC and all local correlations
   result <- mgc.stat.driver(DX, DY, option)
 
   # compute the null using permutation test
   mgc.nulls <- mclapply(1:nperm, function(i) {
-    per <- sample(N)
+    # fast MGC by taking subsample of size `fast`
+    if (!isFALSE(fast)) {
+      sample.id <- sample(1:N, size=fast, replace=TRUE)  # sample `fast` items from N total with replacement
+      DX <- DX[sample.id, sample.id]; DY <- DY[sample.id, sample.id]
+      N <- fast
+    }
+    per <- sample(N)  # resample the IDs for Y
     return(mgc.stat.driver(DX, DY[per, per], option=option))
   }, mc.cores=no_cores)
 
   # get the boolean mgc test results for each permutation
+  result <- list(stat=result$stat, localCorr=result$localCorr, optimalScale=result$optimalScale,
+                 option=option)
+
+  if (isFALSE(fast)) {
+    pLocalCorrs <- lapply(mgc.nulls, function(mgc.null) mgc.null$localCorr >= result$localCorr)
+    result$p.localCorr <- (Reduce("+", pLocalCorrs) + 1)/(nperm + 1)
+  }
   pMGCs <- lapply(mgc.nulls, function(mgc.null) mgc.null$stat >= result$stat)
-  pLocalCorrs <- lapply(mgc.nulls, function(mgc.null) mgc.null$localCorr >= result$localCorr)
 
   # element-wise average
-  pMGC <- (Reduce("+", pMGCs) + 1)/(nperm + 1)
-  pLocalCorr <- (Reduce("+", pLocalCorrs) + 1)/(nperm + 1)
+  result$p.value <- (Reduce("+", pMGCs) + 1)/(nperm + 1)
 
-  return(list(p.value=pMGC, stat=result$stat, p.localCorr=pLocalCorr,
-              localCorr=result$localCorr, optimalScale=result$optimalScale,
-              option=option))
+  return(result)
 }
 

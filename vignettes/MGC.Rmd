@@ -78,7 +78,7 @@ visualizing the `MGC` image with 100 replicates:
 
 ```{r, fig.width=5, fig.height=4}
 set.seed(12345)
-res <- mgc.test(data$X, data$Y, nperm=20)  # 100 permutations test
+res <- mgc.test(data$X, data$Y, nperm=20)  # 20 permutations test; typically should be run with >100 permutations
 
 plot_mtx(res$localCorr, main.title="Local Correlation Map")
 
@@ -105,3 +105,17 @@ print(res$statMGC)
 ```
 
 viewing the corr map above we see that the relationship betweel Sepal and Petal Length is strongly linear.
+
+## Fast MGC
+
+In many situations, it is often the case that the estimating a distance matrix during the computation of MGC may prove computationally prohibitive. To circumvent this hurdle, we can use fast MGC, which computes the null distribution of the `MGC` statistic by using a bootstrapping approach:
+
+```{r}
+set.seed(12345)
+
+data <- mgc.sims.linear(n=1000, d)  # data with noise
+res <- mgc.test(data$X, data$Y, nperm=20, fast=100)  # 20 permutations test; typically should be run with >100 permutations
+print(res$statMGC)
+```
+
+With $N$ large, we would recommend fast MGC if regular MGC is too computationally intensive.
