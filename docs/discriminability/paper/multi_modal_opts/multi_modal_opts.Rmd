@@ -241,7 +241,7 @@ edge.result <- do.call(rbind, lapply(1:dim(edge.sum)[1], function(i) {
   return(reslt)
 }))
 
-result <- rbind(data.frame(discr=reg.result$discr, Option="FSL"), 
+result <- rbind(data.frame(discr=reg.result$discr, Option="FNIRT"), 
                 data.frame(discr=freq.result$discr, Option="No Freq. Filter"), 
                 data.frame(discr=scr.result$discr, Option="No Scrub"), 
                 data.frame(discr=gsr.result$discr, Option="Global Sig. Reg."), 
@@ -285,7 +285,8 @@ f5.fmri <- ggplot(result, aes(x=Option, y=discr)) +#, color=Option)) +
 ```{r}
 f5.dmri2 <- ggplot(subset(dmri.results, Dataset == "SWU4"), aes(x=nroi, y=discr, color=xfm, group=xfm)) +
   geom_point() +
-  scale_x_continuous(trans=log10_trans()) +
+  # geom_smooth(method = "lm", se=FALSE, formula = "y ~ x") +
+  scale_x_continuous(trans=log10_trans(), breaks=c(64, 256, 1064, 4096), limits=c(40, 4100)) +
   xlab("Number of Parcels in Parcellation") +
   scale_color_discrete(name="Edge Transform", label=c("Raw", "PTR", "Log")) +
   theme_bw() +
@@ -293,6 +294,11 @@ f5.dmri2 <- ggplot(subset(dmri.results, Dataset == "SWU4"), aes(x=nroi, y=discr,
   theme(panel.grid.minor.y = element_blank()) +
   ggtitle("(C.ii) Impact of ROI Count on dMRI Discriminability") +
   guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
+
+dmri.results %>%
+  filter(Dataset != "SWU4") %>%
+  group_by(xfm) %>%
+  summarise(pval=summary(lm(discr ~ nroi))$coefficients["nroi", "Pr(>|t|)"])
 ```
 
 ```{r}
@@ -493,17 +499,17 @@ dmri.scan.params <- dmri.dset.aug %>%
 ```{r}
 mm.dat <- merge(fmri.results %>%
   filter(Reg=="F", FF=="N", Scr=="N", GSR=="G", xfm=="P") %>%
-    mutate(Parcellation=fct_recode(Parcellation, "CPAC200"="C", "HO"="H",
+    mutate(Parcellation=fct_recode(Parcellation, "CC200"="C", "HO"="H",
                                    "AAL"="A", "Desikan"="D")),
   dmri.results %>%
     filter(xfm=="P", Parcellation %in% c("CPAC200", "HarvardOxford", "AAL", "desikan")) %>%
     mutate(Parcellation=fct_recode(Parcellation, "HO"="HarvardOxford",
-                                   "Desikan"="desikan")),
+                                   "Desikan"="desikan", "CC200"="CPAC200")),
   by=c("Parcellation", "Dataset")) %>%
   ggplot(aes(x=Parcellation, y=discr.y-discr.x, color=Dataset, size=nscans.x)) +
     geom_point() +
     xlab("Parcellation") +
-    ylab(TeX("Difference in Discriminability")) +
+    ylab(TeX("dMRI - fMRI")) +
     scale_color_manual(values=dset.cols) +
     theme_bw() +
     geom_hline(yintercept=0) +

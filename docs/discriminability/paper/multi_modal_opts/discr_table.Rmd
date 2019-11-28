@@ -1,0 +1,122 @@
+---
+title: "Discriminability Table Summary"
+author: "Eric Bridgeford"
+date: "November 22, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(tidyverse)
+require(knitr)
+```
+
+```{r}
+fmri.results <- readRDS('../data/real/discr_fmri_results.rds') %>%
+  mutate(Pipeline=paste0(Reg, FF, Scr, GSR, Parcellation, xfm)) %>%
+  filter(Pipeline == "FNNNCP" & !(Dataset %in%c("NKI24_mx1400", "NKI24_std2500"))) %>%
+  select(-Reg, -FF, -Scr, -GSR, -Parcellation, -xfm, -Pipeline) %>%
+  rename(Discriminability=discr) %>%
+  mutate(Dataset=recode_factor(Dataset, "NKI24_mx645"="NKI24"))
+dmri.results <- readRDS('../data/real/discr_dmri_results.rds')
+```
+
+```{r}
+
+fmri.cov <- data.frame(Dataset=c('BNU1', 'BNU2', 'BNU3', 'DC1', 'HNU1', 'IACAS', 'IPCAS1', 'IPCAS2', 'IPCAS3',
+                                 'IPCAS4', 'IPCAS5', 'IPCAS6', 'IPCAS7', 'IPCAS8', 'JHNU', 'LMU1', 'LMU2',
+                                 'LMU3', 'MPG1', 'MRN1', 'NKI24_mx645', 'NKI24_mx1400', 'NKI24_std2500', 'NYU1',
+                                 'NYU2', 'SWU1', 'SWU2', 'SWU3', 'SWU4', 'UM', 'UPSM1', 'UWM', 'Utah1',
+                                 'Utah2', 'XHCUMS', 'IBATRT'), 
+                       `Scan Manuf`=c('Siemens', 'Siemens', 'Siemens', 'Philips', 'GE', 'GE', 'Siemens', 'Siemens', 
+                                     'Siemens', 'GE', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens',
+                                     'Philips', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens',
+                                     'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens', 'Siemens',
+                                     'Siemens', 'Siemens', 'GE', 'Siemens', 'Siemens', 'Siemens', 'Siemens'),
+                       `Scan Model`=c('TrioTim', 'TrioTim', 'TrioTim', NaN, 'MR750', 'Signa HDx', 'TrioTim', 'TrioTim',
+                                     'TrioTim', 'MR750', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim',
+                                     'Achieva', 'Verio', 'TrioTim', 'Magentom', 'TrioTim', 'TrioTim', 'TrioTim', 
+                                     'TrioTim', 'Allegra', 'Allegra', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim',
+                                     'TrioTim', 'TrioTim', 'MR750', 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim'),
+                       `Coil Channels`=c(12, 12, 12, 32, 8, 8, 8, 32, 8, 8, 12, 8, 8, 12, 8, 32, 12, 12, NaN, 12, 32, 32, 32,
+                                  1, 1, 8, 8, 8, 8, 12, 12, 8, 12, 12, 12, 12),
+                       `Magnet Strength`=c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                             3, 3, 3, 3, 3, 3, 3),
+                       `TE`=c(30, 30, 30, 35, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 17, 29, 30, 30, 30,
+                            25, 15, 30, 30, 30, 30, 30, 29, 25, 28, 28, 30, 30),
+                       `TR`=c(2000, 'variable', 2000, 2500, 2000, 2000, 2000, 2500, 2000, 2000, 2000, 2500, 2500, 2000, 2000, 2500,
+                            3000, 3000, 3000, 2000, 645, 1400, 2500, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 1500,
+                            2600, 2000, 2000, 3000, 1750),
+                       Orientation=c(NaN, NaN, NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN, 'coronal', 'axial', 'axial', 'axial', 'axial',
+                                     'axial', 'axial', 'axial', 'axial', 'axial', 'axial', 'axial', 'axial', NaN,
+                                     'axial', 'axial', 'axial', 'axial', 'axial', 'axial', 'axial', NaN, 'axial',
+                                     'axial', 'axial', 'axial'),
+                       STC=c('inter.', 'inter.', 'inter.', 'inter.', 'inter.', 'inter.', 
+                             'inter.', 'inter.', 'inter.', 'inter.', 'inter.',
+                             'inter.', 'inter.', 'inter.', 'inter.', 'seq.',
+                             'inter.', 'inter.', 'inter.', 'inter.', 'inter.',
+                             'inter.', 'inter.', NaN, 'inter.', 'inter.', 'inter.',
+                             'inter.', 'inter.', 'seq.', 'seq.', 'inter.', 'inter.',
+                             'inter.', 'inter.', 'seq.'),
+                       Direction=c('asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc',
+                             'asc', 'asc', 'asc', 'asc', 'asc','asc', 'asc', 'asc', 'asc', 'asc',
+                             'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'asc', 'desc', 'asc', 
+                             'asc', 'asc', 'asc', 'asc', 'asc'),
+                       `Slice Thick`=c(3.5, 'variable', 3.5, 3.5, 3.4, 4.0, 4.0, 3.0, 3.0, 3.5, 5.0, 3.5, 3.0, 3.0, 4.0, 3.0,
+                                     4.0, 4.0, 1.5, 3.5, 3.0, 2.0, 3.0, 3.0, 4.0, 3, 3, 3, 3, 4.0, 4.0, 3.5, 3.0,
+                                     3.0, 3.0, 3.6),
+                       `Planar Res`=c(3.1, 3.1, 3.5, 3, 3.4, 3.4, 4.0, 3.8, 3.4, 3.5, 3.1, 3.5, 3.0, 3.4, 3.75, 2.95, 
+                            3.0, 3.0, 1.5, 3.8, 3.0, 2.0, 3.0, 3.0, 3.0, 3.1, 3.4, 3.4, 3.4, 4.0, 3.1, 3.5,
+                            3.4, 3.4, 3.0, 3.4),
+                       `Npts`=c(200, 'variable', 150, 120, 300, 240, 205, 212, 180, 180, 170, 242, 184, 240, 250, 180,
+                               120, 120, 300, 150, 900, 404, 120, 197, 180, 240, 300, 242, 242, 150, 200,
+                               231, 240, 240, 124, 220),
+                       `Fat Suppress`=c(T, T, T, T, T, F, T, T, T, T, T, T, T, T, T, T, T, T, NaN, T, T, T, T, NaN, T, T,
+                            T, T, T, T, T, F, T, T, T, T)) %>%
+  filter(!(Dataset %in%c("NKI24_mx1400", "NKI24_std2500"))) %>%
+  mutate(Dataset=recode_factor(Dataset, "NKI24_mx645"="NKI24"))
+
+dmri.cov <- data.frame(Dataset=c('BNU1', 'BNU3', 'HNU1', 'IPCAS1', 'IPCAS2', 'IPCAS8', 'MRN1', 'NKI24', 'SWU4',
+                                 'XHCUMS'),
+                       Scan.Manuf=c("Siemens", "Siemens", "GE", 'Siemens', 'Siemens', 'Siemens', 'Siemens', 
+                                     'Siemens', 'Siemens', 'Siemens'),
+                       Scan.Model=c("TrioTim", "TrioTim", "MR750", 'TrioTim', 'TrioTim', 'TrioTim', 'TrioTim', 
+                                     'TrioTim', 'TrioTim', 'TrioTim'),
+                       Magnet.Strength=c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3),
+                       Headcoil.Channels=c(12, 12, 8, 8, 32, 12, 12, 32, 8, 12),
+                       TE=c(89, 104, 'Min', NaN, NaN, 104, 84, 95, NaN, 83),
+                       TR=c(8000, 7200, 8600, NaN, NaN, 6600, 9000, 2400, NaN, 8000),
+                       Orientation=c(NaN, NaN, NaN, NaN, NaN, 'a', 'a', 'a', NaN, 'a'),
+                       STC=c('interleaved', 'interleaved', 'interleaved', NaN, NaN, 'interleaved', 'interleaved',
+                             'interleaved', NaN, 'interleaved'),
+                       Slice.Thick=c(2.2, 2.5, 1.5, NaN, NaN, 3.0, 2.0, 2.0, NaN, 2.0),
+                       Planar.Res=c(2.2, 1.8, 1.5, NaN, NaN, 1.8, 2.0, 2.0, NaN, 2.0),
+                       Fat.Supp=c(T, T, T, NaN, NaN, T, T, T, NaN, T),
+                       n.Directions=c(30, 64, 33, 62, 39, 64, 35, 137, 93, 64),
+                       Bval.Intens=c(1000, 1000, 1000, NaN, NaN, 1000, 800, 1500, 1000, 700))
+```
+
+```{r}
+fmri.results %>%
+  left_join(fmri.cov, by="Dataset") %>%
+  select(Dataset, Scan.Manuf, Scan.Model, TE, TR, STC,
+         Npts, nsub, nses, nscans, Discriminability) %>%
+  rename("Manuf."=Scan.Manuf, "Model"=Scan.Model, "TE(ms)"=TE, "TR(ms)"=TR, "#Timepts"=Npts,
+         "#Sub"=nsub, "#Ses"=nses, "#Scans"=nscans, "Discr"=Discriminability) %>%
+  mutate(Discr=round(Discr, digits=2)) %>%
+  kable(format="latex")
+```
+
+```{r}
+dmri.results %>%
+  left_join(dmri.cov, by="Dataset") %>%
+  filter(Parcellation=="CPAC200", xfm=="L") %>%
+  select(Dataset,Scan.Manuf, Scan.Model, TE, TR, n.Directions, Bval.Intens, nsub, nses, nscans, discr) %>%
+  rename("Manuf."=Scan.Manuf, "Model"=Scan.Model, "TE(ms)"=TE, "TR(ms)"=TR, "#Dir"=n.Directions, "Bval Intens"=Bval.Intens,
+         "#Sub"=nsub, "#Ses"=nses, "#Scans"=nscans, "Discr"=discr) %>%
+  mutate(Discr=round(Discr, digits=2)) %>%
+  kable(format="latex")
+```

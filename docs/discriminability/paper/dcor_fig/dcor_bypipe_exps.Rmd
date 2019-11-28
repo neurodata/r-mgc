@@ -34,12 +34,6 @@ require(tidyverse)
 results <- readRDS('../data/real/dep_wt_fmri_results.rds')
 
 dset.cols <- readRDS("../data/real/dset_colors.rds")
-
-single.ds <- lapply(results, function(res) {
-  res %>%
-    subset(Dataset == "BNU1")
-  })
-
 ```
 
 # Statistic vs MGC/Dcorr
@@ -48,12 +42,12 @@ Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classificat
 
 output figure should be 7 x 4.5 and then edited in illustrator
 
-```{r}
+```{r, fig.height=4.5, fig.width=7}
 stat.vs.perf <- merge(results$stat, results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation",
                                                        "xfm", "Dataset", "nsub", "nses", "nroi", "nscans")) %>%
   filter(method == "mgc" & xfm == "N" & embed == "raw") %>%
   subset(Dataset != "IPCAS6" & alg != "ANOVA") %>%
-  mutate(alg=recode_factor(alg, "Discr" = "(i) Discr", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2"))# , "ANOVA" = "(ii) ANOVA o PCA", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2"))
+  mutate(alg=recode_factor(alg, "Discr" = "(i) Discr", "ICC" = "(ii) ICC o PCA", "I2C2" = "(iii) I2C2"))# , "ANOVA" = "(ii) ANOVA o PCA", "ICC" = "(iii) ICC o PCA", "I2C2" = "(iv) I2C2"))
 
 task.titles <- c("(A)", "(B)")
 task.names <- c("Sex"="Sex (Classification)", "Age"="Age (Regression)")
@@ -65,10 +59,11 @@ lapply(unique(stat.vs.perf$xfm), function(xf) {
     ta <- as.character(tasks[i])
     do.call(rbind, lapply(unique(stat.vs.perf$alg), function(al) {
       minmax.dat <- stat.vs.perf %>%
-        filter(alg == as.character(al)& task == as.character(ta) & 
+        filter(alg == as.character(al) & task == as.character(ta) & 
                xfm == as.character(xf)) %>%
         select(alg, task, xfm, stat.x, stat.y) %>%
         group_by(alg, task, xfm) %>%
+        # compute the min and maximum of the observed statistics and the effect sizes
         summarise(min.x=min(stat.x), max.x=max(stat.x), min.y=min(stat.y), max.y=max(stat.y))
       dat.task <- do.call(rbind, lapply(unique(stat.vs.perf$Dataset), function(ds) {
         do.call(rbind, lapply(unique(stat.vs.perf$method), function(meth) {
