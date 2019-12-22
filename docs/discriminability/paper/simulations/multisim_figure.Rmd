@@ -228,7 +228,7 @@ sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
   dplyr::select(sim.name, n, d, i, stat.name, sigma, outcome, test.name) %>%
   rbind(
     readRDS('../data/sims/discr_sims_bound.rds')$bound.results %>%
-      dplyr::mutate(test.name="(C) Bound Results") %>%
+      dplyr::mutate(test.name="(C) Comparison to Error") %>%
       dplyr::rename(stat.name=algorithm, outcome=value) %>%
       dplyr::mutate(outcome=round(outcome, digits=2)) %>%
       dplyr::mutate(outcome=ifelse(stat.name=="bayes", 1-outcome, outcome))
@@ -240,7 +240,7 @@ sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
   dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma))) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(
-        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "ICC o PCA",
+        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "PICC",
                                 "i2c2" = "I2C2", "bayes"="1-Bayes"),
         sim.name=recode_factor(sim.name, "No Signal" = "(iv) No Signal",
                              "Gaussian" = "(i) Gaussian",
@@ -251,20 +251,20 @@ sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
       ) %>%
   dplyr::mutate(test.name=factor(test.name),
          sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
-         stat.name=factor(stat.name, levels=c("I2C2", "ICC o PCA", "Discr", "1-Bayes"),
+         stat.name=factor(stat.name, levels=c("I2C2", "PICC", "Discr", "1-Bayes"),
                           ordered=TRUE))
 
 
-alg.colors <- c("#c70000", "#a7aec5", "#6699cc", "#3CB371")
+alg.colors <- c("#c70000", "#ffa500", "#6699cc", "#3CB371")
 line.types <- c(1, 1, 1, 1)
-names(alg.colors) <- names(line.types) <- c("Discr", "ICC o PCA", "I2C2", "1-Bayes")
+names(alg.colors) <- names(line.types) <- c("Discr", "PICC", "I2C2", "1-Bayes")
 ```
 
 ### Sample Test Plot
 
 ```{r}
 bound.plot <- sample.test.results %>%
-  dplyr::filter(test.name == "(C) Bound Results") %>%
+  dplyr::filter(test.name == "(C) Comparison to Error") %>%
   dplyr::group_by(n, d, stat.name, sim.name, test.name) %>%
   dplyr::mutate(stat.wt=(statistic - min(statistic))/(max(.02, max(c(statistic)) - min(statistic)))) %>%
   ggplot(aes(x=sigma.wt, y=stat.wt, color=stat.name)) +
@@ -283,7 +283,7 @@ bound.plot <- sample.test.results %>%
   guides(color=guide_legend(nrow=2,byrow=TRUE))
 
 sample.plot <- sample.test.results %>%
-  dplyr::filter(test.name != "(C) Bound Results") %>%
+  dplyr::filter(test.name != "(C) Comparison to Error") %>%
   ggplot(aes(x=sigma.wt, y=statistic, color=stat.name)) +
     geom_line() +
     scale_color_manual(values=alg.colors, name="Statistic") +

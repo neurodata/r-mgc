@@ -29,6 +29,9 @@ require(abind)
 require(tidyverse)
 require(forcats)
 require(dplyr)
+
+select <- dplyr::select; filter <- dplyr::filter; count <- dplyr::count
+summarize <- dplyr::summarize
 ```
 
 
@@ -249,18 +252,6 @@ result <- rbind(data.frame(discr=reg.result$discr, Option="FNIRT"),
                 data.frame(discr=edge.result$discr, Option="Rank"))
 ```
 
-```{r}
-sig.test <- lapply(as.character(unique(result$Option)), function(opt) {
-  res.opt <- subset(result, Option == as.character(opt))
-  # wilcox signed-rank paired test on the difference btwn best and second best option
-  test.res <- wilcox.test(res.opt$discr, rep(0, length(res.opt$discr)), alternative = "two.sided")
-  # multiple hypothesis correction
-  test.res$p.value <- test.res$p.value * length(as.character(unique(result$Option)))
-  return(test.res)
-})
-names(sig.test) <- as.character(unique(result$Option))
-print(sig.test)
-```
 
 ```{r}
 set.seed(1234)
@@ -274,7 +265,7 @@ f5.fmri <- ggplot(result, aes(x=Option, y=discr)) +#, color=Option)) +
   scale_y_continuous(limits=c(-.1, .4)) +
   geom_hline(yintercept = 0, linetype=1, size=0.8) +
   ylab("Difference in Discriminability") +
-  ggtitle("(A) Impact of fMRI Preprocessing Options on Discriminability") +
+  ggtitle("(A) Impact of fMRI Preprocessing on Discriminability") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank()) +
   guides(color=guide_legend(override.aes = list(size=2, alpha=1)))
 ```
@@ -287,7 +278,7 @@ f5.dmri2 <- ggplot(subset(dmri.results, Dataset == "SWU4"), aes(x=nroi, y=discr,
   geom_point() +
   # geom_smooth(method = "lm", se=FALSE, formula = "y ~ x") +
   scale_x_continuous(trans=log10_trans(), breaks=c(64, 256, 1064, 4096), limits=c(40, 4100)) +
-  xlab("Number of Parcels in Parcellation") +
+  xlab("log(Number of Parcels)") +
   scale_color_discrete(name="Edge Transform", label=c("Raw", "PTR", "Log")) +
   theme_bw() +
   ylab("Discriminability") +
@@ -346,7 +337,32 @@ xfm.dm.result$Option = "Log - Raw"
 xfmlp.dm.result$Option = "Log - Rank"
 
 xfm.result <- rbind(xfmp.dm.result, xfm.dm.result, xfmlp.dm.result)
+
+test.res.dmri <- lapply(as.character(unique(xfm.result$Option)), function(opt) {
+  res.opt <- subset(xfm.result, Option == as.character(opt))
+  # wilcox signed-rank paired test on the difference btwn best and second best option
+  test.res <- wilcox.test(res.opt$discr, rep(0, length(res.opt$discr)), alternative = "two.sided", paired=TRUE)
+  # multiple hypothesis correction
+  test.res$p.value <- test.res$p.value * length(as.character(unique(xfm.result$Option)))* length(as.character(unique(result$Option)))
+  return(test.res)
+})
+names(test.res.dmri) <- as.character(unique(xfm.result$Option))
+print(test.res.dmri)
 ```
+
+```{r}
+sig.test <- lapply(as.character(unique(result$Option)), function(opt) {
+  res.opt <- subset(result, Option == as.character(opt))
+  # wilcox signed-rank paired test on the difference btwn best and second best option
+  test.res <- wilcox.test(res.opt$discr, rep(0, length(res.opt$discr)), alternative = "two.sided", paired=TRUE)
+  # multiple hypothesis correction
+  test.res$p.value <- test.res$p.value * length(as.character(unique(xfm.result$Option)))* length(as.character(unique(result$Option)))
+  return(test.res)
+})
+names(sig.test) <- as.character(unique(result$Option))
+print(sig.test)
+```
+
 
 ```{r}
 f5.dmri1 <- ggplot(xfm.result, aes(x=Option, y=discr)) +# , color=Option)) +

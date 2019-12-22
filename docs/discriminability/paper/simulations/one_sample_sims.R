@@ -79,7 +79,7 @@ sim.linear_sig <- function(n, d, sigma=0) {
   return(list(X=samp$X, Y=samp$Y))
 }
 
-sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
+sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
   # class mus
   K=2
   mu.class <- rep(0, d)
