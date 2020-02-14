@@ -4,8 +4,17 @@
 \alias{discr.sims.exp}
 \title{Discriminability Exponential Simulation}
 \usage{
-discr.sims.exp(n, d, K, signal.scale = 1, signal.lshift = 1,
-  non.scale = 1, rotate = FALSE, class.equal = TRUE, ind = FALSE)
+discr.sims.exp(
+  n,
+  d,
+  K,
+  signal.scale = 1,
+  signal.lshift = 1,
+  non.scale = 1,
+  rotate = FALSE,
+  class.equal = TRUE,
+  ind = FALSE
+)
 }
 \arguments{
 \item{n}{the number of samples.}

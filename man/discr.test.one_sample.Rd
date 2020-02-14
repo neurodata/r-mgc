@@ -4,9 +4,17 @@
 \alias{discr.test.one_sample}
 \title{Discriminability One Sample Permutation Test}
 \usage{
-discr.test.one_sample(X, Y, is.dist = FALSE, dist.xfm = mgc.distance,
-  dist.params = list(method = "euclidean"), dist.return = NULL,
-  remove.isolates = TRUE, nperm = 100, no_cores = 1)
+discr.test.one_sample(
+  X,
+  Y,
+  is.dist = FALSE,
+  dist.xfm = mgc.distance,
+  dist.params = list(method = "euclidean"),
+  dist.return = NULL,
+  remove.isolates = TRUE,
+  nperm = 100,
+  no_cores = 1
+)
 }
 \arguments{
 \item{X}{is interpreted as:

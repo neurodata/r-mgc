@@ -4,8 +4,17 @@
 \alias{discr.sims.cross}
 \title{Discriminability Cross Simulation}
 \usage{
-discr.sims.cross(n, d, K, signal.scale = 10, non.scale = 1,
-  mean.scale = 0, rotate = FALSE, class.equal = TRUE, ind = FALSE)
+discr.sims.cross(
+  n,
+  d,
+  K,
+  signal.scale = 10,
+  non.scale = 1,
+  mean.scale = 0,
+  rotate = FALSE,
+  class.equal = TRUE,
+  ind = FALSE
+)
 }
 \arguments{
 \item{n}{the number of samples.}

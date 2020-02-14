@@ -4,10 +4,18 @@
 \alias{mgc.validator}
 \title{MGC Utility Validator}
 \usage{
-mgc.validator(X, Y, is.dist.X = FALSE, dist.xfm.X = mgc.distance,
-  dist.params.X = list(method = "euclidean"), dist.return.X = NULL,
-  is.dist.Y = FALSE, dist.xfm.Y = mgc.distance,
-  dist.params.Y = list(method = "euclidean"), dist.return.Y = NULL)
+mgc.validator(
+  X,
+  Y,
+  is.dist.X = FALSE,
+  dist.xfm.X = mgc.distance,
+  dist.params.X = list(method = "euclidean"),
+  dist.return.X = NULL,
+  is.dist.Y = FALSE,
+  dist.xfm.Y = mgc.distance,
+  dist.params.Y = list(method = "euclidean"),
+  dist.return.Y = NULL
+)
 }
 \arguments{
 \item{X}{is interpreted as:

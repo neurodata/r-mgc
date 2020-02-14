@@ -4,8 +4,17 @@
 \alias{discr.sims.linear}
 \title{Discriminability Linear Simulation}
 \usage{
-discr.sims.linear(n, d, K, signal.scale = 1, signal.lshift = 1,
-  non.scale = 1, rotate = FALSE, class.equal = TRUE, ind = FALSE)
+discr.sims.linear(
+  n,
+  d,
+  K,
+  signal.scale = 1,
+  signal.lshift = 1,
+  non.scale = 1,
+  rotate = FALSE,
+  class.equal = TRUE,
+  ind = FALSE
+)
 }
 \arguments{
 \item{n}{the number of samples.}

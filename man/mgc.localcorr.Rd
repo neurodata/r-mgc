@@ -4,11 +4,19 @@
 \alias{mgc.localcorr}
 \title{MGC Local Correlations}
 \usage{
-mgc.localcorr(X, Y, is.dist.X = FALSE, dist.xfm.X = mgc.distance,
-  dist.params.X = list(method = "euclidean"), dist.return.X = NULL,
-  is.dist.Y = FALSE, dist.xfm.Y = mgc.distance,
-  dist.params.Y = list(method = "euclidean"), dist.return.Y = NULL,
-  option = "mgc")
+mgc.localcorr(
+  X,
+  Y,
+  is.dist.X = FALSE,
+  dist.xfm.X = mgc.distance,
+  dist.params.X = list(method = "euclidean"),
+  dist.return.X = NULL,
+  is.dist.Y = FALSE,
+  dist.xfm.Y = mgc.distance,
+  dist.params.Y = list(method = "euclidean"),
+  dist.return.Y = NULL,
+  option = "mgc"
+)
 }
 \arguments{
 \item{X}{is interpreted as:

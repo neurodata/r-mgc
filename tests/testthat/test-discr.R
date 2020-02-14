@@ -50,14 +50,14 @@ test_that("Discriminability - 2 Class, d==1", {
 })
 
 test_that("Discriminability - 2 Class, d > 1; large n", {
-  n=100; d=10
+  n=100; d=3
   # large class difference
-  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=10); X <- sim$X; Y <- sim$Y
+  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=20); X <- sim$X; Y <- sim$Y
   dstat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
   expect_equal(dstat$discr, 1)
 
   # small class difference
-  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=1); X <- sim$X; Y <- sim$Y
+  sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=.05); X <- sim$X; Y <- sim$Y
   dstat.dat <- discr.stat(X, Y, remove.isolates = FALSE, is.dist = FALSE)
 
   # large class difference is more discriminable
@@ -65,7 +65,7 @@ test_that("Discriminability - 2 Class, d > 1; large n", {
 })
 
 test_that("Discriminability - using data and distance function manually produces same result", {
-  n=100; d=10
+  n=100; d=3
 
   # small class difference with distance matrix vs data produces same result
   sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=1); X <- sim$X; Y <- sim$Y
@@ -77,7 +77,7 @@ test_that("Discriminability - using data and distance function manually produces
 })
 
 test_that("One Sample Test is Valid", {
-  n = 100; d=5; nsim=50; alpha=0.1
+  n = 100; d=2; nsim=20; alpha=0.1
   set.seed(12345)
   seed.idx <- floor(runif(nsim, 1, 10000))
   res <- unlist(parallel::mclapply(1:nsim, function(i) {
@@ -85,7 +85,7 @@ test_that("One Sample Test is Valid", {
     set.seed(seed.idx[i])
     sim <- discr.sims.linear(n=n, d=d, K=2, signal.lshift=0); X <- sim$X; Y <- sim$Y
     set.seed(seed.idx[i])
-    return(discr.test.one_sample(X, Y, nperm=100)$p.value < alpha)
+    return(discr.test.one_sample(X, Y, nperm=50)$p.value < alpha)
   }, mc.cores=1), use.names=FALSE)
   # check power is near alpha
   expect_lt(abs(mean(res) - alpha), 0.1)
@@ -112,7 +112,7 @@ test_that("Two Sample Test is Valid and Detects Relationship", {
   seed.idx <- floor(runif(nsim, 1, 10000))
   sim.opts <- list(list(alt="greater", sigma=20, outcome=1),
                    list(alt="neq", sigma=20, outcome=1),
-                   list(alt="less", sigma=0.1, outcome=1))
+                   list(alt="less", sigma=0.01, outcome=1))
   # test all cases of alternatives that can be specified
   sapply(sim.opts, function(sim.opt) {
     res <- unlist(parallel::mclapply(1:nsim, function(i) {
@@ -120,7 +120,7 @@ test_that("Two Sample Test is Valid and Detects Relationship", {
       set.seed(seed.idx[i])
       sim <- sim.linear_sig(n, d, sigma=sim.opt$sigma)
       set.seed(seed.idx[i])
-      pval <- discr.test.two_sample(sim$X1, sim$X2, sim$Y, alt=sim.opt$alt, nperm=50)$p.value
+      pval <- discr.test.two_sample(sim$X1, sim$X2, sim$Y, alt=sim.opt$alt, nperm=20)$p.value
       return(pval < alpha)
     }, mc.cores=1), use.names=FALSE)
     # check power accordingly

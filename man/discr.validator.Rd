@@ -4,9 +4,15 @@
 \alias{discr.validator}
 \title{Discriminability Utility Validator}
 \usage{
-discr.validator(X, Y, is.dist = FALSE, dist.xfm = mgc.distance,
-  dist.params = list(method = "euclidean"), dist.return = NULL,
-  remove.isolates = TRUE)
+discr.validator(
+  X,
+  Y,
+  is.dist = FALSE,
+  dist.xfm = mgc.distance,
+  dist.params = list(method = "euclidean"),
+  dist.return = NULL,
+  remove.isolates = TRUE
+)
 }
 \arguments{
 \item{X}{is interpreted as:

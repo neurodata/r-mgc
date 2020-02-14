@@ -4,8 +4,13 @@
 \alias{mgc.dist.validator}
 \title{Distance Matrix Validator}
 \usage{
-mgc.dist.validator(X, is.dist = FALSE, dist.xfm = mgc.distance,
-  dist.params = list(method = "euclidean"), dist.return = NULL)
+mgc.dist.validator(
+  X,
+  is.dist = FALSE,
+  dist.xfm = mgc.distance,
+  dist.params = list(method = "euclidean"),
+  dist.return = NULL
+)
 }
 \arguments{
 \item{X}{is interpreted as:

@@ -4,9 +4,15 @@
 \alias{discr.stat}
 \title{Discriminability Statistic}
 \usage{
-discr.stat(X, Y, is.dist = FALSE, dist.xfm = mgc.distance,
-  dist.params = list(method = "euclidean"), dist.return = NULL,
-  remove.isolates = TRUE)
+discr.stat(
+  X,
+  Y,
+  is.dist = FALSE,
+  dist.xfm = mgc.distance,
+  dist.params = list(method = "euclidean"),
+  dist.return = NULL,
+  remove.isolates = TRUE
+)
 }
 \arguments{
 \item{X}{is interpreted as:

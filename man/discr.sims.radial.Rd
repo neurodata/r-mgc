@@ -4,8 +4,15 @@
 \alias{discr.sims.radial}
 \title{Discriminability Radial Simulation}
 \usage{
-discr.sims.radial(n, d, K, er.scale = 0.1, r = 1, class.equal = TRUE,
-  ind = FALSE)
+discr.sims.radial(
+  n,
+  d,
+  K,
+  er.scale = 0.1,
+  r = 1,
+  class.equal = TRUE,
+  ind = FALSE
+)
 }
 \arguments{
 \item{n}{the number of samples.}

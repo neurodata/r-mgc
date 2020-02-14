@@ -4,10 +4,18 @@
 \alias{discr.test.two_sample}
 \title{Discriminability Two Sample Permutation Test}
 \usage{
-discr.test.two_sample(X1, X2, Y, dist.xfm = mgc.distance,
-  dist.params = list(method = "euclidian"), dist.return = NULL,
-  remove.isolates = TRUE, nperm = 100, no_cores = 1,
-  alt = "greater")
+discr.test.two_sample(
+  X1,
+  X2,
+  Y,
+  dist.xfm = mgc.distance,
+  dist.params = list(method = "euclidian"),
+  dist.return = NULL,
+  remove.isolates = TRUE,
+  nperm = 100,
+  no_cores = 1,
+  alt = "greater"
+)
 }
 \arguments{
 \item{X1}{is interpreted as a \code{[n x d]} data matrix with \code{n} samples in \code{d} dimensions. Should NOT be a distance matrix.}

@@ -4,8 +4,15 @@
 \alias{discr.sims.fat_tails}
 \title{Discriminability Spread Simulation}
 \usage{
-discr.sims.fat_tails(n, d, K, signal.scale = 1, rotate = FALSE,
-  class.equal = TRUE, ind = FALSE)
+discr.sims.fat_tails(
+  n,
+  d,
+  K,
+  signal.scale = 1,
+  rotate = FALSE,
+  class.equal = TRUE,
+  ind = FALSE
+)
 }
 \arguments{
 \item{n}{the number of samples.}
