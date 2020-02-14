@@ -3,28 +3,15 @@ require(mgc)
 require(lolR)
 require(I2C2)
 require(ICC)
-require(igraph)
-require(fmriutils)
-require(reshape2)
-require(stringr)
-require(FNN)
-require(Metrics)
-require(randomForest)
-require(rARPACK)
 require(energy)
+require(tidyverse)
 
-
-
-stats <- list(discr.os, anova.os, icc.os, i2c2.os)
-names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")
-
-graph.xfms <- list(nofn, ptr, log.xfm)
-names(graph.xfms) <- c("N", "P", "L")
 
 genomics.dat <- readRDS('../data/real/genomics_data.rds')
 data <- list(CPM=genomics.dat$CPM, counts=genomics.dat$counts)
 Subject <- genomics.dat$covariates$donor
-Y <- genomics.dat$covariates$
+genom.covs <- genomics.dat$covariates[, grepl("characteristic", names(genomics.dat$covariates))]
+Sex <- rowSums(genom.covs == "Sex: Male")
 
 # one-way ICC
 icc.os <- function(X, y) {
@@ -73,7 +60,7 @@ ptr.xfm <- function(X, ...) {
 
 log.xfm <- function(X, ...) {
   log.col <- function(x) {
-    return(log2(x + min(x)/2))
+    return(log2(x + min(x[x != 0])/2))
   }
   return(apply(X, 2, log.col))
 }
@@ -107,7 +94,7 @@ zscore.xfm <- function(X, ...) {
   return(apply(X, 2, zsc.col))
 }
 
-stats <- list(Discr=discr.os, ANOVA=anova.os, PICC=icc.os, I2C2=i2c2.os)
+stats <- list(Discr=discr.os, PICC=icc.os, I2C2=i2c2.os)
 
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
@@ -115,29 +102,49 @@ xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=cent
 experiments <- do.call(rbind, lapply(names(data), function(dat) {
   X <- t(data[[dat]])
   do.call(rbind, lapply(names(xfms), function(xfm) {
-    X.xfm <- do.call(xfms[[xfm]], X)
+    X.xfm <- do.call(xfms[[xfm]], list(X))
     lapply(names(stats), function(stat) {
-      return(X=X.xfm, dat.name=dat, ID=Subject,
-             xfm.name=xfm, alg=algs[[stat]], alg.name=stat)
+      return(list(X=X.xfm, dat.name=dat, ID=Subject,
+             xfm.name=xfm, alg=stats[[stat]], alg.name=stat))
     })
   }))
 }))
 
-mclapply(experiments, function(experiment) {
-  X <- do.call(experiment$xfm, experiment$X)
-  stat <- do.call(experiment$alg, list(X, experiment$ID))
-  return(data.frame(Data=experiment$dat.name, xfm=experiment$xfm.name, Algorithm=experiment$alg.name,
-                    Statistic=stat))
-}, mc.cores=detectCores() - 1)
+result.stat <- do.call(rbind, mclapply(experiments, function(experiment) {
+  stat <- tryCatch({
+    do.call(experiment$alg, list(experiment$X, experiment$ID))
+  }, error=function(e) {
+    print(sprintf("Data=%s, XFM=%s, Alg=%s", experiment$dat.name, experiment$xfm.name, experiment$alg.name))
+    return(NULL)
+  })
+  if (!is.null(stat)) {
+    return(data.frame(Data=experiment$dat.name, xfm=experiment$xfm.name, Algorithm=experiment$alg.name,
+                      Statistic=stat))
+  } else {
+    return(NULL)
+  }
+}, mc.cores=detectCores() - 1))
 
 experiments <- do.call(rbind, lapply(names(data), function(dat) {
   X <- t(data[[dat]])
   lapply(names(xfms), function(xfm) {
-  X.xfm <- do.call(xfms[[xfm]], X)
-    return(X=X.xfm, dat.name=dat, Sex=Sex, xfm.name=xfm)
+    X.xfm <- do.call(xfms[[xfm]], list(X))
+    return(list(X=X.xfm, dat.name=dat, Sex=Sex, xfm.name=xfm))
   })
 }))
 
-mclapply(experiments, function(experiment) {
-  do.call(dcor, list(experiment$X, experiment$Sex))
-}, mc.cores=detectCores() - 1)
+result.dcor <- do.call(rbind, mclapply(experiments, function(experiment) {
+  stat=tryCatch({
+    do.call(dcor, list(experiment$X, experiment$Sex))
+  }, error=function(e) {
+    print(sprintf("Data=%s, XFM=%s", experiment$dat.name, experiment$xfm.name))
+    return(NULL)
+  })
+  if (!is.null(stat)) {
+    return(data.frame(Data=experiment$dat.name, xfm=experiment$xfm.name, Algorithm="DCor",
+                      Statistic=stat))
+  } else {
+    return(NULL)
+  }
+}, mc.cores=detectCores() - 1))
+
