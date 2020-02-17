@@ -94,7 +94,7 @@ zscore.xfm <- function(X, ...) {
   return(apply(X, 2, zsc.col))
 }
 
-stats <- list(Discr=discr.os, PICC=icc.os, I2C2=i2c2.os)
+stats <- list(Discr=discr.os)
 
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
@@ -110,11 +110,12 @@ experiments <- do.call(rbind, lapply(names(data), function(dat) {
   }))
 }))
 
-result.stat <- do.call(rbind, mclapply(experiments, function(experiment) {
+result.stat <- do.call(rbind, lapply(experiments, function(experiment) {
+  print(sprintf("Data=%s, XFM=%s, Alg=%s", experiment$dat.name, experiment$xfm.name, experiment$alg.name))
   stat <- tryCatch({
-    do.call(experiment$alg, list(experiment$X, experiment$ID))
+    withTimeout(do.call(experiment$alg, list(experiment$X, experiment$ID)), timeout=1200)
   }, error=function(e) {
-    print(sprintf("Data=%s, XFM=%s, Alg=%s", experiment$dat.name, experiment$xfm.name, experiment$alg.name))
+    print(e)
     return(NULL)
   })
   if (!is.null(stat)) {
@@ -123,7 +124,7 @@ result.stat <- do.call(rbind, mclapply(experiments, function(experiment) {
   } else {
     return(NULL)
   }
-}, mc.cores=detectCores() - 1))
+}))
 
 experiments <- do.call(rbind, lapply(names(data), function(dat) {
   X <- t(data[[dat]])
