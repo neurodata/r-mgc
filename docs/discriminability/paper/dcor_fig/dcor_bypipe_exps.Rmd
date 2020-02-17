@@ -12,8 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 require(ggplot2)
-require(dplyr)
 require(plyr)
+require(tie)
+require(robustbase)
+require(tidyverse)
 ```
 
 
@@ -32,13 +34,13 @@ merged.dat <- results$stat %>%
   dplyr::filter(Method == "mgc" & xfm == "N" & embed == "raw" & 
                   Dataset != "IPCAS6" & Algorithm != "ANOVA") %>%
   # make it ordered so we can force the plot format
-  mutate(Task=factor(Task, levels=c("Sex", "Age"), ordered=TRUE),
+  dplyr::mutate(Task=factor(Task, levels=c("Sex", "Age"), ordered=TRUE),
          Algorithm=factor(Algorithm, levels=c("Discr", "ICC", "I2C2"), ordered=TRUE)) %>%
   # add information about the letter for the subplot
-  mutate(Task=recode_factor(Task, "Sex"="(A) Sex (Classification)",
+  dplyr::mutate(Task=recode_factor(Task, "Sex"="(A) Sex (Classification)",
                             "Age"="(B) Age (Regression)"),
-         Algorithm=recode_factor(Algorithm, "Discr" = "(i) Discr", 
-                                 "ICC" = "(ii) PICC", "I2C2" = "(iii) I2C2"))
+                Algorithm=recode_factor(Algorithm, "Discr" = "(i) Discr", 
+                                        "ICC" = "(ii) PICC", "I2C2" = "(iii) I2C2"))
 ```
 
 # Regression of Effect Size onto Statistic of interest
@@ -47,45 +49,48 @@ Statistic on the graphs, vs. MGC/Dcorr for age (regression) and sex (classificat
 
 output figure should be 7 x 4.5 and then edited in illustrator
 
-```{r}
+```{r, fig.height=4, fig.width=8}
 # a function for regressing the effect size of interest onto the statistic of interest
 reg.ana <- function(stat.x, stat.y) {
-  reg.fit <- lm(stat.y ~ stat.x)  # basic LM
-  sum.fit <- summary(reg.fit)
-  # get the slope and intercepts
-  fit.sl <- reg.fit$coefficients["stat.x"]; fit.in <- reg.fit$coefficients["(Intercept)"]
-  # t-test for significance of the slope coefficient
-  pval.test <- pt(coef(sum.fit)[2,3], sum.fit$df[2], lower.tail=FALSE)
+  reg.fit <- lm(stat.y ~ stat.x); coef.fit <- coef(reg.fit)  # basic LM
+  # sandwich variance estimates
+  sandwich_se <- diag(vcovHC(reg.fit, type="HC"))^0.5
+  z_stat <- coef.fit/sandwich_se
+  # run a one-sided Z test
+  p_values <- pnorm(z_stat, lower.tail=FALSE)
   min.x=min(stat.x); max.x=max(stat.x)
-  return(list(slope=fit.sl, intercept=fit.in, p.value=pval.test, min.x=min.x, max.x=max.x))
+  return(list(slope=coef.fit["stat.x"], intercept=coef.fit["(Intercept)"],
+              p.value=p_values["stat.x"], min.x=min.x, max.x=max.x))
 }
 
 stat.vs.perf <- merged.dat %>%
-  group_by(xfm, Task, Algorithm) %>%
+  dplyr::group_by(xfm, Task, Algorithm) %>%
   # normalize by the max/min statistics across datasets for cross-statistic
   # comparisons; does not effect p-values as is a affine xfm
-  mutate(stat.x=(stat.x - min(stat.x))/(max(stat.x) - min(stat.x)),
+  dplyr::mutate(stat.x=(stat.x - min(stat.x))/(max(stat.x) - min(stat.x)),
          stat.y=(stat.y - min(stat.y))/(max(stat.y) - min(stat.y))) %>%
-  group_by(xfm, Task, Algorithm, Dataset, nsub) %>%
+  dplyr::group_by(xfm, Task, Algorithm, Dataset, nsub) %>%
   # regress effect size onto the statistic
   bow(tie(Slope, Intercept, p.value, min.x, max.x) := reg.ana(stat.x, stat.y))
 
 # analyze p-values per-algorithm/task
 test.results <- stat.vs.perf %>%
-  group_by(xfm, Task, Algorithm) %>%
+  dplyr::group_by(xfm, Task, Algorithm) %>%
   # compute Fisher-corrected p-value and the weighted mean slope (by subjects)
-  summarize(p.value=round(median(p.value), digits=3), Slope=weighted.mean(Slope, nsub)) %>%
-  mutate(Alg.Title=ifelse(p.value == 0, sprintf("Mean(Slope)=%.3f, p-value<%.3f", Slope, p.value + .001), 
+  dplyr::summarize(p.value=round(median(p.value), digits=3), Slope=weighted.mean(Slope, nsub),
+                   Intercept=weighted.mean(Intercept, nsub)) %>%
+  dplyr::mutate(Alg.Title=ifelse(p.value == 0, sprintf("Mean(Slope)=%.3f, p-value<%.3f", Slope, p.value + .001), 
                           sprintf("Mean(Slope)=%.3f, p-value=%.3f", Slope, p.value)))
 
 stat.vs.perf %>%
-  gather("Condition", "xval", min.x, max.x) %>%
-  mutate(y.pos=Slope*xval + Intercept) %>%
+  tidyr::gather("Condition", "xval", min.x, max.x) %>%
+  dplyr::mutate(y.pos=Slope*xval + Intercept) %>%
   # add the pvalues and slopes
-  left_join(test.results, by=c("xfm", "Algorithm", "Task")) %>%
+  dplyr::left_join(test.results, by=c("xfm", "Algorithm", "Task")) %>%
   # plot it
   ggplot(aes(x=xval, y=y.pos, color=Dataset, size=log(nsub), group=Dataset)) +
-    geom_line() +
+    geom_line(alpha=0.6) +
+    geom_abline(data=test.results, aes(slope=Slope, intercept=Intercept), color="black", size=1.5) +
     facet_grid(Task ~ Algorithm) +
     theme_bw() +
     xlab("Reference Statistic") +
@@ -95,7 +100,8 @@ stat.vs.perf %>%
     scale_x_continuous(limits=c(0, 1), expand = c(0, 0)) +
     guides(color=FALSE) +
     scale_size(range=c(0.5, 3)) +
-    guides(size=FALSE, color=FALSE)
+    guides(size=FALSE, color=FALSE) +
+    ggtitle("(I) Neuroimaging")
 
 print(test.results)
 ```
