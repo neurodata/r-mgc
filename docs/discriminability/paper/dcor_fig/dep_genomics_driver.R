@@ -5,13 +5,34 @@ require(I2C2)
 require(ICC)
 require(energy)
 require(tidyverse)
+require(mltools)
+require(data.table)
 
 
 genomics.dat <- readRDS('../data/real/genomics_data.rds')
 data <- list(CPM=genomics.dat$CPM, counts=genomics.dat$counts)
 Subject <- genomics.dat$covariates$donor
 genom.covs <- genomics.dat$covariates[, grepl("characteristic", names(genomics.dat$covariates))]
-Sex <- rowSums(genom.covs == "Sex: Male")
+Covariates <- list(Sex=rowSums(genom.covs == "Sex: Male"),
+                   Age=sapply(1:nrow(genom.covs), function(i) {
+                     j <- as.numeric(which(sapply(genom.covs[i,], function(x) {
+                       grepl('age: ', x) & !(grepl('passage', x))
+                     })))
+                     as.numeric(str_replace(genom.covs[i,j], 'age: ', ''))
+                   }),
+                   BMI=sapply(1:nrow(genom.covs), function(i) {
+                     j <- as.numeric(which(sapply(genom.covs[i,], function(x) grepl('bmi: ', as.character(x)))))
+                     as.numeric(str_replace(as.character(genom.covs[i,j]), 'bmi: ', ''))
+                   }),
+                   Insulin.sens=sapply(1:nrow(genom.covs), function(i) {
+                     j <- as.numeric(which(sapply(genom.covs[i,], function(x) grepl('state: ', as.character(x)))))
+                     as.numeric(as.character(str_replace(
+                       as.character(genom.covs[i,j]), 'state: ', '')) == "Insulin sensitive")
+                   }),
+                   Race=as.matrix(one_hot(data.table(Race=factor(sapply(1:nrow(genom.covs), function(i) {
+                     j <- as.numeric(which(sapply(genom.covs[i,], function(x) grepl('race: ', as.character(x)))))
+                     as.character(str_replace(as.character(genom.covs[i,j]), 'race: ', ''))
+                   }))))))
 
 # one-way ICC
 icc.os <- function(X, y) {
@@ -130,7 +151,7 @@ experiments <- do.call(rbind, lapply(names(data), function(dat) {
   X <- t(data[[dat]])
   lapply(names(xfms), function(xfm) {
     X.xfm <- do.call(xfms[[xfm]], list(X))
-    return(list(X=X.xfm, dat.name=dat, Sex=Sex, xfm.name=xfm))
+    return(list(X=X.xfm, dat.name=dat, task.name=task, Covariate=, xfm.name=xfm))
   })
 }))
 
