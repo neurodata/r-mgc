@@ -31,8 +31,12 @@ i2c2.os <- function(X, Y) {
   return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
 }
 
-mmd.os <- function(X, Y) {
-  DX <- mgc.distance(X, method="euclidean")
+mmd.os <- function(X, Y, is.dist=FALSE) {
+  if (is.dist) {
+    DX <- X
+  } else {
+    DX <- mgc.distance(X, method="euclidean")
+  }
   DY <- mgc.distance(Y, method="ohe")
   return(HSIC(DX, DY))
 }
