@@ -9,6 +9,8 @@ require(I2C2)
 require(lolR)
 require(abind)
 require(emdbook)
+require(kernelPSI)
+
 
 # one-way ICC
 icc.os <- function(x, y) {
@@ -27,6 +29,12 @@ icc.os <- function(x, y) {
 # I2C2 wrapper
 i2c2.os <- function(X, Y) {
   return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
+}
+
+mmd.os <- function(X, Y) {
+  DX <- mgc.distance(X, method="euclidean")
+  DY <- mgc.distance(Y, method="ohe")
+  return(HSIC(DX, DY))
 }
 
 ## ------------------------------------------
