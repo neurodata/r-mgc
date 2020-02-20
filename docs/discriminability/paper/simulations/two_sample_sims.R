@@ -31,9 +31,10 @@ test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
   }
   Xr1 <- lol.project.pca(X1, r=1)$Xr; Xr2 <- lol.project.pca(X2, r=1)$Xr
   # get observed difference in statistic of interest
-  tr <- list(discr=mgc:::discr.mnr(mgc:::discr.rdf(D1, Y1)) - mgc:::discr.mnr(mgc:::discr.rdf(D2, Y1)),
-             icc=icc.os(Xr1, Y1) - icc.os(Xr2, Y1),
-             i2c2=i2c2.os(X1, Y1) - i2c2.os(X2, Y1))
+  tr <- list(SimilRR=mgc:::discr.mnr(mgc:::discr.rdf(D1, Y1)) - mgc:::discr.mnr(mgc:::discr.rdf(D2, Y1)),
+             PICC=icc.os(Xr1, Y1) - icc.os(Xr2, Y1),
+             I2C2=i2c2.os(X1, Y1) - i2c2.os(X2, Y1),
+             MMD=mmd.os(D1, Y1, is.dist=TRUE) - mmd.os(D2, Y1, is.dist=TRUE))
 
   null.stats <- mclapply(1:nperm, function(i) {
     # generate null dataset for X1
@@ -47,25 +48,30 @@ test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
     Xn2 <- lambda2*X2[idx2[,1],] + (1 - lambda2)*X2[idx2[,2],]  # convex combination of elements of X2
 
     Xnr1 <- lol.project.pca(Xn1, r=1)$Xr; Xnr2 <- lol.project.pca(Xn2, r=1)$Xr
+    DXn1 <- mgc.distance(Xn1); DXn2 <- mgc.distance(Xn2)
     # compute statistics of interest under the null
-    D1.null <- discr.stat(Xn1, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+    D1.null <- discr.stat(DXn1, Y1, is.dist=TRUE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                           remove.isolates=remove.isolates)$discr
-    D2.null <- discr.stat(Xn2, Y1, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
+    D2.null <- discr.stat(DXn2, Y1, is.dist=TRUE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                           remove.isolates=remove.isolates)$discr
+    mmd1.null <- mmd.os(DXn1, Y1, is.dist=TRUE)
+    mmd2.null <- mmd.os(DXn2, Y1, is.dist=TRUE)
 
     icc1.null <- icc.os(Xnr1, Y1)
     icc2.null <- icc.os(Xnr2, Y1)
     i2c21.null <- i2c2.os(Xn1, Y1)
     i2c22.null <- i2c2.os(Xn2, Y1)
-    return(list(discr=c(D1.null - D2.null, D2.null - D1.null),
-                icc=c(icc1.null - icc2.null, icc2.null - icc1.null),
-                i2c2=c(i2c21.null - i2c22.null, i2c22.null - i2c21.null)))
+    return(list(SimilRR=c(D1.null - D2.null, D2.null - D1.null),
+                PICC=c(icc1.null - icc2.null, icc2.null - icc1.null),
+                I2C2=c(i2c21.null - i2c22.null, i2c22.null - i2c21.null),
+                MMD=c(mmd1.null - mmd2.null, mmd2.null - mmd1.null)))
   }, mc.cores=no_cores)
 
   # compute null distribution of difference between discriminabilities
-  null.diff <- list(discr=sapply(null.stats, function(x) x$discr),
-                    icc=sapply(null.stats, function(x) x$icc),
-                    i2c2=sapply(null.stats, function(x) x$i2c2))
+  null.diff <- list(SimilRR=sapply(null.stats, function(x) x$SimilRR),
+                    PICC=sapply(null.stats, function(x) x$PICC),
+                    I2C2=sapply(null.stats, function(x) x$I2C2),
+                    MMD=sapply(null.stats, function(x) x$MMD))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
     data.frame(stat.name=stat.name, stat=tr[[stat.name]],
@@ -240,7 +246,7 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
 }
 
 # 8 pairs of annulus/discs
-sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
+sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
 
   mus <- cbind(c(0, 0))
 
@@ -260,19 +266,28 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   return(list(X1=X, X2=X2 + array(rnorm(n*d), dim=c(n, d))*sigma, Y=Y))
 }
 
+sim.xor2 <- function(n, d, sigma=0) {
+  mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
+  Y <- rep(1:ncol(mus), n/ncol(mus))
+  X1 <- mvrnorm(n=n, mu=c(0, 0), Sigma=.1*diag(d)) + t(mus[,Y])
+  X2 <- mvrnorm(n=n, mu=c(0, 0), Sigma=.1*diag(d)) + t(mus[,Y])
+  Y <- floor((Y-1)/2)
+  return(list(X1=X1, X2=X2 + array(rnorm(n*d), dim=c(n, d))*sigma, Y=Y))
+}
+
 ## --------------------------------------
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 300
+nrep <- 500
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.parallel_rot_cigars, sim.crossed_sig2,
-                    sim.multiclass_gaussian, sim.multiclass_ann_disc2)
-sims.sig.max <- c(10, 2, 2, 1, 1, 1)
-sims.sig.min <- c(0, 0, 0, 0, 0, 0)
+simulations <- list(sim.no_signal, sim.crossed_sig2,
+                    sim.multiclass_gaussian, sim.multiclass_ann_disc2, sim.xor2)
+sims.sig.max <- c(10, 1, 1, 1, .2)
+sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Rotated", "Cross", "Gaussian", "Annulus/Disc")
+  c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
