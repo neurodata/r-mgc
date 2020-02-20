@@ -21,20 +21,23 @@ test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
   }
   Xr <- lol.project.pca(X, 1)$Xr
   # compute references for the statistics
-  tr <- list(discr=discr.stat(D, Y, is.dist=TRUE)$discr,
-             icc=icc.os(Xr, Y),
-             i2c2=i2c2.os(X, Y))
+  tr <- list(SimilRR=discr.stat(D, Y, is.dist=TRUE)$discr,
+             PICC=icc.os(Xr, Y),
+             I2C2=i2c2.os(X, Y),
+             MMD=mmd.os(D, Y, is.dist=TRUE))
 
   nr <- mclapply(1:nperm, function(i) {
     perm.Y <- Y[sample(N)]
-    return(list(discr=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
-                icc=icc.os(Xr, perm.Y),
-                i2c2=i2c2.os(X, perm.Y)))
+    return(list(SimilRR=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
+                PICC=icc.os(Xr, perm.Y),
+                I2C2=i2c2.os(X, perm.Y),
+                MMD=mmd.os(D, perm.Y, is.dist=TRUE)))
   }, mc.cores=no_cores)
 
-  null.stats <- list(discr=lapply(nr, function(x) x$discr),
-                     icc=lapply(nr, function(x) x$icc),
-                     i2c2=lapply(nr, function(x) x$i2c2))
+  null.stats <- list(SimilRR=lapply(nr, function(x) x$SimilRR),
+                     PICC=lapply(nr, function(x) x$PICC),
+                     I2C2=lapply(nr, function(x) x$I2C2),
+                     MMD=lapply(nr, function(x) x$MMD))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
     data.frame(stat.name=stat.name, stat=tr[[stat.name]],
@@ -190,7 +193,7 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
 }
 
 # 8 pairs of annulus/discs
-sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
+sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
 
   mus <- cbind(c(0, 0))
 
@@ -206,6 +209,15 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   Y <- c(rep(1, ni[1]), rep(2, ni[2]))
   return(list(X=X, Y=Y))
 }
+
+sim.xor2 <- function(n, d, sigma=0) {
+
+  mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
+  Y <- rep(1:ncol(mus), n/ncol(mus))
+  X <- mvrnorm(n=n, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y])
+  Y <- floor((Y-1)/2)
+  return(list(X=X, Y=Y))
+}
 ## -------------------------
 # Driver
 ## -------------------------
@@ -213,12 +225,13 @@ n <- 128; d <- 2
 nrep <- 500
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
-                    sim.multiclass_gaussian, sim.parallel_rot_cigars, sim.multiclass_ann_disc2)
-sims.sig.max <- c(20, 20, 10, 20, 20, 10)
-sims.sig.min <- c(0, 0, 0, 0, 0, 0)
+simulations <- list(sim.no_signal, sim.crossed_sig2,
+                    sim.multiclass_gaussian, sim.multiclass_ann_disc2,
+                    sim.xor2)
+sims.sig.max <- c(20, 10, 20, 10, .5)
+sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Cross", "Gaussian", "Rotated", "Annulus/Disc")
+  c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
