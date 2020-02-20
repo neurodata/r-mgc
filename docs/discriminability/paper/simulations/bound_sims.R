@@ -34,8 +34,9 @@ sim.no_signal <- function(n=128, d=2, n.bayes=10000, sigma=1) {
   samp.bayes <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n.bayes, priors=c(0.5,0.5))
   samp.bayes$X=samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
-  return(list(discr=discr.stat(samp$X, samp$Y)$discr, icc=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              i2c2=i2c2.os(samp$X, samp$Y), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+  DX <- mgc.distance(samp$X)
+  return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
 sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
@@ -50,15 +51,16 @@ sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=
   samp.bayes <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n.bayes, priors=c(0.5, 0.5))
   samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
-  return(list(discr=discr.stat(samp$X, samp$Y)$discr, icc=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              i2c2=i2c2.os(samp$X, samp$Y), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+  DX <- mgc.distance(samp$X)
+  return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
 
 ## Linear Signal Difference
 # a simulation where classes are linearly distinguishable
 # 2 classes
-sim.linear_sig <- function(n=128, d=2, n.bayes=10000, n.pts=100,sigma=0) {
+sim.linear_sig <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
   S.class <- diag(d)
   Sigma <- diag(d)
   Sigma[1, 1] <- 2
@@ -72,8 +74,9 @@ sim.linear_sig <- function(n=128, d=2, n.bayes=10000, n.pts=100,sigma=0) {
   samp.bayes <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n.bayes, priors=c(pi.k, pi.k))
   samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
-  return(list(discr=discr.stat(samp$X, samp$Y)$discr, icc=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              i2c2=i2c2.os(samp$X, samp$Y), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+  DX <- mgc.distance(samp$X)
+  return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
 ## Crossed Signal Difference
@@ -134,8 +137,9 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
   Z.bayes <- do.call(c, lapply(1:(K/2), function(k) {
     return(rep(mus.z[k], ni.bayes[2*k - 1] + ni.bayes[2*k]))
   }))
-  return(list(discr=discr.stat(X, Y)$discr, icc=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              i2c2=i2c2.os(X, Y), bayes=compute_bayes(X.bayes, Z.bayes)))
+  DX <- mgc.distance(X)
+  return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Z.bayes)))
 }
 
 ## Crossed Signal Difference
@@ -172,8 +176,9 @@ sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
   X.bayes <- sim.bayes$X + array(rnorm(n.bayes*d)*sigma, dim=c(n.bayes, d))
   Y.bayes <- sim.bayes$Y
 
-  return(list(discr=discr.stat(X, Y)$discr, icc=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              i2c2=i2c2.os(X, Y), bayes=compute_bayes(X.bayes, Y.bayes)))
+  DX <- mgc.distance(X)
+  return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 ## Samples from Multiclass Gaussians
 # a simulation where there are multiple classes present, and a correlation structure
@@ -205,8 +210,9 @@ sim.multiclass_gaussian <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   })) + 1
   Z.bayes <- mus.z[samp.bayes$Y]
 
-  return(list(discr=discr.stat(samp$X, samp$Y)$discr, icc=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              i2c2=i2c2.os(samp$X, samp$Y), bayes=compute_bayes(samp.bayes$X, Z.bayes)))
+  DX <- mgc.distance(samp$X)
+  return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, Z.bayes)))
 }
 
 # 8 pairs of annulus/discs
@@ -252,8 +258,9 @@ sim.multiclass_ann_disc <- function(n, d, K=16, n.bayes=10000, sigma=0) {
     return(rep(mus.z[k], ni.bayes[2*k - 1] + ni.bayes[2*k]))
   }))
 
-  return(list(discr=discr.stat(X, Y)$discr, icc=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              i2c2=i2c2.os(X, Y), bayes=compute_bayes(X.bayes, Z.bayes)))
+  DX <- mgc.distance(X)
+  return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Z.bayes)))
 }
 
 
@@ -284,20 +291,37 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   X.bayes <- X.bayes + array(rnorm(n*d)*sigma, dim=c(n.bayes, d))
   Y.bayes <- c(rep(1, ni.bayes[1]), rep(2, ni.bayes[2]))
 
-  return(list(discr=discr.stat(X, Y)$discr, icc=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              i2c2=i2c2.os(X, Y), bayes=compute_bayes(X.bayes, Y.bayes)))
+  DX <- mgc.distance(X)
+  return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Y.bayes)))
+}
+
+
+sim.xor2 <- function(n, d, n.bayes=10000, sigma=0) {
+  mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
+  Y <- rep(1:ncol(mus), n/ncol(mus))
+  X <- mvrnorm(n=n, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y])
+  Y <- floor((Y-1)/2)
+
+  Y.bayes <- rep(1:ncol(mus), n.bayes/ncol(mus))
+  X.bayes <- mvrnorm(n=n.bayes, mu=c(0, 0), sigma=sigma*diag(d)) + t(mus[,Y.bayes])
+  Y.bayes <- floor((Y.bayes-1)/2)
+
+  DX <- mgc.distance(X)
+  return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 
 n <- 128; d <- 2
 nrep <- 500
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.parallel_rot_cigars, sim.crossed_sig2,
-                    sim.multiclass_gaussian, sim.multiclass_ann_disc2)
-sims.sig.max <- c(10, 2, 2, 2, 2, 1)
-sims.sig.min <- c(0, 0, 0, 0, 0, 0)
+simulations <- list(sim.no_signal, sim.crossed_sig2,
+                    sim.multiclass_gaussian, sim.multiclass_ann_disc2, sim.xor2)
+sims.sig.max <- c(10, 2, 2, 1, 0.5)
+sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Rotated", "Cross", "Gaussian", "Annulus/Disc")
+  c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
