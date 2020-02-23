@@ -301,11 +301,11 @@ sim.xor2 <- function(n, d, n.bayes=10000, sigma=0) {
   mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
   Y <- rep(1:ncol(mus), n/ncol(mus))
   X <- mvrnorm(n=n, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y])
-  Y <- floor((Y-1)/2)
+  Y <- floor((Y-1)/2) + 1
 
   Y.bayes <- rep(1:ncol(mus), n.bayes/ncol(mus))
-  X.bayes <- mvrnorm(n=n.bayes, mu=c(0, 0), sigma=sigma*diag(d)) + t(mus[,Y.bayes])
-  Y.bayes <- floor((Y.bayes-1)/2)
+  X.bayes <- mvrnorm(n=n.bayes, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y.bayes])
+  Y.bayes <- floor((Y.bayes-1)/2) + 1
 
   DX <- mgc.distance(X)
   return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
