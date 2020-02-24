@@ -228,7 +228,7 @@ n.sigma <- 15
 simulations <- list(sim.no_signal, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2,
                     sim.xor2)
-sims.sig.max <- c(20, 10, 20, 10, .5)
+sims.sig.max <- c(20, 5, 20, 5, 0.8)
 sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
