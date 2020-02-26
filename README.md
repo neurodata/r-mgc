@@ -1,4 +1,4 @@
-This R repo is a development branch, the actively developed repo is in Python at https://github.com/neurodata/mgcpy.
+This R repo is a development branch, the actively developed repo is in Python at https://github.com/neurodata/hyppo.
 
 # Multiscale Graph Correlation (MGC)
 
