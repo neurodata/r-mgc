@@ -4,48 +4,64 @@ nofn.xfm <- function(x, ...) {
 }
 
 ptr.xfm <- function(X, ...) {
-  ptr.col <- function(x) {
+  ptr.row <- function(x) {
     nz <- x[x != 0]
     r <- rank(nz)*2/(length(nz) + 1)
     x[x != 0] <- r
     x <- (x - min(x))/(max(x) - min(x))
     return(x)
   }
-  return(apply(X, 2, ptr.col))
+  return(apply(X, 1, ptr.row))
 }
 
 log.xfm <- function(X, ...) {
-  log.col <- function(x) {
-    return(log2(x + min(x[x != 0])/2))
+  log.row <- function(x) {
+    if (length(unique(x)) != 1) {
+      return(log2(x + min(x[x != 0])/2))
+    } else {
+      return(rep(0, length(x)))
+    }
   }
-  return(apply(X, 2, log.col))
+  return(apply(X, 1, log.row))
 }
 
 unit.xfm <- function(X, ...) {
-  unit.col <- function(x) {
-    return((x - min(x))/(max(x)-min(x)))
+  unit.row <- function(x) {
+    if (length(unique(x)) != 1) {
+      return((x - min(x))/(max(x)-min(x)))
+    } else {
+      return(rep(0, length(x)))
+    }
   }
-  return(apply(X, 2, unit.col))
+  return(apply(X, 1, unit.row))
 }
 
 center.xfm <- function(X, ...) {
-  center.col <- function(x) {
+  center.row <- function(x) {
     return(x - mean(x))
   }
-  return(apply(X, 2, center.col))
+  return(apply(X, 1, center.row))
 }
 
 unitvar.xfm <- function(X, ...) {
-  unitvar.col <- function(x) {
-    return(x/sd(x))
+  unitvar.row <- function(x) {
+    if (length(unique(x)) != 1) {
+      return(x/sd(x))
+    } else {
+      return(rep(0, length(x)))
+    }
   }
-  return(apply(X, 2, unitvar.col))
+  return(apply(X, 1, unitvar.row))
 }
 
 zscore.xfm <- function(X, ...) {
-  zsc.col <- function(x) {
-    x.m <- x - mean(x)
-    return((x.m)/sd(x.m))
+  zsc.row <- function(x) {
+    if (length(unique(x)) != 1) {
+      x.m <- x - mean(x)
+      return((x.m)/sd(x.m))
+    } else {
+      return(rep(0, length(x)))
+    }
   }
-  return(apply(X, 2, zsc.col))
+  return(apply(X, 1, zsc.row))
 }
