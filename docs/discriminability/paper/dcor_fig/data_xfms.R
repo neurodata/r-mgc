@@ -11,7 +11,7 @@ ptr.xfm <- function(X, ...) {
     x <- (x - min(x))/(max(x) - min(x))
     return(x)
   }
-  return(apply(X, 1, ptr.row))
+  return(t(apply(X, 1, ptr.row)))
 }
 
 log.xfm <- function(X, ...) {
@@ -22,7 +22,7 @@ log.xfm <- function(X, ...) {
       return(rep(0, length(x)))
     }
   }
-  return(apply(X, 1, log.row))
+  return(t(apply(X, 1, log.row)))
 }
 
 unit.xfm <- function(X, ...) {
@@ -33,14 +33,14 @@ unit.xfm <- function(X, ...) {
       return(rep(0, length(x)))
     }
   }
-  return(apply(X, 1, unit.row))
+  return(t(apply(X, 1, unit.row)))
 }
 
 center.xfm <- function(X, ...) {
   center.row <- function(x) {
     return(x - mean(x))
   }
-  return(apply(X, 1, center.row))
+  return(t(apply(X, 1, center.row)))
 }
 
 unitvar.xfm <- function(X, ...) {
@@ -51,7 +51,7 @@ unitvar.xfm <- function(X, ...) {
       return(rep(0, length(x)))
     }
   }
-  return(apply(X, 1, unitvar.row))
+  return(t(apply(X, 1, unitvar.row)))
 }
 
 zscore.xfm <- function(X, ...) {
@@ -63,5 +63,5 @@ zscore.xfm <- function(X, ...) {
       return(rep(0, length(x)))
     }
   }
-  return(apply(X, 1, zsc.row))
+  return(t(apply(X, 1, zsc.row)))
 }
