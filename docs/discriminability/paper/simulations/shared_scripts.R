@@ -10,6 +10,7 @@ require(lolR)
 require(abind)
 require(emdbook)
 require(gtools)
+require(kernelPSI)
 
 # one-way ICC
 icc.os <- function(X, Y, ...) {
@@ -81,6 +82,16 @@ disco.os <- function(X, Y, is.dist=TRUE, ...) {
     DX <- mgc.distance(X, method="euclidean")
   }
   as.numeric(disco(X, factor(Y), R=0, method="disco")$statistic)
+}
+
+mmd.os <- function(X, Y, is.dist=FALSE) {
+  if (is.dist) {
+    DX <- X
+  } else {
+    DX <- mgc.distance(X, method="euclidean")
+  }
+  DY <- mgc.distance(Y, method="ohe")
+  return(HSIC(DX, DY))
 }
 
 ## ------------------------------------------
