@@ -35,8 +35,10 @@ sim.no_signal <- function(n=128, d=2, n.bayes=10000, sigma=1) {
   samp.bayes$X=samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   DX <- mgc.distance(samp$X)
+  Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
 sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
@@ -52,8 +54,10 @@ sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=
   samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   DX <- mgc.distance(samp$X)
+  Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
 
@@ -75,8 +79,10 @@ sim.linear_sig <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
   samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   DX <- mgc.distance(samp$X)
+  Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
 ## Crossed Signal Difference
@@ -138,8 +144,10 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
     return(rep(mus.z[k], ni.bayes[2*k - 1] + ni.bayes[2*k]))
   }))
   DX <- mgc.distance(X)
+  Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Z.bayes)))
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              bayes=compute_bayes(X.bayes, Z.bayes)))
 }
 
 ## Crossed Signal Difference
@@ -177,8 +185,10 @@ sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
   Y.bayes <- sim.bayes$Y
 
   DX <- mgc.distance(X)
+  Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Y.bayes)))
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 ## Samples from Multiclass Gaussians
 # a simulation where there are multiple classes present, and a correlation structure
@@ -211,8 +221,10 @@ sim.multiclass_gaussian <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   Z.bayes <- mus.z[samp.bayes$Y]
 
   DX <- mgc.distance(samp$X)
+  Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(SimilRR=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
-              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), bayes=compute_bayes(samp.bayes$X, Z.bayes)))
+              I2C2=i2c2.os(samp$X, samp$Y), MMD=mmd.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              bayes=compute_bayes(samp.bayes$X, Z.bayes)))
 }
 
 # 8 pairs of annulus/discs
@@ -259,8 +271,10 @@ sim.multiclass_ann_disc <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   }))
 
   DX <- mgc.distance(X)
+  Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Z.bayes)))
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              bayes=compute_bayes(X.bayes, Z.bayes)))
 }
 
 
@@ -292,8 +306,10 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   Y.bayes <- c(rep(1, ni.bayes[1]), rep(2, ni.bayes[2]))
 
   DX <- mgc.distance(X)
+  Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Y.bayes)))
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 
 
@@ -308,8 +324,10 @@ sim.xor2 <- function(n, d, n.bayes=10000, sigma=0) {
   Y.bayes <- floor((Y.bayes-1)/2) + 1
 
   DX <- mgc.distance(X)
+  Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(SimilRR=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
-              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), bayes=compute_bayes(X.bayes, Y.bayes)))
+              I2C2=i2c2.os(X, Y), MMD=mmd.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 
 n <- 128; d <- 2
