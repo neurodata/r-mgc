@@ -5,7 +5,6 @@
 source('./shared_scripts.R')
 no_cores = detectCores() - 1
 
-
 ## One Sample Driver
 test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                             dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
@@ -236,8 +235,9 @@ sim.xor2 <- function(n, d, sigma=0) {
 # Driver
 ## -------------------------
 n <- 128; d <- 2
-nrep <- 500
-n.sigma <- 15
+nrep <- 300 # 500
+n.sigma <- 15 # 15
+nperm <- 100
 
 simulations <- list(sim.no_signal, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2,
@@ -268,10 +268,10 @@ list.results.os <- mclapply(1:length(experiments), function(i) {
         stop("Error")
       }
       simu
-    }, error=function(e) e)
+    }, error=function(e) print(e))
     att <- att + 1
   }
-  res <- test.one_sample(sim$X, sim$Y, sim$Z, nperm=100)
+  res <- test.one_sample(sim$X, sim$Y, sim$Z, nperm=nperm)
   res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
   res$sigma <- exper$sigma
   return(res)
