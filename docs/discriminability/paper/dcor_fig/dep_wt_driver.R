@@ -12,6 +12,7 @@ require(Metrics)
 require(randomForest)
 require(rARPACK)
 require(energy)
+
 # load/source MASE code
 mase.path <- './mase/R/'
 mase.files <- list.files(mase.path)
@@ -35,51 +36,8 @@ mgc.testt <- function(x, y, R=1000) {
 # dependence test methods
 dep.tests <- list(mgc=mgc.testt, dcor=dcor.test)
 
-
 # dependence test methods
 dep.tests <- list(mgc=mgc.testt, dcor=dcor.test)
-
-# one-way anova
-anova.os <- function(X, y) {
-  x <- lol.project.pca(X, r=1)$Xr
-  data <- data.frame(x=x, y=y)
-  fit <- anova(aov(x ~ y, data=data))
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  f = fit[["F value"]][1]
-  p = fit[["Pr(>F)"]][1]
-  return(f)
-}
-
-# one-way ICC
-icc.os <- function(X, y) {
-  x <- lol.project.pca(X, r=1)$Xr
-  data <- data.frame(x=x, y=y)
-  fit <- anova(aov(x ~ y, data=data))
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(y))
-  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
-  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-  var.a <- (MSa - MSw)/k
-  r <- var.a/(var.w + var.a)
-  return(r)
-}
-
-# one-sample MANOVA
-manova.os <- function(X, Y) {
-  fit <- manova(X ~ Y)
-  return(summary(fit)$stats["Y", "approx F"])
-}
-
-# I2C2 wrapper
-i2c2.os <- function(X, Y) {
-  return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
-}
-
-discr.os <- function(X, Y) {
-  return(discr.stat(X, Y)$discr)
-}
 
 cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
                              fmt='elist', verbose=FALSE, rtype='list', flatten=FALSE,
@@ -185,22 +143,6 @@ fmriu.list2array <- function(list_in, flatten=FALSE) {
   return(list(array=array_out, incl_ar=incl_ar, names=subnames))
 }
 
-nofn <- function(x, ...) {
-  return(x)
-}
-
-ptr <- function(x, ...) {
-  nz <- x[x != 0]
-  r <- rank(nz)*2/(length(nz) + 1)
-  x[x != 0] <- r
-  x <- (x - min(x))/(max(x) - min(x))
-  return(x)
-}
-
-log.xfm <- function(x, min.x) {
-  return(log(x + min.x/exp(2)))
-}
-
 reg_opts <- c("A", "F")
 names(reg_opts) <- c("ANT", "FSL")
 freq_opts <- c("F", "N")
@@ -256,8 +198,8 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
 }))
 
 
-stats <- list(discr.os, anova.os, icc.os, i2c2.os)#, manova.os)
-names(stats) <- c("Discr", "ANOVA", "ICC", "I2C2")#, "MANOVA")
+stats <- list(discr.os, icc.os, i2c2.os, disco.os, fpi.os)#, manova.os)
+names(stats) <- c("SimilRR", "PICC", "I2C2", "DISCO", "FPI")#, "MANOVA")
 
 graph.xfms <- list(nofn, ptr, log.xfm)
 names(graph.xfms) <- c("N", "P", "L")
@@ -300,7 +242,7 @@ dep.results <- mclapply(experiments, function(exp) {
                               Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
                               xfm=graph.xfm, nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                               nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)),
-                              stat=do.call(stats[[stat]], list(flat.gr$array, graphs$subjects))))
+                              stat=do.call(stats[[stat]], list(X=flat.gr$array, Y=graphs$subjects, Z=graphs$sessions, is.dist=FALSE))))
           }, error=function(e) {return(NULL)})
         }))
 
@@ -325,7 +267,7 @@ dep.results <- mclapply(experiments, function(exp) {
         }
 
         graphs.embedded <- list(
-          raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x))))#,
+          raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x)))),
           mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
         )
         graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
