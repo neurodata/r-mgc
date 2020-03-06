@@ -26,6 +26,7 @@ pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
 #pheno.path <- '/data/all_mr/phenotypic/'
 opath <- '../data/real/'
 source('./data_xfms.R')
+source('../simulations/shared_scripts.R')
 no_cores <- parallel::detectCores() - 10
 
 mgc.testt <- function(x, y, R=1000) {
@@ -34,10 +35,7 @@ mgc.testt <- function(x, y, R=1000) {
 }
 
 # dependence test methods
-dep.tests <- list(mgc=mgc.testt, dcor=dcor.test)
-
-# dependence test methods
-dep.tests <- list(mgc=mgc.testt, dcor=dcor.test)
+dep.tests <- list(dcor=dcor.test)
 
 cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
                              fmt='elist', verbose=FALSE, rtype='list', flatten=FALSE,
@@ -231,6 +229,7 @@ dep.results <- mclapply(experiments, function(exp) {
 
       # flatten for statistics
       result <- lapply(names(graph.xfms), function(graph.xfm) {
+        print(graph.xfm)
         test <- graphs
         min.gr <- min(sapply(test$graphs, function(gr) min(gr[gr != 0])))
         test$graphs <- lapply(test$graphs, function(gr) do.call(graph.xfms[[graph.xfm]], list(gr)))
@@ -242,7 +241,8 @@ dep.results <- mclapply(experiments, function(exp) {
                               Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
                               xfm=graph.xfm, nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                               nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)),
-                              stat=do.call(stats[[stat]], list(X=flat.gr$array, Y=graphs$subjects, Z=graphs$sessions, is.dist=FALSE))))
+                              stat=do.call(stats[[stat]], list(X=flat.gr$array, Y=graphs$subjects,
+                                                               Z=graphs$sessions, is.dist=FALSE))))
           }, error=function(e) {return(NULL)})
         }))
 
@@ -267,10 +267,10 @@ dep.results <- mclapply(experiments, function(exp) {
         }
 
         graphs.embedded <- list(
-          raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x)))),
-          mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
+          Raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x))))#,
+          # mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
         )
-        graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
+        #graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
 
         dcor.res <- do.call(rbind, lapply(names(graphs.embedded), function(embed) {
           embed.graphs <- graphs.embedded[[embed]]
@@ -281,21 +281,21 @@ dep.results <- mclapply(experiments, function(exp) {
               valid.idx.age <- (!is.na(Y.age) & !is.null(Y.age) & !is.nan(Y.age))
               Y.sex <- as.numeric(pheno.scans$SEX)
               valid.idx.sex <- (!is.na(Y.sex) & !is.null(Y.sex) & !is.nan(Y.sex))
-              dep.age <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.age,], y=Y.age[valid.idx.age], R=500))
-              dep.sex <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.sex,], y=Y.sex[valid.idx.sex], R=500))
+              dep.age <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.age,], y=Y.age[valid.idx.age], R=1))
+              dep.sex <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.sex,], y=Y.sex[valid.idx.sex], R=1))
               return(rbind(data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
                                       Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
                                       nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                                       nroi=sqrt(dim(flat.gr$array)[2]), task="Age", embed=embed,
-                                      stat=dep.age$statistic, pval=dep.age$p.value, method=dep),
+                                      stat=dep.age$statistic, method=dep),# , pval=dep.age$p.value),
                            data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
                                       Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
                                       nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                                       nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", embed=embed,
-                                      stat=dep.sex$statistic, pval=dep.sex$p.value, method=dep)))
-            }, error=function(e) {return(e)})
+                                      stat=dep.sex$statistic, method=dep)))#, pval=dep.sex$p.value)))
+            }, error=function(e) {print(e)})
           })))
         }))
 
@@ -309,7 +309,10 @@ dep.results <- mclapply(experiments, function(exp) {
       saveRDS(result, o.path)
       return(result)
     #}
-  }, error=function(e) {return(NULL)})
+  }, error=function(e) {
+    print(sprintf("Dataset: %s, Reg=%s, FF=%s, Scr=%s, GSR=%s, Parc=%s, ERR=%s", exp$Dataset, Reg=exp$Reg, FF=exp$FF,
+                  Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, e))
+  })
 }, mc.cores=no_cores)
 
 robj <- list(statistics=do.call(rbind, lapply(dep.results, function(res) res$statistics)),
