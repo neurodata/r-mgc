@@ -4,7 +4,6 @@ require(lolR)
 require(I2C2)
 require(ICC)
 require(igraph)
-require(fmriutils)
 require(reshape2)
 require(stringr)
 require(FNN)
@@ -25,7 +24,8 @@ pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
 #pheno.path <- '/cis/project/ndmg/eric/discriminability/phenotypic/'
 #fmri.path <- '/data/cpac_3-9-2/'
 #pheno.path <- '/data/all_mr/phenotypic/'
-opath <- './data/real/'
+opath <- '../data/real/'
+source('./data_xfms.R')
 no_cores <- parallel::detectCores() - 10
 
 mgc.testt <- function(x, y, R=1000) {
@@ -154,7 +154,7 @@ names(gsr_opts) <- c("gsr", "ngs")
 atlas_opts <- c("A", "C", "D", "H")
 names(atlas_opts) <- c("aal", "cc2", "des", "hox")
 
-graph.xfm <- list(nofn, ptr, log.xfm)
+graph.xfm <- list(nofn.xfm, ptr.xfm, log.xfm)
 names(graph.xfm) <- c("N", "P", "L")
 
 dsets <- list.dirs(path=fmri.path, recursive=FALSE)
@@ -201,7 +201,7 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
 stats <- list(discr.os, icc.os, i2c2.os, disco.os, fpi.os)#, manova.os)
 names(stats) <- c("SimilRR", "PICC", "I2C2", "DISCO", "FPI")#, "MANOVA")
 
-graph.xfms <- list(nofn, ptr, log.xfm)
+graph.xfms <- list(nofn.xfm, ptr.xfm, log.xfm)
 names(graph.xfms) <- c("N", "P", "L")
 
 dep.res.path <- file.path(opath, 'dep_results_wt')
@@ -220,9 +220,9 @@ dep.results <- mclapply(experiments, function(exp) {
   o.path <- file.path(dep.res.path, paste0("dep_dset-", exp$Dataset, "_",
                                           paste0(exp$Reg, exp$FF, exp$Scr, exp$GSR, exp$Parcellation), ".rds"))
   tryCatch({
-    if (file.exists(o.path)) {
-     return(readRDS(o.path))
-    } else if (file.exists(exp$pheno.path)) {
+    #if (file.exists(o.path)) {
+    # return(readRDS(o.path))
+    #} else if (file.exists(exp$pheno.path)) {
       graphs <- cpac.open_graphs(exp$dat.path, dataset_id=exp$Dataset,
                                  atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten=FALSE)
 
@@ -233,7 +233,7 @@ dep.results <- mclapply(experiments, function(exp) {
       result <- lapply(names(graph.xfms), function(graph.xfm) {
         test <- graphs
         min.gr <- min(sapply(test$graphs, function(gr) min(gr[gr != 0])))
-        test$graphs <- lapply(test$graphs, function(gr) do.call(graph.xfms[[graph.xfm]], list(gr, min.gr)))
+        test$graphs <- lapply(test$graphs, function(gr) do.call(graph.xfms[[graph.xfm]], list(gr)))
         flat.gr <- fmriu.list2array(test$graphs, flatten=TRUE)
 
         stat.res <- do.call(rbind, lapply(names(stats), function(stat) {
@@ -281,8 +281,8 @@ dep.results <- mclapply(experiments, function(exp) {
               valid.idx.age <- (!is.na(Y.age) & !is.null(Y.age) & !is.nan(Y.age))
               Y.sex <- as.numeric(pheno.scans$SEX)
               valid.idx.sex <- (!is.na(Y.sex) & !is.null(Y.sex) & !is.nan(Y.sex))
-              dep.age <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.age,], y=Y.age[valid.idx.age], R=1000))
-              dep.sex <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.sex,], y=Y.sex[valid.idx.sex], R=1000))
+              dep.age <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.age,], y=Y.age[valid.idx.age], R=500))
+              dep.sex <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.sex,], y=Y.sex[valid.idx.sex], R=500))
               return(rbind(data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
                                       Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
@@ -308,7 +308,7 @@ dep.results <- mclapply(experiments, function(exp) {
 
       saveRDS(result, o.path)
       return(result)
-    }
+    #}
   }, error=function(e) {return(NULL)})
 }, mc.cores=no_cores)
 

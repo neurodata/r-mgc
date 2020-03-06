@@ -9,13 +9,13 @@ require(I2C2)
 require(lolR)
 require(abind)
 require(emdbook)
-
+require(gtools)
 
 # one-way ICC
 icc.os <- function(X, Y, ...) {
   if (length(dim(X)) == 2) {
     if (dim(X)[2] > 1) {
-      X=lol.project.pca(x, 1)$Xr
+      X=lol.project.pca(X, 1)$Xr
     }
   }
   data <- data.frame(X=X, Y=Y, ...)

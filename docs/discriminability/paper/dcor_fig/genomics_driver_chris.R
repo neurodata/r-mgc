@@ -99,18 +99,18 @@ if (!file.exists(file.path('/genomics', 'chris_parsed.rds'))) {
         individuals.dat <- do.call(c, lapply(agg.dat, function(dat) dat$Individual))
         aggregation=do.call(c, lapply(agg.dat, function(dat) dat$Aggregation))
         return(list(Data=genomics.dat, Sessions=session.dat,
-                    Individuals=individuals.dat, Status=rep(status, length(individuals.dat)),
+                    Individuals=individuals.dat, Cancer=rep(status, length(individuals.dat)),
                     Aggregation=aggregation))
         })
     })
     genomics.dat <- do.call(rbind, lapply(condition.dat, function(dat) dat$Data))
     session.dat <- do.call(c, lapply(condition.dat, function(dat) dat$Sessions))
     individual.dat <- do.call(c, lapply(condition.dat, function(dat) dat$Individual))
-    status.dat <- do.call(c, lapply(condition.dat, function(dat) dat$Status))
+    status.dat <- do.call(c, lapply(condition.dat, function(dat) dat$Cancer))
     aggregation.dat <- do.call(c, lapply(condition.dat, function(dat) dat$Aggregation))
     # status is a 1 if have cancer, a 0 otherwise
     return(list(Data=genomics.dat, Sessions=session.dat, Individuals=individual.dat,
-                Status=as.numeric(status.dat == "cancer"), Resolution = resolution,
+                Cancer=as.numeric(status.dat == "cancer"), Resolution = resolution,
                 Aggregation=aggregation.dat))
   })
 } else {
@@ -159,7 +159,7 @@ if (!file.exists('/genomics/genomics_prep.rds')) {
       Xr <- as.matrix(flashx.pca(X.xfm, 1)$Xr)
       rm(X.fm)
       gc()
-      return(list(X=X.xfm, DX=DX, Xr=Xr, Individuals=dat.res$Individuals, Status=dat.res$Status,
+      return(list(X=X.xfm, DX=DX, Xr=Xr, Individuals=dat.res$Individuals, Cancer=dat.res$Cancer,
                   xfm.name=xfm, Resolution=dat.res$Resolution))
     })
     gc()
@@ -196,10 +196,11 @@ results.reference <- do.call(rbind, mclapply(experiments.base, function(experime
 
 saveRDS(results.reference, '../data/real/genomics_chris_ref.rds')
 
+lapply()
 results.effect <- do.call(rbind, mclapply(experiments.base, function(experiment) {
   print(sprintf("Resolution=%s, XFM=%s", experiment$Resolution, experiment$xfm.name))
   stat=tryCatch({
-    do.call(dcor, list(as.dist(experiment$DX), as.dist(mgc.distance(experiment$Status, method="ohe"))))
+    do.call(dcor, list(as.dist(experiment$DX), as.dist(mgc.distance(experiment$Sex, method="ohe"))))
   }, error=function(e) {
     print(sprintf("Data=%s, XFM=%s, ERROR=%s", experiment$dat.name, experiment$xfm.name, e))
     return(NULL)
@@ -212,4 +213,4 @@ results.effect <- do.call(rbind, mclapply(experiments.base, function(experiment)
   }
 }, mc.cores=detectCores() - 1))
 
-saveRDS(results.effect, '../data/real/genomics_chris_eff.rds')
+saveRDS(results.effect, '../data/real/genomics_chris_sex.rds')
