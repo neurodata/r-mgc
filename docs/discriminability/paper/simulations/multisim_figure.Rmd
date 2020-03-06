@@ -123,19 +123,33 @@ sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
   Y <- c(rep(1, ni[1]), rep(2, ni[2]))
   return(list(X=X, Y=Y, Z=Y))
 }
+
+sim.xor2 <- function(n, d, sigma=0) {
+  mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
+  Y <- rep(1:ncol(mus), n/ncol(mus))
+  X <- mvrnorm(n=n, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y])
+  ordx.Y <- sort(Y, index.return=TRUE, decreasing=FALSE)$ix
+  Y <- floor((Y-1)/2)
+  return(list(X=X[ordx.Y,], Y=Y[ordx.Y] + 1, Z=Y[ordx.Y] + 1))
+}
 ```
 
 ```{r, fig.width=10, fig.height=2}
 n <- 256; d <- 2
 
-simulations <- list(sim.multiclass_gaussian, sim.crossed_sig2, sim.multiclass_ann_disc2,  sim.no_signal)
-names(simulations) <- c("(i) Gaussian", "(ii) Cross", "(iii) Annulus/Disc", "(iv) No Signal")
+simulations <- list(sim.multiclass_gaussian, sim.crossed_sig2, sim.multiclass_ann_disc2, sim.xor2, sim.no_signal)
+names(simulations) <- c("(i) Gaussian", "(ii) Cross", "(iii) Ball/Circle", "(iv) XOR", "(v) No Signal")
 
 colors <- c('#e6194b','#4363d8', '#ffe119', '#3cb44b', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff')
 
 sim.dat <- lapply(names(simulations), function(sim.name) {
+  print(sim.name)
   set.seed(1234)
-  sim <- do.call(simulations[[sim.name]], list(n=n, d=d, sigma=0))
+  if (sim.name == "(iv) XOR") {
+    sim <- do.call(simulations[[sim.name]], list(n=n, d=d, sigma=0.05))
+  } else {
+    sim <- do.call(simulations[[sim.name]], list(n=n, d=d, sigma=0))
+  }
   if (sim.name == "(ii) Cross") {
     # sort cross distance matrix within-spoke
     for (class in unique(sim$Y)) {
@@ -151,7 +165,7 @@ sim.dat <- lapply(names(simulations), function(sim.name) {
     }
     samp.order <- c(samp.y1, samp.y2)
     sim$X <- sim$X[samp.order,]; sim$Y <- sim$Y[samp.order]
-  } else if (sim.name == "(iii) Annulus/Disc") {
+  } else if (sim.name == "(iii) Ball/Circle") {
     # sort Annulus/Disc by spherical angle
     for (class in unique(sim$Y)) {
       if (class == 1) {
@@ -231,33 +245,31 @@ sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
       dplyr::mutate(test.name="(C) Comparison to Error") %>%
       dplyr::rename(stat.name=algorithm, outcome=value) %>%
       dplyr::mutate(outcome=round(outcome, digits=2)) %>%
-      dplyr::mutate(outcome=ifelse(stat.name=="bayes", 1-outcome, outcome))
+      dplyr::mutate(outcome=ifelse(stat.name=="bayes", 1-outcome, outcome),
+                    sim.name=recode_factor(sim.name, "Annulus/Disc"="Ball/Circle"))
   ) %>%
   dplyr::group_by(n, d, stat.name, sim.name, sigma, test.name) %>%
   dplyr::summarise(statistic=mean(outcome)) %>%
-  dplyr::filter(sim.name %in% c("No Signal", "Cross", "Gaussian", "Annulus/Disc")) %>%
+  dplyr::filter(sim.name %in% c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")) %>%
   dplyr::group_by(n, d, stat.name, sim.name, test.name) %>%
   dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma))) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(
-        stat.name=recode_factor(stat.name, "discr" = "Discr", "icc" = "PICC",
-                                "i2c2" = "I2C2", "bayes"="1-Bayes"),
-        sim.name=recode_factor(sim.name, "No Signal" = "(iv) No Signal",
+        stat.name=recode_factor(stat.name, "discr"="SimilRR", "icc"="PICC", "i2c2"="I2C2", "bayes"="1-Bayes"),
+        sim.name=recode_factor(sim.name, "No Signal" = "(v) No Signal",
                              "Gaussian" = "(i) Gaussian",
-                             "Cross" = "(ii) Cross", "Annulus/Disc"="(iii) Annulus/Disc")
-#                             "Linear" = "(i) Linear",
-#                             "Annulus/Disc" = "(iv) Annulus/Disc",
-#                             "Rotated"="(vi) Rotated")
+                             "Cross" = "(ii) Cross", "Ball/Circle"="(iii) Ball/Circle",
+                             "XOR"="(iv) XOR")
       ) %>%
   dplyr::mutate(test.name=factor(test.name),
          sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
-         stat.name=factor(stat.name, levels=c("I2C2", "PICC", "Discr", "1-Bayes"),
+         stat.name=factor(stat.name, levels=c("SimilRR", "PICC", "I2C2", "MMD", "1-Bayes"),
                           ordered=TRUE))
 
 
-alg.colors <- c("#c70000", "#ffa500", "#6699cc", "#3CB371")
-line.types <- c(1, 1, 1, 1)
-names(alg.colors) <- names(line.types) <- c("Discr", "PICC", "I2C2", "1-Bayes")
+alg.colors <- c("#c70000", "#ffa500", "#6699cc", "#740ac4", "#3CB371")
+line.types <- c(1, 1, 1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("SimilRR", "PICC", "I2C2", "MMD", "1-Bayes")
 ```
 
 ### Sample Test Plot

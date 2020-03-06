@@ -7,7 +7,7 @@ no_cores = detectCores() - 1
 
 
 ## One Sample Driver
-test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
+test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
                             dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
 
   validated <- validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
@@ -21,20 +21,28 @@ test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.par
   }
   Xr <- lol.project.pca(X, 1)$Xr
   # compute references for the statistics
-  tr <- list(discr=discr.stat(D, Y, is.dist=TRUE)$discr,
-             icc=icc.os(Xr, Y),
-             i2c2=i2c2.os(X, Y))
+  tr <- list(SimilRR=discr.stat(D, Y, is.dist=TRUE)$discr,
+             PICC=icc.os(Xr, Y),
+             I2C2=i2c2.os(X, Y),
+             MMD=mmd.os(D, Y, is.dist=TRUE),
+             FPI=fpi.os(X, Y, Z))
 
   nr <- mclapply(1:nperm, function(i) {
-    perm.Y <- Y[sample(N)]
-    return(list(discr=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
-                icc=icc.os(Xr, perm.Y),
-                i2c2=i2c2.os(X, perm.Y)))
+    perm.idx <- sample(N)
+    perm.Y <- Y[perm.idx]
+    perm.Z <- Z[perm.idx]
+    return(list(SimilRR=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
+                PICC=icc.os(Xr, perm.Y),
+                I2C2=i2c2.os(X, perm.Y),
+                MMD=mmd.os(D, perm.Y, is.dist=TRUE),
+                FPI=fpi.os(X, perm.Y, perm.Z)))
   }, mc.cores=no_cores)
 
-  null.stats <- list(discr=lapply(nr, function(x) x$discr),
-                     icc=lapply(nr, function(x) x$icc),
-                     i2c2=lapply(nr, function(x) x$i2c2))
+  null.stats <- list(SimilRR=lapply(nr, function(x) x$SimilRR),
+                     PICC=lapply(nr, function(x) x$PICC),
+                     I2C2=lapply(nr, function(x) x$I2C2),
+                     MMD=lapply(nr, function(x) x$MMD),
+                     FPI=lapply(nr, function(x) x$FPI))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
     data.frame(stat.name=stat.name, stat=tr[[stat.name]],
@@ -49,7 +57,8 @@ sim.no_signal <- function(n=128, d=2, sigma=1) {
   # classes are from same distribution, so signal should be detected w.p. alpha
   samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
   samp$X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
-  return(list(X=samp$X, Y=samp$Y))
+  return(list(X=samp$X, Y=samp$Y,
+              Z=do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))))
 }
 
 sim.parallel_rot_cigars <- function(n=128, d=2, sigma=0) {
@@ -60,7 +69,8 @@ sim.parallel_rot_cigars <- function(n=128, d=2, sigma=0) {
   mus <- cbind(c(0, 2.5), c(0, 0))
   samp <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(0.5, 0.5))
 
-  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y))
+  return(list(X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp$Y,
+              Z=do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))))
 }
 
 ## Linear Signal Difference
@@ -76,7 +86,8 @@ sim.linear_sig <- function(n, d, sigma=0) {
   pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
   samp <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(pi.k, pi.k))
   samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
-  return(list(X=samp$X, Y=samp$Y))
+  return(list(X=samp$X, Y=samp$Y,
+              Z=do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))))
 }
 
 sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
@@ -103,7 +114,8 @@ sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
 
   X <- sim$X + array(rnorm(n*d)*sigma, dim=c(n, d))
   Y <- sim$Y
-  return(list(X=X, Y=Y))
+  return(list(X=X, Y=Y,
+              Z=do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))))
 }
 ## Crossed Signal Difference
 # a simulation where classes are crossed but distinguishable
@@ -138,7 +150,8 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
   Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
-  return(list(X=X, Y=Y))
+  return(list(X=X, Y=Y,
+              Z=do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))))
 }
 
 ## Samples from Multiclass Gaussians
@@ -161,7 +174,8 @@ sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
   # sample individuals w.p. 1/K
   samp <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n, priors=rep(1/K, K))
   samp$X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d))
-  return(list(X=samp$X, Y=samp$Y))
+  return(list(X=samp$X, Y=samp$Y,
+              Z=do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))))
 }
 
 # 8 pairs of annulus/discs
@@ -186,11 +200,12 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
   Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
-  return(list(X=X, Y=Y))
+  return(list(X=X, Y=Y,
+              Z=do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))))
 }
 
 # 8 pairs of annulus/discs
-sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
+sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
 
   mus <- cbind(c(0, 0))
 
@@ -204,7 +219,18 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
   Y <- c(rep(1, ni[1]), rep(2, ni[2]))
-  return(list(X=X, Y=Y))
+  return(list(X=X, Y=Y,
+              Z=do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))))
+}
+
+sim.xor2 <- function(n, d, sigma=0) {
+
+  mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
+  Y <- rep(1:ncol(mus), n/ncol(mus))
+  X <- mvrnorm(n=n, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y])
+  Y <- floor((Y-1)/2)
+  return(list(X=X, Y=Y,
+              Z=do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))))
 }
 ## -------------------------
 # Driver
@@ -213,12 +239,13 @@ n <- 128; d <- 2
 nrep <- 500
 n.sigma <- 15
 
-simulations <- list(sim.no_signal, sim.linear_sig, sim.crossed_sig2,
-                    sim.multiclass_gaussian, sim.parallel_rot_cigars, sim.multiclass_ann_disc2)
-sims.sig.max <- c(20, 20, 10, 20, 20, 10)
-sims.sig.min <- c(0, 0, 0, 0, 0, 0)
+simulations <- list(sim.no_signal, sim.crossed_sig2,
+                    sim.multiclass_gaussian, sim.multiclass_ann_disc2,
+                    sim.xor2)
+sims.sig.max <- c(20, 5, 20, 5, 0.8)
+sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Linear", "Cross", "Gaussian", "Rotated", "Annulus/Disc")
+  c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
@@ -244,7 +271,7 @@ list.results.os <- mclapply(1:length(experiments), function(i) {
     }, error=function(e) e)
     att <- att + 1
   }
-  res <- test.one_sample(sim$X, sim$Y, nperm=100)
+  res <- test.one_sample(sim$X, sim$Y, sim$Z, nperm=100)
   res$sim.name <- exper$sim.name; res$n <- n; res$d <- d; res$i <- exper$i
   res$sigma <- exper$sigma
   return(res)
