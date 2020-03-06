@@ -47,7 +47,7 @@ fpi.os <- function(X, Y, Z, ...) {
   RX <- apply(DX, 1, function(x) rank(-x, ties.method="first"))
   individuals <- unique(Y)
   sessions <- unique(Z)
-  fpis <- sapply(1:length(individuals), function(i) {
+  fpis <- unlist(sapply(1:length(individuals), function(i) {
     individual <- individuals[i]
     # find the indices associated with current individual
     idx.i <- which(Y == individual)
@@ -67,7 +67,7 @@ fpi.os <- function(X, Y, Z, ...) {
       # current subject; if so, return 1, else 0
       ifelse(individual %in% Y[ses.idx][min.idx], return(1), return(0))
     })
-  })
+  }))
   return(mean(fpis))
 }
 
