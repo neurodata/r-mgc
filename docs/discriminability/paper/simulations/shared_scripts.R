@@ -10,6 +10,7 @@ require(lolR)
 require(abind)
 require(emdbook)
 require(gtools)
+require(kernelPSI)
 
 # one-way ICC
 icc.os <- function(X, Y, ...) {
@@ -46,7 +47,7 @@ fpi.os <- function(X, Y, Z, ...) {
   RX <- apply(DX, 1, function(x) rank(-x, ties.method="first"))
   individuals <- unique(Y)
   sessions <- unique(Z)
-  fpis <- sapply(1:length(individuals), function(i) {
+  fpis <- unlist(sapply(1:length(individuals), function(i) {
     individual <- individuals[i]
     # find the indices associated with current individual
     idx.i <- which(Y == individual)
@@ -66,7 +67,7 @@ fpi.os <- function(X, Y, Z, ...) {
       # current subject; if so, return 1, else 0
       ifelse(individual %in% Y[ses.idx][min.idx], return(1), return(0))
     })
-  })
+  }))
   return(mean(fpis))
 }
 
@@ -81,6 +82,16 @@ disco.os <- function(X, Y, is.dist=TRUE, ...) {
     DX <- mgc.distance(X, method="euclidean")
   }
   as.numeric(disco(X, factor(Y), R=0, method="disco")$statistic)
+}
+
+mmd.os <- function(X, Y, is.dist=FALSE) {
+  if (is.dist) {
+    DX <- X
+  } else {
+    DX <- mgc.distance(X, method="euclidean")
+  }
+  DY <- mgc.distance(Y, method="ohe")
+  return(HSIC(DX, DY))
 }
 
 ## ------------------------------------------
