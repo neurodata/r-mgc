@@ -232,8 +232,8 @@ sim.xor2 <- function(n, d, sigma=0) {
 # Driver
 ## -------------------------
 n <- 128; d <- 2
-nrep <- 2 # 500
-n.sigma <- 2 # 15
+nrep <- 200 # 500
+n.sigma <- 15 # 15
 nperm <- 100
 
 simulations <- list(sim.no_signal, sim.crossed_sig2,
