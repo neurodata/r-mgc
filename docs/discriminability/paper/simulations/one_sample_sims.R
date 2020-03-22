@@ -232,7 +232,7 @@ sim.xor2 <- function(n, d, sigma=0) {
 # Driver
 ## -------------------------
 n <- 128; d <- 2
-nrep <- 300 # 500
+nrep <- 200 # 500
 n.sigma <- 15 # 15
 nperm <- 100
 
