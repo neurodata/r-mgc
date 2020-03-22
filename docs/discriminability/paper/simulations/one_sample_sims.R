@@ -140,7 +140,7 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
     # sample from crossed gaussians w p=0.5, 0.5 respectively
-    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k])
     # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
