@@ -290,8 +290,8 @@ sim.xor2 <- function(n, d, sigma=0) {
 # Driver
 ## --------------------------------------
 n <- 128; d <- 2
-nrep <- 200
-n.sigma <- 15
+nrep <- 2
+n.sigma <- 2
 
 simulations <- list(sim.no_signal, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2, sim.xor2)
@@ -315,6 +315,7 @@ list.results.ts <- mclapply(1:length(experiments), function(i) {
   sim <- simpleError("Fake Error"); att = 0
   while(inherits(sim, "error") && att <= 50) {
     sim <- tryCatch({
+      simu <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
       if (dim(simu$X1)[1] != length(simu$Y) || dim(simu$X2)[1] != length(simu$Y)) {
         stop("Error")
       }
