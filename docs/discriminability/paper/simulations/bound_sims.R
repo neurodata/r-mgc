@@ -28,10 +28,10 @@ compute_bayes <- function(X, Z, npts=100) {
 # 2 classes
 sim.no_signal <- function(n=128, d=2, n.bayes=10000, sigma=1) {
   # classes are from same distribution, so signal should be detected w.p. alpha
-  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
+  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
   samp$X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
 
-  samp.bayes <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n.bayes, priors=c(0.5,0.5))
+  samp.bayes <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n.bayes)
   samp.bayes$X=samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   DX <- mgc.distance(samp$X)
@@ -47,10 +47,10 @@ sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=
   diag(Sigma) <- 3
 
   mus <- cbind(c(0, 3), c(0, 0))
-  samp <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(0.5, 0.5))
+  samp <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n)
   samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
 
-  samp.bayes <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n.bayes, priors=c(0.5, 0.5))
+  samp.bayes <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n.bayes)
   samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   DX <- mgc.distance(samp$X)
@@ -71,11 +71,10 @@ sim.linear_sig <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
   Sigma[-c(1), -c(1)] <- 1
   Sigma[1,1] <- 2
   mus.class <- mvrnorm(n=2, c(0,0), S.class)
-  pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
-  samp <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(pi.k, pi.k))
+  samp <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n)
   samp$X <- samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
 
-  samp.bayes <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n.bayes, priors=c(pi.k, pi.k))
+  samp.bayes <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n.bayes)
   samp.bayes$X <- samp.bayes$X + array(rnorm(n.bayes*d), dim=c(n.bayes, d))*sigma
 
   DX <- mgc.distance(samp$X)
@@ -101,8 +100,7 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
   Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
   mus=cbind(rep(0, d), rep(0, d))
 
-  # probability of being each individual is 1/K
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  ni <- n/K
   rhos <- runif(K, min=-.2, max=.2)
   X <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
@@ -110,17 +108,17 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
     # sample from crossed gaussians w p=0.5, 0.5 respectively
-    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni)
     # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
 
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
-  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
+  Y <- do.call(c, lapply(1:K, function(k) rep(k, ni)))
 
   # probability of being each individual is 1/K
-  ni.bayes <- rowSums(rmultinom(n.bayes, 1, prob=rep(1/K, K)))
+  ni.bayes <- n.bayes/K
 
   X.bayes <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
@@ -128,20 +126,20 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
     # sample from crossed gaussians w p=0.5, 0.5 respectively
-    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni.bayes[k], priors=c(0.5, 0.5))
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni.bayes[k])
     # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
 
   X.bayes <- X.bayes + array(rnorm(n.bayes*d)*sigma, dim=c(n.bayes, d))
 
-  Y.bayes <- do.call(c, lapply(1:K, function(k) rep(k, ni.bayes[k])))
+  Y.bayes <- do.call(c, lapply(1:K, function(k) rep(k, ni.bayes)))
   # assign cluster centers based on <= 0 in first dimension
   mus.z <- as.numeric(sapply(1:K, function(k) {
     return(mus.class[1,k] <= 0)
   })) + 1
   Z.bayes <- do.call(c, lapply(1:(K/2), function(k) {
-    return(rep(mus.z[k], ni.bayes[2*k - 1] + ni.bayes[2*k]))
+    return(rep(mus.z[k], 2*ni.bayes))
   }))
   DX <- mgc.distance(X)
   Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
@@ -174,13 +172,13 @@ sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
   Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
   Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
   # sample from crossed gaussians w p=0.5, 0.5 respectively
-  sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n, priors=c(0.5, 0.5))
+  sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n)
 
   X <- sim$X + array(rnorm(n*d)*sigma, dim=c(n, d))
   Y <- sim$Y
 
   # Bayes Sim
-  sim.bayes <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n.bayes, priors=c(0.5, 0.5))
+  sim.bayes <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n.bayes)
   X.bayes <- sim.bayes$X + array(rnorm(n.bayes*d)*sigma, dim=c(n.bayes, d))
   Y.bayes <- sim.bayes$Y
 
@@ -208,11 +206,11 @@ sim.multiclass_gaussian <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   Sigmas <- abind(lapply(1:K, function(k) S.k), along=3)
 
   # sample individuals w.p. 1/K
-  samp <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n, priors=rep(1/K, K))
+  samp <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n)
   samp$X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d))
 
   # sample individuals w.p. 1/K
-  samp.bayes <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n.bayes, priors=rep(1/K, K))
+  samp.bayes <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n.bayes)
   samp.bayes$X=samp.bayes$X + array(rnorm(n.bayes*d)*sigma, dim=c(n.bayes, d))
   # assign cluster centers based on <= 0 in first dimension
   mus.z <- as.numeric(sapply(1:K, function(k) {
@@ -236,14 +234,13 @@ sim.multiclass_ann_disc <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   mus <- t(rbind(mvrnorm(n=K/2, mu.class, S.class)))
 
   # probability of being each individual is 1/K
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  ni <- n/K
 
   # individuals are either (1) a ball, or (2) a disc, around means
   X <- do.call(rbind, lapply(1:(K/2), function(k) {
-    n.ball <- ni[2*(k-1)+1]; n.disc <- ni[2*k]
-    X <- array(NaN, dim=c((n.ball + n.disc), d))
-    X[1:n.ball,] <- sweep(mgc.sims.2ball(n.ball, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
-    X[(n.ball + 1):(n.ball + n.disc),] <- sweep(mgc.sims.2sphere(n.disc, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
+    X <- array(NaN, dim=c((2*ni), d))
+    X[1:ni,] <- sweep(mgc.sims.2ball(ni, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
+    X[(ni + 1):(2*ni),] <- sweep(mgc.sims.2sphere(ni, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
     return(X)
   }))
   X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
@@ -251,23 +248,22 @@ sim.multiclass_ann_disc <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   Y <- do.call(c, lapply(1:K, function(k) rep(k, ni[k])))
 
   # probability of being each individual is 1/K
-  ni.bayes <- rowSums(rmultinom(n.bayes, 1, prob=rep(1/K, K)))
+  ni.bayes <- n.bayes/K
 
   # individuals are either (1) a ball, or (2) a disc, around means
   X.bayes <- do.call(rbind, lapply(1:(K/2), function(k) {
-    n.ball <- ni.bayes[2*(k-1)+1]; n.disc <- ni.bayes[2*k]
-    X <- array(NaN, dim=c((n.ball + n.disc), d))
-    X[1:n.ball,] <- sweep(mgc.sims.2ball(n.ball, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
-    X[(n.ball + 1):(n.ball + n.disc),] <- sweep(mgc.sims.2sphere(n.disc, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
+    X <- array(NaN, dim=c((2*ni.bayes), d))
+    X[1:ni.bayes,] <- sweep(mgc.sims.2ball(ni.bayes, d, r=1, cov.scale=0.1), 2, mus[,k], "+")
+    X[(ni.bayes + 1):(2*ni.bayes),] <- sweep(mgc.sims.2sphere(ni.bayes, r=1, d=d, cov.scale=0.1), 2, mus[,k], "+")
     return(X)
   }))
-  Y.bayes <- do.call(c, lapply(1:K, function(k) rep(k, ni.bayes[k])))
+  Y.bayes <- do.call(c, lapply(1:K, function(k) rep(k, ni.bayes)))
   # assign cluster centers based on <= 0 in first dimension
   mus.z <- as.numeric(sapply(1:(K/2), function(k) {
     return(mus[1,k] <= 0)
   })) + 1
   Z.bayes <- do.call(c, lapply(1:(K/2), function(k) {
-    return(rep(mus.z[k], ni.bayes[2*k - 1] + ni.bayes[2*k]))
+    return(rep(mus.z[k], 2*ni.bayes))
   }))
 
   DX <- mgc.distance(X)
@@ -284,7 +280,7 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   mus <- cbind(c(0, 0))
 
   # probability of being each individual is 1/K
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/2, 2)))
+  ni <- rep(n/2, 2)
 
   X <- array(NaN, dim=c(n, d))
   X[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
@@ -295,7 +291,7 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   Y <- c(rep(1, ni[1]), rep(2, ni[2]))
 
   # probability of being each individual is 1/K
-  ni.bayes <- rowSums(rmultinom(n.bayes, 1, prob=rep(1/2, 2)))
+  ni.bayes <- rep(n.bayes/2, 2)
 
   X.bayes <- array(NaN, dim=c(n.bayes, d))
   X.bayes[1:ni.bayes[1],] <- sweep(mgc.sims.2ball(ni.bayes[1], d, r=1, cov.scale=0.1),

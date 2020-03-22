@@ -90,7 +90,7 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
 # 2 classes
 sim.no_signal <- function(n=128, d=2, sigma=1) {
   # classes are from same distribution, so signal should be detected w.p. alpha
-  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
+  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
   samp2 <- sim_gmm_match(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), samp1$Y)
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y,
               Z=sapply(unique(Y), function(y) return(1:sum(Y == y)))))
@@ -102,7 +102,7 @@ sim.parallel_rot_cigars <- function(n=128, d=2, sigma=0) {
   diag(Sigma) <- 3
 
   mus <- cbind(c(0, 3), c(0, 0))
-  samp1 <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(0.5, 0.5))
+  samp1 <- sim_gmm(mus, Sigmas=abind(Sigma, Sigma, along=3), n)
 
   samp2 <- sim_gmm_match(mus, Sigmas=abind(Sigma, Sigma, along=3), samp1$Y)
 
@@ -122,7 +122,7 @@ sim.linear_sig <- function(n, d, sigma=0) {
   Sigma[1,1] <- 2
   mus.class <- mvrnorm(n=2, c(0,0), S.class)
   pi.k <- 0.5  # equal chance of a new sample being from class 1 or class 2
-  samp1 <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n, priors=c(pi.k, pi.k))
+  samp1 <- sim_gmm(mus.class, Sigmas=abind(Sigma, Sigma, along=3), n)
 
   samp2 <- sim_gmm_match(mus.class, Sigmas=abind(Sigma, Sigma, along=3), samp1$Y)
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y,
@@ -150,7 +150,7 @@ sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
   Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
   Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
   # sample from crossed gaussians w p=0.5, 0.5 respectively
-  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n, priors=c(0.5, 0.5))
+  samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n)
   samp2 <- sim_gmm_match(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, samp1$Y)
 
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y,
@@ -173,8 +173,7 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
   Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
   mus=cbind(rep(0, d), rep(0, d))
 
-  # probability of being each individual is 1/K
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  ni <- rep(n/K, K)
   rhos <- runif(K, min=-.2, max=.2)
   X1 <- do.call(rbind, lapply(1:K, function(k) {
     # add random correlation
@@ -182,7 +181,7 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
     # sample from crossed gaussians w p=0.5, 0.5 respectively
-    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k])
     # add individual-specific signal
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   }))
@@ -192,7 +191,7 @@ sim.crossed_sig <- function(n, d, K=16, sigma=0) {
     Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
     Sigmas[1,2,1] <- Sigmas[2,1,1] <- rhos[k]
     Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rhos[k]
-    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k], priors=c(0.5, 0.5))
+    sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, ni[k])
     return(sweep(sim$X, 2, mus.class[,k], "+"))
   })) + array(rnorm(n*d), dim=c(n, d))*sigma
 
@@ -220,7 +219,7 @@ sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
   Sigmas <- abind(lapply(1:K, function(k) S.k), along=3)
 
   # sample individuals w.p. 1/K
-  samp1 <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n, priors=rep(1/K, K))
+  samp1 <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n)
   samp2 <- sim_gmm_match(mus=mus.class, Sigmas=Sigmas, Ys=samp1$Y)
   return(list(X1=samp1$X, X2= samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y,
               Z=do.call(c, lapply(unique(samp1$Y), function(y) return(1:sum(samp1$Y == y))))))
@@ -233,8 +232,7 @@ sim.multiclass_ann_disc <- function(n, d, K=16, sigma=0) {
 
   mus <- t(rbind(mvrnorm(n=K/2, mu.class, S.class)))
 
-  # probability of being each individual is 1/K
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/K, K)))
+  ni <- rep(n/K, K)
 
   # individuals are either (1) a ball, or (2) a disc, around means
   X1 <- do.call(rbind, lapply(1:(K/2), function(k) {
@@ -262,8 +260,7 @@ sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
 
   mus <- cbind(c(0, 0))
 
-  # probability of being each individual is 1/K
-  ni <- rowSums(rmultinom(n, 1, prob=rep(1/2, 2)))
+  ni <- rep(n/K, K)
 
   X <- array(NaN, dim=c(n, d))
   X[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
