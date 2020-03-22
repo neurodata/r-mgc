@@ -60,6 +60,10 @@ fpi.os <- function(X, Y, Z, ...) {
     sapply(1:dim(ses.perm)[1], function(q) {
       # get the database sessions
       ses.idx <- which(Z == sessions.i[ses.perm[q,2]])
+      # if there are no other items with this particular session, skip
+      if (length(ses.idx) == 0) {
+        return(NaN)
+      }
       # restrict RX to the database session, and compute the index
       # of the minimum
       min.idx <- which.min(RX[idx.i[ses.perm[q,1]], ses.idx])
@@ -68,7 +72,7 @@ fpi.os <- function(X, Y, Z, ...) {
       ifelse(individual %in% Y[ses.idx][min.idx], return(1), return(0))
     })
   }))
-  return(mean(fpis))
+  return(mean(fpis, na.rm=TRUE))
 }
 
 discr.os <- function(X, Y, is.dist=TRUE, ...) {
