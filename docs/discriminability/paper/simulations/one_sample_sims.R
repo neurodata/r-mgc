@@ -20,7 +20,7 @@ test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.
   }
   Xr <- lol.project.pca(X, 1)$Xr
   # compute references for the statistics
-  tr <- list(SimilRR=discr.stat(D, Y, is.dist=TRUE)$discr,
+  tr <- list(Stability=discr.stat(D, Y, is.dist=TRUE)$discr,
              PICC=icc.os(Xr, Y),
              I2C2=i2c2.os(X, Y),
              MMD=mmd.os(D, Y, is.dist=TRUE),
@@ -30,14 +30,14 @@ test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.
     perm.idx <- sample(N)
     perm.Y <- Y[perm.idx]
     perm.Z <- Z[perm.idx]
-    return(list(SimilRR=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
+    return(list(Stability=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
                 PICC=icc.os(Xr, perm.Y),
                 I2C2=i2c2.os(X, perm.Y),
                 MMD=mmd.os(D, perm.Y, is.dist=TRUE),
                 FPI=fpi.os(X, perm.Y, perm.Z)))
   }, mc.cores=no_cores)
 
-  null.stats <- list(SimilRR=lapply(nr, function(x) x$SimilRR),
+  null.stats <- list(Stability=lapply(nr, function(x) x$Stability),
                      PICC=lapply(nr, function(x) x$PICC),
                      I2C2=lapply(nr, function(x) x$I2C2),
                      MMD=lapply(nr, function(x) x$MMD),

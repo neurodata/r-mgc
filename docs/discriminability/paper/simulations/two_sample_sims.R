@@ -31,7 +31,7 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
   }
   Xr1 <- lol.project.pca(X1, r=1)$Xr; Xr2 <- lol.project.pca(X2, r=1)$Xr
   # get observed difference in statistic of interest
-  tr <- list(SimilRR=mgc:::discr.mnr(mgc:::discr.rdf(D1, Y1)) - mgc:::discr.mnr(mgc:::discr.rdf(D2, Y1)),
+  tr <- list(Stability=mgc:::discr.mnr(mgc:::discr.rdf(D1, Y1)) - mgc:::discr.mnr(mgc:::discr.rdf(D2, Y1)),
              PICC=icc.os(Xr1, Y1) - icc.os(Xr2, Y1),
              I2C2=i2c2.os(X1, Y1) - i2c2.os(X2, Y1),
              MMD=mmd.os(D1, Y1, is.dist=TRUE) - mmd.os(D2, Y1, is.dist=TRUE),
@@ -64,7 +64,7 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
     i2c22.null <- i2c2.os(Xn2, Y1)
     fpi1.null <- fpi.os(Xn1, Y1, Z)
     fpi2.null <- fpi.os(Xn2, Y1, Z)
-    return(list(SimilRR=c(D1.null - D2.null, D2.null - D1.null),
+    return(list(Stability=c(D1.null - D2.null, D2.null - D1.null),
                 PICC=c(icc1.null - icc2.null, icc2.null - icc1.null),
                 I2C2=c(i2c21.null - i2c22.null, i2c22.null - i2c21.null),
                 MMD=c(mmd1.null - mmd2.null, mmd2.null - mmd1.null),
@@ -72,7 +72,7 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
   }, mc.cores=no_cores)
 
   # compute null distribution of difference between discriminabilities
-  null.diff <- list(SimilRR=sapply(null.stats, function(x) x$SimilRR),
+  null.diff <- list(Stability=sapply(null.stats, function(x) x$Stability),
                     PICC=sapply(null.stats, function(x) x$PICC),
                     I2C2=sapply(null.stats, function(x) x$I2C2),
                     MMD=sapply(null.stats, function(x) x$MMD),
