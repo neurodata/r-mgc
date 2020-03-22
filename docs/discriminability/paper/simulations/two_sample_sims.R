@@ -93,7 +93,7 @@ sim.no_signal <- function(n=128, d=2, sigma=1) {
   samp1 <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n)
   samp2 <- sim_gmm_match(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), samp1$Y)
   return(list(X1=samp1$X, X2=samp2$X + array(rnorm(n*d), dim=c(n, d))*sigma, Y=samp1$Y,
-              Z=sapply(unique(Y), function(y) return(1:sum(Y == y)))))
+              Z=sapply(unique(samp1$Y), function(y) return(1:sum(samp1$Y == y)))))
 }
 
 sim.parallel_rot_cigars <- function(n=128, d=2, sigma=0) {
@@ -260,7 +260,7 @@ sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
 
   mus <- cbind(c(0, 0))
 
-  ni <- rep(n/K, K)
+  ni <- rep(n/2, 2)
 
   X <- array(NaN, dim=c(n, d))
   X[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
@@ -315,7 +315,6 @@ list.results.ts <- mclapply(1:length(experiments), function(i) {
   sim <- simpleError("Fake Error"); att = 0
   while(inherits(sim, "error") && att <= 50) {
     sim <- tryCatch({
-      simu <- do.call(exper$sim, list(n=n, d=d, sigma=exper$sigma))
       if (dim(simu$X1)[1] != length(simu$Y) || dim(simu$X2)[1] != length(simu$Y)) {
         stop("Error")
       }
