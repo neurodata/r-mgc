@@ -206,7 +206,7 @@ sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
 
   mus <- cbind(c(0, 0))
 
-  ni <- rep(n/K, K)
+  ni <- rep(n/2, 2)
 
   X <- array(NaN, dim=c(n, d))
   X[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
@@ -239,7 +239,7 @@ nperm <- 100
 simulations <- list(sim.no_signal, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2,
                     sim.xor2)
-sims.sig.max <- c(20, 5, 20, 5, 0.8)
+sims.sig.max <- c(20, 2, 20, 2, 0.8)
 sims.sig.min <- c(0, 0, 0, 0, 0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
   c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
