@@ -298,10 +298,10 @@ n.sigma <- 15
 
 simulations <- list(sim.no_signal, sim.crossed_sig2,
                     sim.multiclass_gaussian, sim.multiclass_ann_disc2, sim.xor2)
-sims.sig.max <- c(10, 1, 1, 1, .2)
-sims.sig.min <- c(0, 0, 0, 0, 0)
+sims.sig.max <- c(.2)
+sims.sig.min <- c(0)
 names(simulations) <- names(sims.sig.max) <- names(sims.sig.min) <-
-  c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")
+  c("XOR")
 
 experiments <- do.call(c, lapply(names(simulations), function(sim.name) {
   do.call(c, lapply(seq(from=sims.sig.min[sim.name], to=sims.sig.max[sim.name],
@@ -332,6 +332,13 @@ list.results.ts <- mclapply(1:length(experiments), function(i) {
   return(res)
 }, mc.cores=no_cores)
 
-ts.results <- do.call(rbind, list.results.ts)
-saveRDS(list(ts.results=ts.results, list.results=list.results.ts), '../data/sims/discr_sims_ts.rds')
+
+bound.results.ts <- do.call(rbind, list.results.ts)
+old.ts <- readRDS('../data/sims/discr_sims_ts.rds')
+old.ts$list.results[sapply(old.ts$list.results, function(x) x$sim.name == "XOR")] <- NULL
+old.ts$list.results <- c(old.os$list.results, list.results.ts)
+old.ts$ts.results <- rbind(old.os$ts.results %>% filter(sim.name != "XOR"),
+                           bound.results.ts)
+
+saveRDS(old.os, '../data/sims/discr_sims_ts.rds')
 
