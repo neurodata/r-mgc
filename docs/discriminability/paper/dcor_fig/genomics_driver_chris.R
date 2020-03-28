@@ -143,7 +143,7 @@ flashx.pca <- function(X, r, ...) {
 }
 
 
-stats <- list(SimilRR=discr.os, PICC=icc.os, I2C2=i2c2.os, DISCO=disco.os)
+stats <- list(Similarity=discr.os, PICC=icc.os, I2C2=i2c2.os, DISCO=disco.os, FPI=fpi.os)
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
 
@@ -158,9 +158,10 @@ if (!file.exists('/genomics/genomics_prep.rds')) {
       DX <- as.matrix(fm.inner.prod(X.fm, t(X.fm), fm.bo.euclidean, fm.bo.add))
       Xr <- as.matrix(flashx.pca(X.xfm, 1)$Xr)
       rm(X.fm)
+      RX <- as.matrix(cov(X.fm))
       gc()
-      return(list(X=X.xfm, DX=DX, Xr=Xr, Individuals=dat.res$Individuals, Cancer=dat.res$Cancer,
-                  xfm.name=xfm, Resolution=dat.res$Resolution))
+      return(list(X=X.xfm, DX=DX, Xr=Xr, RX=RX, Individuals=dat.res$Individuals, Cancer=dat.res$Cancer,
+                  xfm.name=xfm, Resolution=dat.res$Resolution, Sessions=dat.res$Sessions))
     })
     gc()
     return(result)
@@ -180,10 +181,16 @@ results.reference <- do.call(rbind, mclapply(experiments.base, function(experime
         X.dat = experiment$DX
       } else if (stat.name == "PICC") {
         X.dat = experiment$Xr
+      } else if (stat.name == "AFPI") {
+        X.dat = experiment$RX
       } else {
         X.dat = experiment$X
       }
-      stat.res=do.call(stats[[stat.name]], list(X.dat, experiment$Individual))
+      if (stat.name == "AFPI") {
+        stat.res=do.call(stats[[stat.name]], list(X=X.dat, Y=experiment$Individual, Z=experiment$Sessions, is.corr=TRUE))
+      } else {
+        stat.res=do.call(stats[[stat.name]], list(X.dat, experiment$Individual))
+      }
     }, error=function(e) {
       print(sprintf("Resolution=%s, XFM=%s, Agg=%s, Stat=%s, ERROR=%s", experiment$Resolution,
                     experiment$xfm.name, experiment$Aggregation, stat.name, e))
