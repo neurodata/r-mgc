@@ -158,7 +158,7 @@ if (!file.exists('/genomics/genomics_prep.rds')) {
       DX <- as.matrix(fm.inner.prod(X.fm, t(X.fm), fm.bo.euclidean, fm.bo.add))
       Xr <- as.matrix(flashx.pca(X.xfm, 1)$Xr)
       rm(X.fm)
-      RX <- as.matrix(cov(X.fm))
+      RX <- as.matrix(cov(t(X.fm)))
       gc()
       return(list(X=X.xfm, DX=DX, Xr=Xr, RX=RX, Individuals=dat.res$Individuals, Cancer=dat.res$Cancer,
                   xfm.name=xfm, Resolution=dat.res$Resolution, Sessions=dat.res$Sessions))
