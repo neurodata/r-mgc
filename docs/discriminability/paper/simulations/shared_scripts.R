@@ -41,9 +41,13 @@ i2c2.os <- function(X, Y, ...) {
 # X is a nxd data matrix for n samples
 # Y is a n vector of individual labels
 # Z is a n vector of scan sessions
-fpi.os <- function(X, Y, Z, ...) {
-  DX <- cor(t(X))  # compute pairwise correlation
-  # compute the ranks per scan
+fpi.os <- function(X, Y, Z, is.corr=FALSE, ...) {
+  if (!is.corr) {
+    DX <- cor(t(X))  # compute pairwise correlation
+    # compute the ranks per scan
+  } else {
+    DX <- X
+  }
   RX <- apply(DX, 1, function(x) rank(-x, ties.method="first"))
   individuals <- unique(Y)
   sessions <- unique(Z)
