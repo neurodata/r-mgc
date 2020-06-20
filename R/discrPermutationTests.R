@@ -23,7 +23,7 @@
 #' }
 #' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
 #' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
-#' @param nperm the number of permutations to perform. Defaults to \code{100}.
+#' @param nperm the number of permutations to perform. Defaults to \code{500}.
 #' @param no_cores the number of cores to use for permutation test. Defaults to \code{1}.
 #' @return A list containing the following:
 #' \item{\code{stat}}{the discriminability of the data.}
@@ -54,7 +54,7 @@
 #'}
 #' @export
 discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, dist.params=list(method='euclidean'),
-                                  dist.return=NULL, remove.isolates=TRUE, nperm=100, no_cores=1) {
+                                  dist.return=NULL, remove.isolates=TRUE, nperm=500, no_cores=1) {
 
   validated <- discr.validator(X, Y, is.dist=is.dist, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                                remove.isolates=remove.isolates)
@@ -97,7 +97,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #' }
 #' @param remove.isolates remove isolated samples from the dataset. Isolated samples are samples with only
 #' one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.
-#' @param nperm the number of permutations for permutation test. Defualts to \code{100}.
+#' @param nperm the number of permutations for permutation test. Defualts to \code{500}.
 #' @param no_cores the number of cores to use for the permutations. Defaults to \code{1}.
 #' @param alt the alternative hypothesis. Can be that first dataset is more discriminable (\code{alt = 'greater'}), less discriminable (\code{alt = 'less'}),
 #' or just non-equal (\code{alt = 'neq'}). Defaults to \code{"greater"}.
@@ -143,7 +143,7 @@ discr.test.one_sample <- function(X, Y, is.dist=FALSE, dist.xfm=mgc.distance, di
 #' @export
 discr.test.two_sample <- function(X1, X2, Y, dist.xfm=mgc.distance,
                                   dist.params=list(method="euclidian"), dist.return=NULL,
-                                  remove.isolates=TRUE, nperm=100,
+                                  remove.isolates=TRUE, nperm=500,
                                   no_cores=1, alt="greater") {
 
   validated1 <- discr.validator(X1, Y, is.dist=FALSE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
