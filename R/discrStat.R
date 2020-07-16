@@ -76,7 +76,7 @@ discr.rdf <- function(X, ids) {
     di <- X[i,]
     Dii <- di[ind[ind != i]]  # indices of D corresponding to between scan i subject of scan i, excluding scan i
     Dij <- di[-c(ind)]  # indices of D corresponding to between i and those of other subjects, excluding scans of this subject
-    # if there exist scans associated with this subject other than current scan and
+    # if there exist scans associated with this subject othe rthan current scan and
     # other subjects in dataset
     if (length(Dii) > 0 & length(Dij) > 0) {
       # return discriminability local rdfs as an array

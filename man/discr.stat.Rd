@@ -26,15 +26,16 @@ discr.stat(
 \item{is.dist}{a boolean indicating whether your \code{X} input is a distance matrix or not. Defaults to \code{FALSE}.}
 
 \item{dist.xfm}{if \code{is.dist == FALSE}, a distance function to transform \code{X}. If a distance function is passed,
-it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix
-as the \code{$D} return argument. See \link[mgc]{mgc.distance} for details.}
+it should accept an \code{[n x d]} matrix of \code{n} samples in \code{d} dimensions and return a \code{[n x n]} distance matrix,
+which can be either the default output, an item castable to a distance matrix, or . See \link[mgc]{mgc.distance} for details.}
 
 \item{dist.params}{a list of trailing arguments to pass to the distance function specified in \code{dist.xfm}.
 Defaults to \code{list(method='euclidean')}.}
 
 \item{dist.return}{the return argument for the specified \code{dist.xfm} containing the distance matrix. Defaults to \code{FALSE}.
 \describe{
-    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be a \code{[n x n]} matrix.}
+    \item{\code{is.null(dist.return)}}{use the return argument directly from \code{dist.xfm} as the distance matrix. Should be an object castable to a \code{[n x n]} matrix.
+    You can verify whether this is the case by looking at \code{as.matrix(do.call(dist.xfm, list(X, <trailing_args>))}}
     \item{\code{is.character(dist.return) | is.integer(dist.return)}}{use \code{dist.xfm[[dist.return]]} as the distance matrix. Should be a \code{[n x n]} matrix.}
 }}
 

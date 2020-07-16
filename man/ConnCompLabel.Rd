@@ -51,9 +51,6 @@ Chang, F., C.-J. Chen, and C.-J. Lu. 2004. A linear-time
 component-labeling algorithm using contour tracing technique. Comput. Vis.
 Image Underst. 93:206-220.
 }
-\seealso{
-\code{\link{PatchStat}}, \code{\link{ClassStat}}
-}
 \author{
 Jeremy VanDerWal \email{jjvanderwal@gmail.com}
 }

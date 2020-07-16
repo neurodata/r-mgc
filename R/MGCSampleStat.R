@@ -199,6 +199,7 @@ Smoothing <- function(localCorr,m,n,R){
   result=list(stat=stat,optimalScale=optimalScale)
   return(result)
 }
+
 #' Connected Components Labelling -- Unique Patch Labelling
 #'
 #' \code{ConnCompLabel} is a 1 pass implementation of connected components
@@ -216,7 +217,6 @@ Smoothing <- function(localCorr,m,n,R){
 #' components (individual patches) are numbered 1:n with 0 remaining background
 #' value.
 #' @author Jeremy VanDerWal \email{jjvanderwal@@gmail.com}
-#' @seealso \code{\link{PatchStat}}, \code{\link{ClassStat}}
 #' @references Chang, F., C.-J. Chen, and C.-J. Lu. 2004. A linear-time
 #' component-labeling algorithm using contour tracing technique. Comput. Vis.
 #' Image Underst. 93:206-220.
@@ -241,32 +241,22 @@ Smoothing <- function(localCorr,m,n,R){
 #' image(t(ccl.mat[10:1,]),col=c('grey',rainbow(length(unique(ccl.mat))-1)))
 #'
 #'
-#' @useDynLib mgc ccl
-ConnCompLabel <-
-  function(mat)	{
-    #check input for class for returning info
-    if (any(class(mat) == 'asc')) {
-      attrib = attributes(mat)
-    } else if (any(class(mat) %in% 'RasterLayer')) {
-      attrib = mat; mat = asc.from.raster(mat)
-    } else if (any(class(mat) == 'SpatialGridDataFrame')) {
-      attrib = mat; mat = asc.from.sp(mat)
-    } else {
-      attrib = attributes(mat)
-    }
-    #check to ensure matrix
-    mat = try(as.matrix(mat))
-    if (!is.matrix(mat)) stop('objects must be a matrix')
-    #run the connected component labelling
-    out = .Call('ccl',mat,PACKAGE='mgc')
-    #reset the attributes of the input
-    if (any(class(attrib) %in% 'RasterLayer')) {
-      attrib = setValues(attrib, as.vector(t(t(unclass(out))[dim(out)[2]:1,]))); return(attrib)
-    } else if (any(class(attrib) == 'SpatialGridDataFrame')) {
-      attrib@data[1] = as.vector(unclass(out)[,dim(out)[2]:1]); return(attrib)
-    } else {
-      attributes(out) = attrib; return(out)
-    }
+#' @useDynLib mgc
+#' @importFrom raster setValues
+#' @export
+ConnCompLabel <- function(mat)	{
+  attrib = attributes(mat)
+  #check to ensure matrix
+  mat = try(as.matrix(mat))
+  if (!is.matrix(mat)) stop('objects must be a matrix')
+  #run the connected component labelling
+  out = .Call('ccl',mat,PACKAGE='mgc')
+  #reset the attributes of the input
+  if (any(class(attrib) %in% 'RasterLayer')) {
+    attrib = setValues(attrib, as.vector(t(t(unclass(out))[dim(out)[2]:1,]))); return(attrib)
+  } else if (any(class(attrib) == 'SpatialGridDataFrame')) {
+    attrib@data[1] = as.vector(unclass(out)[,dim(out)[2]:1]); return(attrib)
+  } else {
+    attributes(out) = attrib; return(out)
   }
-
-
+}

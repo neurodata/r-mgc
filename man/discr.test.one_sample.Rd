@@ -12,7 +12,7 @@ discr.test.one_sample(
   dist.params = list(method = "euclidean"),
   dist.return = NULL,
   remove.isolates = TRUE,
-  nperm = 100,
+  nperm = 500,
   no_cores = 1
 )
 }
@@ -43,7 +43,7 @@ Defaults to \code{list(method='euclidean')}.}
 \item{remove.isolates}{remove isolated samples from the dataset. Isolated samples are samples with only
 one instance of their class appearing in the \code{Y} vector. Defaults to \code{TRUE}.}
 
-\item{nperm}{the number of permutations to perform. Defaults to \code{100}.}
+\item{nperm}{the number of permutations to perform. Defaults to \code{500}.}
 
 \item{no_cores}{the number of cores to use for permutation test. Defaults to \code{1}.}
 }
