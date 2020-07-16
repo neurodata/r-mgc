@@ -9,7 +9,6 @@
 # install.packages(c('energy', 'mltools', 'data.table',
 #                    'R.utils'))
 
-
 require(parallel)
 require(mgc)
 require(lolR)
@@ -110,7 +109,7 @@ if (!file.exists(file.path('/genomics', 'chris_parsed.rds'))) {
     aggregation.dat <- do.call(c, lapply(condition.dat, function(dat) dat$Aggregation))
     # status is a 1 if have cancer, a 0 otherwise
     return(list(Data=genomics.dat, Sessions=session.dat, Individuals=individual.dat,
-                Cancer=as.numeric(status.dat == "cancer"), Resolution = resolution,
+                Status=as.numeric(status.dat == "cancer"), Resolution = resolution,
                 Aggregation=aggregation.dat))
   })
 } else {
@@ -143,7 +142,7 @@ flashx.pca <- function(X, r, ...) {
 }
 
 
-stats <- list(Similarity=discr.os, PICC=icc.os, I2C2=i2c2.os, DISCO=disco.os, FPI=fpi.os)
+stats <- list(Stability=discr.os, PICC=icc.os, I2C2=i2c2.os, DISCO=disco.os, AFPI=fpi.os)
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
 
@@ -160,7 +159,7 @@ if (!file.exists('/genomics/genomics_prep.rds')) {
       Xr <- as.matrix(flashx.pca(X.fm, 1)$Xr)
       rm(X.fm)
       gc()
-      return(list(X=X.xfm, DX=DX, Xr=Xr, RX=RX, Individuals=dat.res$Individuals, Cancer=dat.res$Cancer,
+      return(list(X=X.xfm, DX=DX, Xr=Xr, RX=RX, Individuals=dat.res$Individuals, Cancer=dat.res$Status,
                   xfm.name=xfm, Resolution=dat.res$Resolution, Sessions=dat.res$Sessions))
     })
     gc()
@@ -173,11 +172,11 @@ if (!file.exists('/genomics/genomics_prep.rds')) {
 }
 
 results.reference <- do.call(rbind, mclapply(experiments.base, function(experiment) {
-  print(sprintf("Resolution=%s, XFM=%s, Agg=%s", experiment$Resolution,
-                experiment$xfm.name, experiment$Aggregation))
+  print(sprintf("Resolution=%s, XFM=%s", experiment$Resolution,
+                experiment$xfm.name))
   test=do.call(rbind, lapply(names(stats), function(stat.name) {
     tryCatch({
-      if (stat.name %in% c("SimilRR", "DISCO")) {
+      if (stat.name %in% c("Stability", "DISCO")) {
         X.dat = experiment$DX
       } else if (stat.name == "PICC") {
         X.dat = experiment$Xr
@@ -192,18 +191,17 @@ results.reference <- do.call(rbind, mclapply(experiments.base, function(experime
         stat.res=do.call(stats[[stat.name]], list(X.dat, experiment$Individual))
       }
     }, error=function(e) {
-      print(sprintf("Resolution=%s, XFM=%s, Agg=%s, Stat=%s, ERROR=%s", experiment$Resolution,
-                    experiment$xfm.name, experiment$Aggregation, stat.name, e))
+      print(sprintf("Resolution=%s, XFM=%s, Stat=%s, ERROR=%s", experiment$Resolution,
+                    experiment$xfm.name, stat.name, e))
       return(NULL)
       })
     return(data.frame(Resolution=experiment$Resolution, xfm=experiment$xfm.name,
-                      Aggregation=experiment$Aggregation, Algorithm=stat.name, Statistic=stat.res))
+                      Algorithm=stat.name, Statistic=stat.res))
   }))
 }, mc.cores=detectCores()-1))
 
 saveRDS(results.reference, '../data/real/genomics_chris_ref.rds')
 
-lapply()
 results.effect <- do.call(rbind, mclapply(experiments.base, function(experiment) {
   print(sprintf("Resolution=%s, XFM=%s", experiment$Resolution, experiment$xfm.name))
   stat=tryCatch({
@@ -220,4 +218,4 @@ results.effect <- do.call(rbind, mclapply(experiments.base, function(experiment)
   }
 }, mc.cores=detectCores() - 1))
 
-saveRDS(results.effect, '../data/real/genomics_chris_sex.rds')
+saveRDS(results.effect, '../data/real/genomics_chris_ref.rds')

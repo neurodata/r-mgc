@@ -11,6 +11,7 @@ require(abind)
 require(emdbook)
 require(gtools)
 require(kernelPSI)
+require(energy)
 
 # one-way ICC
 icc.os <- function(X, Y, ...) {
@@ -36,19 +37,33 @@ i2c2.os <- function(X, Y, ...) {
   return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
 }
 
+corr.t <- function(X) {
+  return(corr(t(X)))
+}
+
+dist.x <- function(X) {
+  if (is.null(dim(X)[2])) {
+    X <- matrix(X, ncol=1)
+  }
+  return(as.matrix(dist(X)))
+}
 
 # average fingerprint index
 # X is a nxd data matrix for n samples
 # Y is a n vector of individual labels
 # Z is a n vector of scan sessions
-fpi.os <- function(X, Y, Z, is.corr=FALSE, ...) {
-  if (!is.corr) {
-    DX <- cor(t(X))  # compute pairwise correlation
-    # compute the ranks per scan
+fpi.os <- function(X, Y, Z, is.sim=FALSE, dist.xfm=corr.t, is.dist=FALSE, ...) {
+  if (!is.dist) {
+    DX <- do.call(dist.xfm, list(X))
   } else {
     DX <- X
   }
-  RX <- apply(DX, 1, function(x) rank(-x, ties.method="first"))
+  if (!is.sim) {
+    RX <- apply(DX, 1, function(x) rank(x, ties.method="first"))
+  } else {
+    RX <- apply(DX, 1, function(x) rank(-x, ties.method="first"))
+  }
+
   individuals <- unique(Y)
   sessions <- unique(Z)
   fpis <- unlist(sapply(1:length(individuals), function(i) {
@@ -57,24 +72,28 @@ fpi.os <- function(X, Y, Z, is.corr=FALSE, ...) {
     idx.i <- which(Y == individual)
     # get the session indices associated with current individual
     sessions.i <- Z[idx.i]
-    # compute all permutations of the sessions available for individual
-    ses.perm <- permutations(length(sessions.i), 2)
-    # for each (session i, session j) pair, compute fingerprint index
-    # for this individual
-    sapply(1:dim(ses.perm)[1], function(q) {
-      # get the database sessions
-      ses.idx <- which(Z == sessions.i[ses.perm[q,2]])
-      # if there are no other items with this particular session, skip
-      if (length(ses.idx) == 0) {
-        return(NaN)
-      }
-      # restrict RX to the database session, and compute the index
-      # of the minimum
-      min.idx <- which.min(RX[idx.i[ses.perm[q,1]], ses.idx])
-      # compare the subject associated with the minimum to the
-      # current subject; if so, return 1, else 0
-      ifelse(individual %in% Y[ses.idx][min.idx], return(1), return(0))
-    })
+    if (length(sessions.i) > 1) {
+      # compute all permutations of the sessions available for individual
+      ses.perm <- permutations(length(sessions.i), 2)
+      # for each (session i, session j) pair, compute fingerprint index
+      # for this individual
+      sapply(1:dim(ses.perm)[1], function(q) {
+        # get the database sessions
+        ses.idx <- which(Z == sessions.i[ses.perm[q,2]])
+        # if there are no other items with this particular session, skip
+        if (length(ses.idx) == 0) {
+          return(NaN)
+        }
+        # restrict RX to the database session, and compute the index
+        # of the minimum
+        min.idx <- which.min(RX[idx.i[ses.perm[q,1]], ses.idx])
+        # compare the subject associated with the minimum to the
+        # current subject; if so, return 1, else 0
+        ifelse(individual %in% Y[ses.idx][min.idx], return(1), return(0))
+      })
+    } else {
+      return(NULL)
+    }
   }))
   return(mean(fpis, na.rm=TRUE))
 }
@@ -89,7 +108,7 @@ disco.os <- function(X, Y, is.dist=TRUE, ...) {
   } else {
     DX <- mgc.distance(X, method="euclidean")
   }
-  as.numeric(disco(X, factor(Y), R=0, method="disco")$statistic)
+  as.numeric(disco(DX, factor(Y), R=0, method="disco")$statistic)
 }
 
 mmd.os <- function(X, Y, is.dist=FALSE) {

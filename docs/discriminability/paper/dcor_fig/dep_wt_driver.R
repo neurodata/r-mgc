@@ -259,6 +259,7 @@ dep.results <- mclapply(experiments, function(exp) {
           }
         })
         retain.idx <- which(sapply(matched.idx, is.null))
+        if ()
         matched.idx <- unlist(matched.idx[-retain.idx])
         test$graphs <- test$graphs[-retain.idx]
         pheno.scans <- pheno.dat[matched.idx,]
