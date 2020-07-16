@@ -14,19 +14,17 @@ require(mgc)
 require(ICC)
 require(I2C2)
 require(cowplot)
-require(lolR)
-require(plyr)
 require(scales)
-require(dplyr)
 require(latex2exp)
 require(MASS)
 source('./shared_scripts.R')
+require(dplyr)
 ```
 
 ```{r}
 n = 10
 
-data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier"), function (sim) {
+data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), function (sim) {
   X.d <- matrix(NaN, nrow=n*2, ncol=1)
   if (sim == "(ii) Offset") {
     centers <- seq(-1, 1, length.out=n)
@@ -36,7 +34,7 @@ data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier"), fun
     Y <- c(ids, ids)
     Z <- c(rep(1, n), rep(2, n))
   }
-  else if (sim == "(iii) Reliable + Outlier") {
+  else if (sim == "(iii) Outlier") {
     centers <- seq(-1, 1, length.out=n)
     ids <- 1:n
     dist <- .5/n
@@ -65,7 +63,7 @@ data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier"), fun
   }
   return(data.frame(X=X.d, Y=Y, Z=Z, Simulation=sim))
 })
-names(data) <- c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier")
+names(data) <- c("(i) Reliable", "(ii) Offset", "(iii) Outlier")
 ```
 
 ```{r}
@@ -76,16 +74,18 @@ results <- lapply(names(data), function(sim) {
   fpi <- fpi.os(matrix(dat$X, ncol=1), dat$Y, dat$Z, dist.xfm=dist.x, is.sim=FALSE)
   disco <- disco.os(dat$X, dat$Y, is.dist=FALSE)
   data.frame(Statistic=c(icc, discr, fpi, disco), Simulation=sim,
-             Algorithm=c("ICC/I2C2", "Discriminability", "Fingerprinting", "Normalized DISCO"))
+             Algorithm=c("ICC/I2C2", "Discr.", "Finger.", "Kernel"))
 })
 
+var.ord <- c(sapply(1:10, function(i) rep(i, 2)))
 Dmtx_results <- lapply(names(data), function(sim) {
   dat <- data[[sim]]
   new_ord <- sort(dat$Y, index.return=TRUE)$ix
   Dmtx <- as.matrix(dist(matrix(dat$X[new_ord], ncol=1))) %>%
     melt() %>%
-    rename("Distance"="value") %>%
-    mutate(Simulation = sim)
+    dplyr::rename(Distance=value) %>%
+    dplyr::mutate(Simulation = sim) %>%
+    dplyr::mutate(Individual1=var.ord[Var1], Individual2=var.ord[Var2])
 })
 ```
 
@@ -95,7 +95,7 @@ col.1 <- do.call(rbind, data) %>%
   mutate(X=(X - min(X))/(max(X) - min(X))) %>%
   ungroup() %>%
   mutate(Simulation=factor(Simulation, 
-                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier"), ordered=TRUE),
+                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE),
          Z=factor(Z)) %>%
   ggplot(aes(x=X - min(X)/max(X), y=as.factor(Y),
              fill=as.factor(Y), shape=Z)) +
@@ -107,32 +107,49 @@ col.1 <- do.call(rbind, data) %>%
   scale_x_continuous(breaks=c(0, 0.5, 1), labels=c(-1, 0, 1)) +
   scale_fill_discrete(guide=FALSE) +
   scale_y_discrete(breaks=c(1, 10), labels=c(1, 10)) +
-  theme_bw() +
+  theme_bw(base_size=18) +
   facet_grid(Simulation~., switch="y")
 
 
 alg.colors <- c("#c70000", "#333333", "#777777", "#6699cc")
-names(alg.colors) <- c("Discriminability", "ICC/I2C2", "Fingerprinting", "Normalized DISCO")
+names(alg.colors) <- c("Discr.", "ICC/I2C2", "Finger.", "Kernel")
 
 Dmtx.results <- do.call(rbind, Dmtx_results) %>%
   group_by(Simulation) %>%
-  mutate(Distance = (Distance - min(Distance))/(max(Distance) - min(Distance)),
+  dplyr::mutate(Distance = (Distance - min(Distance))/(max(Distance) - min(Distance)),
          Var1=factor(Var1, levels=1:(2*n), ordered=TRUE),
          Var2=factor(Var2, levels=1:(2*n), ordered=TRUE)) %>%
   ungroup() %>%
-  mutate(Simulation=factor(Simulation, 
-                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier"), ordered=TRUE))
+  dplyr::mutate(Simulation=factor(Simulation, 
+                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE))
 
+Dmtx_rank <- Dmtx.results %>%
+  group_by(Simulation, Var2) %>%
+  dplyr::mutate(Rank = rank(Distance))
+
+Dmtx.ranked <- Dmtx_rank %>%
+  left_join(Dmtx_rank %>% 
+              filter(Individual1==Individual2 & Var1 != Var2) %>% 
+              dplyr::rename(RankPair=Rank) %>%
+              dplyr::select(Var2, Simulation, RankPair),
+            by=c("Var2", "Simulation")) %>%
+  filter(Rank <= RankPair & Var1 != Var2) %>%
+  dplyr::mutate(color=factor(ifelse(Rank < RankPair, "Closer", ifelse(Individual1 == Individual2, "Match", "Tie")),
+                             levels=rev(c("Match", "Closer", "Tie")), ordered=TRUE))
+
+rank.col <- c("Closer"="#b35806", "Tie"="blue", "Match"="darkgreen")
 col.2 <- Dmtx.results %>%
-  ggplot(aes(x=factor(Var1), y=factor(Var2), fill=Distance)) +
+  ggplot(aes(x=Var1, y=Var2, fill=Distance)) +
     geom_tile() +
+    geom_tile(data=Dmtx.ranked %>% arrange(as.numeric(Rank == RankPair)), aes(x=Var1, y=Var2, color=color), size=.5) +
+    scale_color_manual(values=rank.col, name="") +
     xlab("Measurement ID") +
     ylab("Measurement ID") +
     scale_fill_continuous(low="white", high="purple", breaks=c(0, 1), labels=c(0, 1)) +
     scale_x_discrete(breaks=c(1, 20), labels=c(1, 20)) +
     scale_y_discrete(breaks=c(1, 20), labels=c(1, 20)) +#, limits=rev(levels(Dmtx_results$Var2))) +
     facet_grid(Simulation~.) +
-    theme_bw() +
+    theme_bw(base_size=18) +
     theme(
       strip.background = element_blank(),
       strip.text = element_blank()
@@ -140,23 +157,23 @@ col.2 <- Dmtx.results %>%
     ggtitle("(B) Distance Matrices")
 
 sim.dat <- do.call(rbind, results) %>%
-  mutate(Algorithm=factor(Algorithm, ordered=TRUE, levels=c("Discriminability", "Fingerprinting", "ICC/I2C2", "Normalized DISCO"))) %>%
+  mutate(Algorithm=factor(Algorithm, ordered=TRUE, levels=c("Discr.", "Finger.", "ICC/I2C2", "Kernel"))) %>%
   ungroup() %>%
   group_by(Algorithm) %>%
-  mutate(Statistic=ifelse(Algorithm %in% c("Normalized DISCO"), 
+  mutate(Statistic=ifelse(Algorithm %in% c("Kernel"), 
                           (Statistic - 0)/(max(Statistic) - 0), Statistic),
          Simulation=factor(Simulation, 
-                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Reliable + Outlier"), ordered=TRUE)) %>%
+                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE)) %>%
   ungroup() %>%
-  group_by(Simulation) %>%
-  mutate(ymin=ifelse(min(Statistic) < 0,
+  dplyr::group_by(Simulation) %>%
+  dplyr::mutate(ymin=ifelse(min(Statistic) < 0,
                      ifelse(min(Statistic) < -.5, -1, -.5), 0),
          ymax=1) %>%
-  group_by(Simulation, Algorithm) %>%
-  mutate(position=ifelse(min(Statistic) < 0, Statistic - .1,
-                         ifelse(Statistic > .8, mean(c(Statistic, 0)), Statistic + .1)),
+  dplyr::group_by(Simulation, Algorithm) %>%
+  dplyr::mutate(position=ifelse(min(Statistic) < 0, Statistic - .13,
+                         ifelse(Statistic > .25, Statistic - .13, Statistic + .13)),
          textcol=ifelse(min(Statistic) < 0, 'black',
-                         ifelse(Statistic > .8, 'white', 'black'))) %>%
+                         ifelse(Statistic > .25, 'white', 'black'))) %>%
   ungroup() %>%
   mutate(textcol=factor(textcol))
 
@@ -164,12 +181,12 @@ col.3 <- sim.dat %>%
   ggplot(aes(x=Algorithm, y=Statistic, fill=Algorithm), color='black') +
   geom_col() +
   scale_fill_manual(values=alg.colors, guide=FALSE) +
-  geom_text(data=sim.dat, aes(label=sprintf("%.2f", Statistic), y=position, color=textcol)) +
+  geom_text(data=sim.dat, aes(label=sprintf("%.2f", Statistic), y=position, color=textcol), size=6) +
   scale_color_manual(values=c('white'="#ffffff", 'black'="#000000"), guide=FALSE) +
   xlab(" ") +
   ylab("Statistic") +
   ggtitle("(C) Reproducibility Statistic") +
-  theme_bw() +
+  theme_bw(base_size=18) +
   scale_y_continuous(breaks=c(-.5, 0, 1), labels=c(-.5, 0, 1),
                      minor_breaks=c(-.75, -.25, .25, .5, .75),
                      expand=c(0, 0)) +
@@ -184,5 +201,5 @@ col.3 <- sim.dat %>%
   geom_blank(aes(y=ymin)) +
   geom_blank(aes(y=ymax))
 
-grid.arrange(col.1, col.2, col.3, nrow=1, widths=c(.5, .35, .55))
+grid.arrange(col.1, col.2, col.3, nrow=1, widths=c(.5, .45, .55))
 ```
