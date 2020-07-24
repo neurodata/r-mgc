@@ -108,10 +108,10 @@ discr.os <- function(X, Y, is.dist=TRUE, ...) {
 
 # ksample testing wrapper
 ksamp.test <- function(X, Y, method="Dcorr", nrep=1000L, ...) {
-  ksample <- import("hyppo.independence")[[method]]()
+  ksample <- py_suppress_warnings(import("hyppo.independence")[[method]]())
   Y = as.matrix(dist(as.matrix(one_hot(data.table(factor(Y))))))
   colnames(Y) <- NULL
-  res <- ksample$test(X, Y, reps=1L)
+  res <- py_suppress_warnings(ksample$test(X, Y, reps=1L))
   names(res) <- c("statistic", "pvalue")
   return(res)
 }

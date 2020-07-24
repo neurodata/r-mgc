@@ -31,10 +31,10 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
   }
   Xr1 <- lol.project.pca(X1, r=1)$Xr; Xr2 <- lol.project.pca(X2, r=1)$Xr
   # get observed difference in statistic of interest
-  tr <- list(Stability=mgc:::discr.mnr(mgc:::discr.rdf(D1, Y1)) - mgc:::discr.mnr(mgc:::discr.rdf(D2, Y1)),
+  tr <- list(Discr=mgc:::discr.mnr(mgc:::discr.rdf(D1, Y1)) - mgc:::discr.mnr(mgc:::discr.rdf(D2, Y1)),
              PICC=icc.os(Xr1, Y1) - icc.os(Xr2, Y1),
              I2C2=i2c2.os(X1, Y1) - i2c2.os(X2, Y1),
-             MMD=mmd.os(D1, Y1, is.dist=TRUE) - mmd.os(D2, Y1, is.dist=TRUE),
+             Kernel=ksamp.os(D1, Y1, is.dist=TRUE) - ksamp.os(D2, Y1, is.dist=TRUE),
              FPI=fpi.os(X1, Y1, Z) - fpi.os(X2, Y1, Z))
 
   null.stats <- mclapply(1:nperm, function(i) {
@@ -55,8 +55,8 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
                           remove.isolates=remove.isolates)$discr
     D2.null <- discr.stat(DXn2, Y1, is.dist=TRUE, dist.xfm=dist.xfm, dist.params=dist.params, dist.return=dist.return,
                           remove.isolates=remove.isolates)$discr
-    mmd1.null <- mmd.os(DXn1, Y1, is.dist=TRUE)
-    mmd2.null <- mmd.os(DXn2, Y1, is.dist=TRUE)
+    ksamp1.null <- ksamp.os(DXn1, Y1, is.dist=TRUE)
+    ksamp2.null <- ksamp.os(DXn2, Y1, is.dist=TRUE)
 
     icc1.null <- icc.os(Xnr1, Y1)
     icc2.null <- icc.os(Xnr2, Y1)
@@ -64,18 +64,18 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
     i2c22.null <- i2c2.os(Xn2, Y1)
     fpi1.null <- fpi.os(Xn1, Y1, Z)
     fpi2.null <- fpi.os(Xn2, Y1, Z)
-    return(list(Stability=c(D1.null - D2.null, D2.null - D1.null),
+    return(list(Discr=c(D1.null - D2.null, D2.null - D1.null),
                 PICC=c(icc1.null - icc2.null, icc2.null - icc1.null),
                 I2C2=c(i2c21.null - i2c22.null, i2c22.null - i2c21.null),
-                MMD=c(mmd1.null - mmd2.null, mmd2.null - mmd1.null),
+                Kernel=c(ksamp1.null - ksamp2.null, ksamp2.null - ksamp1.null),
                 FPI=c(fpi1.null - fpi2.null, fpi2.null - fpi1.null)))
   }, mc.cores=no_cores)
 
   # compute null distribution of difference between discriminabilities
-  null.diff <- list(Stability=sapply(null.stats, function(x) x$Stability),
+  null.diff <- list(Discr=sapply(null.stats, function(x) x$Discr),
                     PICC=sapply(null.stats, function(x) x$PICC),
                     I2C2=sapply(null.stats, function(x) x$I2C2),
-                    MMD=sapply(null.stats, function(x) x$MMD),
+                    Kernel=sapply(null.stats, function(x) x$Kernel),
                     FPI=sapply(null.stats, function(x) x$FPI))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {

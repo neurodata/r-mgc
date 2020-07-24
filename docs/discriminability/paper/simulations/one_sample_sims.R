@@ -20,27 +20,27 @@ test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.
   }
   Xr <- lol.project.pca(X, 1)$Xr
   # compute references for the statistics
-  tr <- list(Stability=discr.stat(D, Y, is.dist=TRUE)$discr,
+  tr <- list(Discr=discr.stat(D, Y, is.dist=TRUE)$discr,
              PICC=icc.os(Xr, Y),
              I2C2=i2c2.os(X, Y),
-             MMD=mmd.os(D, Y, is.dist=TRUE),
+             Kernel=ksamp.os(D, Y, is.dist=TRUE),
              FPI=fpi.os(X, Y, Z))
 
   nr <- mclapply(1:nperm, function(i) {
     perm.idx <- sample(N)
     perm.Y <- Y[perm.idx]
     perm.Z <- Z[perm.idx]
-    return(list(Stability=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
+    return(list(Discr=discr.stat(D, perm.Y, is.dist=TRUE)$discr,
                 PICC=icc.os(Xr, perm.Y),
                 I2C2=i2c2.os(X, perm.Y),
-                MMD=mmd.os(D, perm.Y, is.dist=TRUE),
+                Kernel=ksamp.os(D, perm.Y, is.dist=TRUE),
                 FPI=fpi.os(X, perm.Y, perm.Z)))
   }, mc.cores=no_cores)
 
-  null.stats <- list(Stability=lapply(nr, function(x) x$Stability),
+  null.stats <- list(Discr=lapply(nr, function(x) x$Discr),
                      PICC=lapply(nr, function(x) x$PICC),
                      I2C2=lapply(nr, function(x) x$I2C2),
-                     MMD=lapply(nr, function(x) x$MMD),
+                     Kernel=lapply(nr, function(x) x$Kernel),
                      FPI=lapply(nr, function(x) x$FPI))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
