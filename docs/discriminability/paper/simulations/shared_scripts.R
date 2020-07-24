@@ -107,15 +107,19 @@ discr.os <- function(X, Y, is.dist=TRUE, ...) {
 }
 
 # ksample testing wrapper
-ksamp.test <- function(X, Y, method="DCorr", nrep=1000L, ...) {
-  ksample <- import("hyppo.ksample")
-  test <- ksample$KSample(indep_test=method)
-  res <- test$test(as.matrix(X), as.matrix(Y), reps=as.integer(nrep))
+ksamp.test <- function(X, Y, method="Dcorr", nrep=1000L, ...) {
+  ksample <- import("hyppo.independence")[[method]]()
+  Y = as.matrix(dist(as.matrix(one_hot(data.table(factor(Y))))))
+  colnames(Y) <- NULL
+  res <- ksample$test(X, Y, reps=1L)
   names(res) <- c("statistic", "pvalue")
   return(res)
 }
 
-ksamp.os <- function(X, Y, method="DCorr", ...) {
+ksamp.os <- function(X, Y, method="Dcorr", is.dist=TRUE, ...) {
+  if (!is.dist) {
+    X = as.matrix(dist(as.matrix(X)))
+  }
   res <- ksamp.test(X, Y, method=method, nrep=0L)
   return(res$statistic)
 }

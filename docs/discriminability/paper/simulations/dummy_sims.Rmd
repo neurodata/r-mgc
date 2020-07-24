@@ -73,7 +73,7 @@ results <- lapply(names(data), function(sim) {
   icc <- icc.os(dat$X, dat$Y)
   discr <- discr.os(dat$X, dat$Y, is.dist=FALSE)
   fpi <- fpi.os(matrix(dat$X, ncol=1), dat$Y, dat$Z, dist.xfm=dist.x, is.sim=FALSE)
-  dcorr <- ksamp.os(dat$X, dat$Y)
+  dcorr <- ksamp.os(dat$X, dat$Y, is.dist=FALSE)
   data.frame(Statistic=c(icc, discr, fpi, dcorr), Simulation=sim,
              Algorithm=c("ICC/I2C2", "Discr.", "Finger.", "Kernel"))
 })
