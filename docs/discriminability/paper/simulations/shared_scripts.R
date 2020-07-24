@@ -42,7 +42,7 @@ i2c2.os <- function(X, Y, ...) {
 }
 
 corr.t <- function(X) {
-  return(corr(t(X)))
+  return(cor(t(X)))
 }
 
 dist.x <- function(X) {
@@ -56,8 +56,8 @@ dist.x <- function(X) {
 # X is a nxd data matrix for n samples
 # Y is a n vector of individual labels
 # Z is a n vector of scan sessions
-fpi.os <- function(X, Y, Z, is.sim=FALSE, dist.xfm=corr.t, is.dist=FALSE, ...) {
-  if (!is.dist) {
+fpi.os <- function(X, Y, Z, is.sim=TRUE, is.sim_or_dist=FALSE, dist.xfm=corr.t, is.dist=FALSE, ...) {
+  if (!is.sim_or_dist) {
     DX <- do.call(dist.xfm, list(X))
   } else {
     DX <- X
