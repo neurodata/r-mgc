@@ -142,7 +142,7 @@ flashx.pca <- function(X, r, ...) {
 }
 
 
-stats <- list(Stability=discr.os, PICC=icc.os, I2C2=i2c2.os, DISCO=disco.os, AFPI=fpi.os)
+stats <- list(Stability=discr.os, PICC=icc.os, I2C2=i2c2.os, Kernel=ksamp.os, FPI=fpi.os)
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
 
@@ -176,16 +176,16 @@ results.reference <- do.call(rbind, mclapply(experiments.base, function(experime
                 experiment$xfm.name))
   test=do.call(rbind, lapply(names(stats), function(stat.name) {
     tryCatch({
-      if (stat.name %in% c("Stability", "DISCO")) {
+      if (stat.name %in% c("Discr", "Kernel")) {
         X.dat = experiment$DX
       } else if (stat.name == "PICC") {
         X.dat = experiment$Xr
-      } else if (stat.name == "AFPI") {
+      } else if (stat.name == "FPI") {
         X.dat = experiment$RX
       } else {
         X.dat = experiment$X
       }
-      if (stat.name == "AFPI") {
+      if (stat.name == "FPI") {
         stat.res=do.call(stats[[stat.name]], list(X=X.dat, Y=experiment$Individual, Z=experiment$Sessions, is.corr=TRUE))
       } else {
         stat.res=do.call(stats[[stat.name]], list(X.dat, experiment$Individual))

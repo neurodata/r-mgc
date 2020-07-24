@@ -21,6 +21,7 @@ source('./shared_scripts.R')
 require(dplyr)
 ```
 
+
 ```{r}
 n = 10
 
@@ -72,8 +73,8 @@ results <- lapply(names(data), function(sim) {
   icc <- icc.os(dat$X, dat$Y)
   discr <- discr.os(dat$X, dat$Y, is.dist=FALSE)
   fpi <- fpi.os(matrix(dat$X, ncol=1), dat$Y, dat$Z, dist.xfm=dist.x, is.sim=FALSE)
-  disco <- disco.os(dat$X, dat$Y, is.dist=FALSE)
-  data.frame(Statistic=c(icc, discr, fpi, disco), Simulation=sim,
+  dcorr <- ksamp.os(dat$X, dat$Y)
+  data.frame(Statistic=c(icc, discr, fpi, dcorr), Simulation=sim,
              Algorithm=c("ICC/I2C2", "Discr.", "Finger.", "Kernel"))
 })
 
@@ -160,9 +161,7 @@ sim.dat <- do.call(rbind, results) %>%
   mutate(Algorithm=factor(Algorithm, ordered=TRUE, levels=c("Discr.", "Finger.", "ICC/I2C2", "Kernel"))) %>%
   ungroup() %>%
   group_by(Algorithm) %>%
-  mutate(Statistic=ifelse(Algorithm %in% c("Kernel"), 
-                          (Statistic - 0)/(max(Statistic) - 0), Statistic),
-         Simulation=factor(Simulation, 
+  mutate(Simulation=factor(Simulation, 
                            levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE)) %>%
   ungroup() %>%
   dplyr::group_by(Simulation) %>%

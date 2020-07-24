@@ -12,6 +12,10 @@ require(emdbook)
 require(gtools)
 require(kernelPSI)
 require(energy)
+require(reticulate)
+use_virtualenv("~/.virtualenvs/hyppo/", required=TRUE)
+py_config()
+ksample <- import("hyppo.ksample")
 
 # one-way ICC
 icc.os <- function(X, Y, ...) {
@@ -100,6 +104,20 @@ fpi.os <- function(X, Y, Z, is.sim=FALSE, dist.xfm=corr.t, is.dist=FALSE, ...) {
 
 discr.os <- function(X, Y, is.dist=TRUE, ...) {
   return(discr.stat(X, Y, is.dist=is.dist)$discr)
+}
+
+# ksample testing wrapper
+ksamp.test <- function(X, Y, method="DCorr", nrep=1000L, ...) {
+  ksample <- import("hyppo.ksample")
+  test <- ksample$KSample(indep_test=method)
+  res <- test$test(as.matrix(X), as.matrix(Y), reps=as.integer(nrep))
+  names(res) <- c("statistic", "pvalue")
+  return(res)
+}
+
+ksamp.os <- function(X, Y, method="DCorr", ...) {
+  res <- ksamp.test(X, Y, method=method, nrep=0L)
+  return(res$statistic)
 }
 
 disco.os <- function(X, Y, is.dist=TRUE, ...) {
