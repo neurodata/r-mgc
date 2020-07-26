@@ -113,7 +113,7 @@ ksamp.test <- function(X, Y, method="Dcorr", nrep=1000L, ...) {
   ksample <- py_suppress_warnings(import("hyppo.independence")[[method]]())
   Y = as.matrix(dist(as.matrix(one_hot(data.table(factor(Y))))))
   colnames(Y) <- NULL
-  res <- py_suppress_warnings(ksample$test(X, Y, reps=1L))
+  res <- py_suppress_warnings(ksample$test(X, Y, reps=nrep))
   names(res) <- c("statistic", "pvalue")
   return(res)
 }
