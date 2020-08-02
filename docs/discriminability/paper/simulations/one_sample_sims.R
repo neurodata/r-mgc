@@ -24,6 +24,9 @@ test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.
              PICC=icc.os(Xr, Y),
              I2C2=i2c2.os(X, Y),
              Kernel=ksamp.os(D, Y, is.dist=TRUE),
+             MMD=mmd.os(X, Y),
+             HSIC=hsic.os(D, Y, is.dist=TRUE),
+             DISCO=disco.os(D, Y, is.dist=TRUE),
              FPI=fpi.os(X, Y, Z))
 
   nr <- mclapply(1:nperm, function(i) {
@@ -34,6 +37,9 @@ test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.
                 PICC=icc.os(Xr, perm.Y),
                 I2C2=i2c2.os(X, perm.Y),
                 Kernel=ksamp.os(D, perm.Y, is.dist=TRUE),
+                MMD=mmd.os(X, perm.Y),
+                HSIC=hsic.os(D, perm.Y, is.dist=TRUE),
+                DISCO=disco.os(D, perm.Y,is.dist=TRUE),
                 FPI=fpi.os(X, perm.Y, perm.Z)))
   }, mc.cores=no_cores)
 
@@ -41,11 +47,18 @@ test.one_sample <- function(X, Y, Z, is.dist=FALSE, dist.xfm=mgc.distance, dist.
                      PICC=lapply(nr, function(x) x$PICC),
                      I2C2=lapply(nr, function(x) x$I2C2),
                      Kernel=lapply(nr, function(x) x$Kernel),
+                     MMD=lapply(nr, function(x) x$MMD),
+                     HSIC=lapply(nr, function(x) x$HSIC),
+                     DISCO=lapply(nr, function(x) x$DISCO),
                      FPI=lapply(nr, function(x) x$FPI))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
+    pval = mean(null.stats[[stat.name]] > tr[[stat.name]])*(nperm - 1)/nperm + 1/nperm
+    if (is.na(pval)) {
+      pval <- NaN
+    }
     data.frame(stat.name=stat.name, stat=tr[[stat.name]],
-               p.value=mean(null.stats[[stat.name]] > tr[[stat.name]])*(nperm - 1)/nperm + 1/nperm)
+               p.value=pval)
   })))
 }
 
