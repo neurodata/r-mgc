@@ -15,6 +15,7 @@ require(energy)
 require(reticulate)
 require(mltools)
 require(data.table)
+require(kernlab)
 use_virtualenv("~/.virtualenvs/hyppo/", required=TRUE)
 py_config()
 ksample <- import("hyppo.ksample")
@@ -108,6 +109,13 @@ discr.os <- function(X, Y, is.dist=TRUE, ...) {
   return(discr.stat(X, Y, is.dist=is.dist)$discr)
 }
 
+mmd.os <- function(X, Y, ...) {
+  X1 = X[Y == 1,,drop=FALSE]
+  X2 = X[Y == 2,,drop=FALSE]
+  kern.stat <- kmmd(X1, X2, ntimes=0)@mmdstats[1]
+  return(kern.stat)
+}
+
 # ksample testing wrapper
 ksamp.test <- function(X, Y, method="Dcorr", is.dist=TRUE, nrep=1000L, ...) {
   if (!is.dist) {
@@ -135,7 +143,7 @@ disco.os <- function(X, Y, is.dist=TRUE, ...) {
   as.numeric(disco(DX, factor(Y), R=0, method="disco")$statistic)
 }
 
-mmd.os <- function(X, Y, is.dist=FALSE) {
+hsic.os <- function(X, Y, is.dist=FALSE) {
   if (is.dist) {
     DX <- X
   } else {

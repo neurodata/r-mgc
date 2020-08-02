@@ -38,6 +38,7 @@ sim.no_signal <- function(n=128, d=2, n.bayes=10000, sigma=1) {
   Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(Discr=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
               I2C2=i2c2.os(samp$X, samp$Y), Kernel=ksamp.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              MMD=mmd.os(samp$X, samp$Y), HSIC=hsic.os(DX, samp$Y, is.dist=TRUE),
               bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
@@ -57,6 +58,7 @@ sim.parallel_rot_cigars <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=
   Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(Discr=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
               I2C2=i2c2.os(samp$X, samp$Y), Kernel=ksamp.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              MMD=mmd.os(samp$X, samp$Y), HSIC=hsic.os(DX, samp$Y, is.dist=TRUE),
               bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
@@ -81,6 +83,7 @@ sim.linear_sig <- function(n=128, d=2, n.bayes=10000, n.pts=100, sigma=0) {
   Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(Discr=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
               I2C2=i2c2.os(samp$X, samp$Y), Kernel=ksamp.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              MMD=mmd.os(samp$X, samp$Y), HSIC=hsic.os(DX, samp$Y, is.dist=TRUE), DISCO=disco.os(DX, samp$Y, is.dist=TRUE),
               bayes=compute_bayes(samp.bayes$X, samp.bayes$Y)))
 }
 
@@ -145,6 +148,7 @@ sim.crossed_sig <- function(n=128, d=2, K=16, n.bayes=10000, sigma=0) {
   Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(Discr=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
               I2C2=i2c2.os(X, Y), Kernel=ksamp.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              MMD=mmd.os(X, Y), HSIC=hsic.os(DX, Y, is.dist=TRUE), DISCO=disco.os(DX, Y, is.dist=TRUE),
               bayes=compute_bayes(X.bayes, Z.bayes)))
 }
 
@@ -186,6 +190,7 @@ sim.crossed_sig2 <- function(n=128, d=2, n.bayes=10000, sigma=0) {
   Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(Discr=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
               I2C2=i2c2.os(X, Y), Kernel=ksamp.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              MMD=mmd.os(X, Y), HSIC=hsic.os(DX, Y, is.dist=TRUE), DISCO=disco.os(DX, Y, is.dist=TRUE),
               bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 ## Samples from Multiclass Gaussians
@@ -222,6 +227,7 @@ sim.multiclass_gaussian <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   Z <- do.call(c, lapply(unique(samp$Y), function(y) return(1:sum(samp$Y == y))))
   return(list(Discr=discr.stat(DX, samp$Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(samp$X, r=1)$Xr, samp$Y),
               I2C2=i2c2.os(samp$X, samp$Y), Kernel=ksamp.os(DX, samp$Y, is.dist=TRUE), FPI=fpi.os(samp$X, samp$Y, Z),
+              MMD=NULL, HSIC=hsic.os(DX, samp$Y, is.dist=TRUE), DISCO=disco.os(DX, samp$Y, is.dist=TRUE),
               bayes=compute_bayes(samp.bayes$X, Z.bayes)))
 }
 
@@ -270,6 +276,7 @@ sim.multiclass_ann_disc <- function(n, d, K=16, n.bayes=10000, sigma=0) {
   Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(Discr=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
               I2C2=i2c2.os(X, Y), Kernel=ksamp.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              MMD=NULL, HSIC=hsic.os(DX, Y, is.dist=TRUE), DISCO=disco.os(DX, Y, is.dist=TRUE),
               bayes=compute_bayes(X.bayes, Z.bayes)))
 }
 
@@ -305,6 +312,7 @@ sim.multiclass_ann_disc2 <- function(n, d, n.bayes=5000, sigma=0) {
   Z <- do.call(c, lapply(unique(Y), function(y) return(1:sum(Y == y))))
   return(list(Discr=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
               I2C2=i2c2.os(X, Y), Kernel=ksamp.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              MMD=NULL, HSIC=hsic.os(DX, Y, is.dist=TRUE), DISCO=disco.os(DX, Y, is.dist=TRUE),
               bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 
@@ -325,6 +333,7 @@ sim.xor2 <- function(n, d, n.bayes=10000, sigma=0) {
   Z[Y == 1] <- sample(1:(n/2), replace=FALSE, size=n/2)
   return(list(Discr=discr.stat(DX, Y, is.dist=TRUE)$discr, PICC=icc.os(lol.project.pca(X, r=1)$Xr, Y),
               I2C2=i2c2.os(X, Y), Kernel=ksamp.os(DX, Y, is.dist=TRUE), FPI=fpi.os(X, Y, Z),
+              MMD=mmd.os(X, Y), HSIC=hsic.os(DX, Y, is.dist=TRUE), DISCO=disco.os(DX, Y, is.dist=TRUE),
               bayes=compute_bayes(X.bayes, Y.bayes)))
 }
 
