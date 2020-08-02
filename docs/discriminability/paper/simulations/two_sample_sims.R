@@ -35,6 +35,9 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
              PICC=icc.os(Xr1, Y1) - icc.os(Xr2, Y1),
              I2C2=i2c2.os(X1, Y1) - i2c2.os(X2, Y1),
              Kernel=ksamp.os(D1, Y1, is.dist=TRUE) - ksamp.os(D2, Y1, is.dist=TRUE),
+             MMD=mmd.os(X1, Y1) - mmd.os(X2, Y1),
+             HSIC=hsic.os(D1, Y1, is.dist=TRUE) - hsic.os(D2, Y1, is.dist=TRUE),
+             DISCO=disco.os(D1, Y1, is.dist=TRUE) - disco.os(D2, Y1, is.dist=TRUE),
              FPI=fpi.os(X1, Y1, Z) - fpi.os(X2, Y1, Z))
 
   null.stats <- mclapply(1:nperm, function(i) {
@@ -57,7 +60,12 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
                           remove.isolates=remove.isolates)$discr
     ksamp1.null <- ksamp.os(DXn1, Y1, is.dist=TRUE)
     ksamp2.null <- ksamp.os(DXn2, Y1, is.dist=TRUE)
-
+    disco1.null <- disco.os(DXn1, Y1, is.dist=TRUE)
+    disco2.null <- disco.os(DXn2, Y1, is.dist=TRUE)
+    hsic1.null <- disco.os(DXn1, Y1, is.dist=TRUE)
+    hsic2.null <- disco.os(DXn2, Y1, is.dist=TRUE)
+    mmd1.null <- mmd.os(Xn1, Y1)
+    mmd2.null <- mmd.os(Xn2, Y2)
     icc1.null <- icc.os(Xnr1, Y1)
     icc2.null <- icc.os(Xnr2, Y1)
     i2c21.null <- i2c2.os(Xn1, Y1)
@@ -68,6 +76,9 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
                 PICC=c(icc1.null - icc2.null, icc2.null - icc1.null),
                 I2C2=c(i2c21.null - i2c22.null, i2c22.null - i2c21.null),
                 Kernel=c(ksamp1.null - ksamp2.null, ksamp2.null - ksamp1.null),
+                MMD=c(mmd1.null - mmd2.null, mmd2.null - mmd1.null),
+                DISCO=c(disco1.null - disco2.null, disco2.null - disco1.null),
+                HSIC=c(hsic1.null - hsic2.null, hsic2.null - hsic1.null),
                 FPI=c(fpi1.null - fpi2.null, fpi2.null - fpi1.null)))
   }, mc.cores=no_cores)
 
@@ -76,11 +87,18 @@ test.two_sample <- function(X1, X2, Y, Z, dist.xfm=mgc.distance,
                     PICC=sapply(null.stats, function(x) x$PICC),
                     I2C2=sapply(null.stats, function(x) x$I2C2),
                     Kernel=sapply(null.stats, function(x) x$Kernel),
+                    MMD=sapply(null.stats, function(x) x$MMD),
+                    DISCO=sapply(null.stats, function(x) x$DISCO),
+                    HSIC=sapply(null.stats, function(x) x$HSIC),
                     FPI=sapply(null.stats, function(x) x$FPI))
 
   return(do.call(rbind, lapply(names(tr), function(stat.name) {
+    pval = mean(null.diff[[stat.name]] > tr[[stat.name]])*(nperm - 1)/nperm + 1/nperm
+    if (is.na(pval)) {
+      pval <- NaN
+    }
     data.frame(stat.name=stat.name, stat=tr[[stat.name]],
-               p.value=mean(null.diff[[stat.name]] > tr[[stat.name]])*(nperm - 1)/nperm + 1/nperm)
+               p.value=pval)
     }))
   )
 }
