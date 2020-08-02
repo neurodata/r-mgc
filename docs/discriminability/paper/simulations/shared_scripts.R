@@ -110,7 +110,7 @@ discr.os <- function(X, Y, is.dist=TRUE, ...) {
 }
 
 mmd.os <- function(X, Y, ...) {
-  if (length(unique(Y)) > 2) {
+  if (length(unique(Y)) == 2) {
     X1 = X[Y == 1,,drop=FALSE]
     X2 = X[Y == 2,,drop=FALSE]
     kern.stat <- kmmd(X1, X2, ntimes=0)@mmdstats[1]
