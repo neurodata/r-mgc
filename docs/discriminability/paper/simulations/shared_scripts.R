@@ -1,5 +1,3 @@
-require(mgc)
-require(lolR)
 require(MASS)
 require(mvtnorm)
 library(parallel)
@@ -148,7 +146,7 @@ disco.os <- function(X, Y, is.dist=TRUE, ...) {
   as.numeric(disco(DX, factor(Y), R=0, method="disco")$statistic)
 }
 
-hsic.os <- function(X, Y, is.dist=FALSE) {
+hsic.os <- function(X, Y, is.dist=FALSE, ...) {
   if (is.dist) {
     DX <- X
   } else {
