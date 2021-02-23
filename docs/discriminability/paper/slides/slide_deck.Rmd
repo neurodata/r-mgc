@@ -1,0 +1,607 @@
+---
+title: "Discr Slide Deck"
+author: "Eric Bridgeford"
+date: "10/6/2020"
+output: html_document
+---
+
+# Dummy Sims
+
+```{r, warning=FALSE, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(scales)
+require(latex2exp)
+require(MASS)
+source('../simulations/shared_scripts.R')
+require(dplyr)
+```
+
+
+```{r}
+n = 10
+
+data <- lapply(c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), function (sim) {
+  X.d <- matrix(NaN, nrow=n*2, ncol=1)
+  if (sim == "(ii) Offset") {
+    centers <- seq(-1, 1, length.out=n)
+    ids <- 1:n
+    dist <- 2/n
+    X.d[,1] <- c(centers + dist, centers - dist)
+    Y <- c(ids, ids)
+    Z <- c(rep(1, n), rep(2, n))
+  }
+  else if (sim == "(iii) Outlier") {
+    centers <- seq(-1, 1, length.out=n)
+    ids <- 1:n
+    dist <- .5/n
+    X.d[,1] <- c(centers + dist, centers - dist)
+    rpts <- c(3, 17)
+    Y <- c(ids, ids)
+    set.seed(1234)
+    X.d[rpts,1] <- X.d[rpts,1] + 8
+    Z <- c(rep(1, n), rep(2, n))
+  }
+  else if (sim == "(i) Discriminable") {
+    centers <- seq(-1, 1, length.out=n)
+    ids <- 1:n
+    dist <- .5/n
+    X.d[,1] <- c(centers + dist, centers - dist)
+    Z <- c(rep(1, n), rep(2, n))
+    Y <- c(ids, ids)
+  }
+  else if (sim == "(iv) Unreliable") {
+    centers <- rep(0, length.out=n)
+    ids <- 1:n
+    dist <- .5/n
+    X.d[,1] <- c(centers + dist, centers - dist)
+    Z <- c(rep(1, n), rep(2, n))
+    Y <- c(ids, rev(ids))
+  }
+  return(data.frame(X=X.d, Y=Y, Z=Z, Simulation=sim))
+})
+names(data) <- c("(i) Discriminable", "(ii) Offset", "(iii) Outlier")
+```
+
+```{r}
+results <- lapply(names(data), function(sim) {
+  dat <- data[[sim]]
+  icc <- icc.os(dat$X, dat$Y)
+  discr <- discr.os(dat$X, dat$Y, is.dist=FALSE)
+  fpi <- fpi.os(matrix(dat$X, ncol=1), dat$Y, dat$Z, dist.xfm=dist.x, is.sim=FALSE)
+  disco <- disco.os(dat$X, dat$Y, is.dist=FALSE)
+  data.frame(Statistic=c(icc, discr, fpi, disco), Simulation=sim,
+             Algorithm=c("ICC", "Discr.", "Finger.", "Kernel"))
+})
+
+var.ord <- c(sapply(1:10, function(i) rep(i, 2)))
+Dmtx_results <- lapply(names(data), function(sim) {
+  dat <- data[[sim]]
+  new_ord <- sort(dat$Y, index.return=TRUE)$ix
+  Dmtx <- as.matrix(dist(matrix(dat$X[new_ord], ncol=1))) %>%
+    melt() %>%
+    dplyr::rename(Distance=value) %>%
+    dplyr::mutate(Simulation = sim) %>%
+    dplyr::mutate(Individual1=var.ord[Var1], Individual2=var.ord[Var2])
+})
+```
+
+```{r, fig.height=3.6, fig.width=6.3}
+do.call(rbind, data) %>%
+  group_by(Simulation) %>%
+  mutate(X=(X - min(X))/(max(X) - min(X))) %>%
+  ungroup() %>%
+  filter(Simulation == "(ii) Offset") %>%
+  mutate(Simulation=factor(Simulation, 
+                           levels=c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE),
+         Z=factor(Z)) %>%
+  ggplot(aes(x=X - min(X)/max(X), y=as.factor(Y),
+             fill=as.factor(Y), shape=Z)) +
+  geom_point(color='white', shape=21, size=5) +
+  #scale_shape_manual(values=c('1'=22, '2'=23), guide=FALSE) +
+  xlab("Value") +
+  ylab("Individual ID") +
+  ggtitle("(ii) Offset Simulation, n=10, s=2") +
+  scale_x_continuous(breaks=c(0, 0.5, 1), labels=c(-1, 0, 1)) +
+  scale_fill_discrete(guide=FALSE) +
+  scale_y_discrete(breaks=c(1, 10), labels=c(1, 10)) +
+  theme_bw(base_size=18)
+```
+
+```{r, fig.height=5, fig.width=6.5}
+alg.colors <- c("#c70000", "#a65628", "#984ea3", "#ff8c00", "#377eb8", "#4daf4a")
+line.types <- c(1, 1, 1, 1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr.", "ICC", "Finger.", "I2C2", "Kernel", "Bayes Accuracy")
+
+Dmtx.results <- do.call(rbind, Dmtx_results) %>%
+  group_by(Simulation) %>%
+  dplyr::mutate(Distance = (Distance - min(Distance))/(max(Distance) - min(Distance)),
+         Var1=factor(Var1, levels=1:(2*n), ordered=TRUE),
+         Var2=factor(Var2, levels=1:(2*n), ordered=TRUE)) %>%
+  ungroup() %>%
+  dplyr::mutate(Simulation=factor(Simulation, 
+                           levels=c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE))
+
+Dmtx_rank <- Dmtx.results %>%
+  group_by(Simulation, Var2) %>%
+  dplyr::mutate(Rank = rank(Distance))
+
+Dmtx.ranked <- Dmtx_rank %>%
+  left_join(Dmtx_rank %>% 
+              filter(Individual1==Individual2 & Var1 != Var2) %>% 
+              dplyr::rename(RankPair=Rank) %>%
+              dplyr::select(Var2, Simulation, RankPair),
+            by=c("Var2", "Simulation")) %>%
+  filter(Rank <= RankPair & Var1 != Var2) %>%
+  dplyr::mutate(color=factor(ifelse(Rank < RankPair, "Closer", ifelse(Individual1 == Individual2, "Match", "Tie")),
+                             levels=rev(c("Match", "Closer", "Tie")), ordered=TRUE))
+
+rank.col <- c("Closer"="#b35806", "Tie"="blue", "Match"="darkgreen")
+
+
+Dmtx.results %>%
+  filter(Simulation == "(ii) Offset") %>%
+  ggplot(aes(x=Var1, y=Var2, fill=Distance)) +
+    geom_tile() +
+    scale_color_manual(values=rank.col, name="") +
+    xlab("Measurement ID") +
+    ylab("Measurement ID") +
+    scale_fill_continuous(low="white", high="purple", breaks=c(0, 1), labels=c("small", "large")) +
+    scale_x_discrete(breaks=c(1, 20), labels=c(1, 20)) +
+    scale_y_discrete(breaks=c(1, 20), labels=c(1, 20)) +#, limits=rev(levels(Dmtx_results$Var2))) +
+    theme_bw(base_size=18) +
+    theme(
+      strip.background = element_blank(),
+      strip.text = element_blank()
+    ) +
+    ggtitle("(ii) Offset, Distance Matrix")
+```
+
+```{r, fig.height=5, fig.width=6.5}
+Dmtx.results %>%
+  filter(Simulation == "(ii) Offset") %>%
+  ggplot(aes(x=Var1, y=Var2, fill=Distance)) +
+    geom_tile() +
+    geom_tile(data=Dmtx.ranked %>% arrange(as.numeric(Rank == RankPair)) %>% filter(Simulation == "(ii) Offset" & color == "Match"), aes(x=Var1, y=Var2, color=color), alpha=0, size=.5) +
+    scale_color_manual(values=rank.col, name="") +
+    xlab("Measurement ID") +
+    ylab("Measurement ID") +
+    scale_fill_continuous(low="white", high="purple", breaks=c(0, 1), labels=c("small", "large")) +
+    scale_x_discrete(breaks=c(1, 20), labels=c(1, 20)) +
+    scale_y_discrete(breaks=c(1, 20), labels=c(1, 20)) +#, limits=rev(levels(Dmtx_results$Var2))) +
+    theme_bw(base_size=18) +
+    theme(
+      strip.background = element_blank(),
+      strip.text = element_blank()
+    ) +
+    ggtitle("(ii) Offset, g=20")
+```
+
+```{r, fig.height=5, fig.width=6.5}
+Dmtx.results %>%
+  filter(Simulation == "(ii) Offset") %>%
+  ggplot(aes(x=Var1, y=Var2, fill=Distance)) +
+    geom_tile() +
+    geom_tile(data=Dmtx.ranked %>% arrange(as.numeric(Rank == RankPair)) %>% filter(Simulation == "(ii) Offset"), aes(x=Var1, y=Var2, color=color), alpha=0, size=.5) +
+    scale_color_manual(values=rank.col, name="") +
+    xlab("Measurement ID") +
+    ylab("Measurement ID") +
+    scale_fill_continuous(low="white", high="purple", breaks=c(0, 1), labels=c("small", "large")) +
+    scale_x_discrete(breaks=c(1, 20), labels=c(1, 20)) +
+    scale_y_discrete(breaks=c(1, 20), labels=c(1, 20)) +#, limits=rev(levels(Dmtx_results$Var2))) +
+    theme_bw(base_size=18) +
+    theme(
+      strip.background = element_blank(),
+      strip.text = element_blank()
+    ) +
+    ggtitle("(ii) Offset, f=84")
+```
+
+```{r, fig.height=3.6, fig.width=6.3}
+sim.dat %>%
+  filter(Simulation == "(ii) Offset") %>%
+  ggplot(aes(x=Algorithm, y=Statistic, fill=Algorithm), color='black') +
+  geom_col() +
+  scale_fill_manual(values=alg.colors, guide=FALSE) +
+  geom_text(data=sim.dat %>% filter(Simulation == "(ii) Offset"), aes(label=sprintf("%.2f", Statistic), y=position, color=textcol), size=6) +
+  scale_color_manual(values=c('white'="#ffffff", 'black'="#000000"), guide=FALSE) +
+  xlab(" ") +
+  ylab("Statistic") +
+  ggtitle("(ii) Offset, Reproducibility Statistic") +
+  theme_bw(base_size=18) +
+  scale_y_continuous(breaks=c(-.5, 0, 1), labels=c(-.5, 0, 1),
+                     minor_breaks=c(-.75, -.25, .25, .5, .75),
+                     expand=c(0, 0)) +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    #axis.text.x = element_text(color="#FFFFFF"),
+    #axis.ticks.x = element_line(color="#FFFFFF"),,
+    panel.grid.minor.y = element_line(color = "grey80")
+  ) +
+  geom_blank(aes(y=ymin)) +
+  geom_blank(aes(y=ymax))
+```
+
+# More realistic sims
+
+```{r, message=FALSE}
+require(ggplot2)
+require(reshape2)
+require(grid)
+require(gridExtra)
+require(mgc)
+require(ICC)
+require(I2C2)
+require(cowplot)
+require(lolR)
+require(plyr)
+require(scales)
+require(dplyr)
+require(latex2exp)
+require(MASS)
+require(gtable)
+```
+
+```{r}
+g_legend<-function(a.gplot){
+  tryCatch({
+    tmp <- ggplot_gtable(ggplot_build(a.gplot))
+    leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+    legend <- tmp$grobs[[leg]]
+    return(legend)
+  }, error=function(e) {return(ggplot() + theme_void())})
+}
+
+gtable_filter_remove <- function (x, name, trim = TRUE){
+  matches <- !(x$layout$name %in% name)
+  x$layout <- x$layout[matches, , drop = FALSE]
+  x$grobs <- x$grobs[matches]
+  if (trim) 
+    x <- gtable_trim(x)
+  x
+}
+```
+
+## Data Plots
+
+```{r}
+source('../simulations/shared_scripts.R')
+
+sim.no_signal <- function(n=128, d=2, sigma=1) {
+  # classes are from same distribution, so signal should be detected w.p. alpha
+  samp <- sim_gmm(mus=cbind(rep(0, d), rep(0,d)), Sigmas=abind(diag(d), diag(d), along=3), n, priors=c(0.5,0.5))
+  samp$X=samp$X + array(rnorm(n*d), dim=c(n, d))*sigma
+  return(list(X=samp$X, Y=samp$Y, Z=samp$Y))
+}
+
+## Samples from Multiclass Gaussians
+# a simulation where there are multiple classes present, and a correlation structure
+# 2 classes
+sim.multiclass_gaussian <- function(n, d, K=16, sigma=0) {
+  # centers for the individuals
+  mu.class <- rep(0, d)
+  S.class <- diag(d)*sqrt(K)
+
+  # sample the individual centers
+  mus.class <- t(mvrnorm(n=K, mu.class, S.class))
+
+  # individual covariances
+  S.k <- diag(d)
+  S.k[upper.tri(S.k)] <- 0.5  # correlated
+  S.k[lower.tri(S.k)] <- 0.5
+  Sigmas <- abind(lapply(1:K, function(k) S.k), along=3)
+
+  # sample individuals w.p. 1/K
+  samp <- sim_gmm(mus=mus.class, Sigmas=Sigmas, n, priors=rep(1/K, K))
+  samp$X=samp$X + array(rnorm(n*d)*sigma, dim=c(n, d))
+  
+  mus.z <- as.numeric(sapply(1:K, function(k) {
+    return(mus.class[1,k] <= 0)
+  })) + 1
+  Z <- mus.z[samp$Y]
+  
+  return(list(X=samp$X, Y=samp$Y, Z=Z))
+}
+
+sim.crossed_sig2 <- function(n=128, d=2, sigma=0) {
+  # class mus
+  K=2
+  mu.class <- rep(0, d)
+  S.class <- diag(d)*sqrt(K)
+
+  mus.class <- t(mvrnorm(n=K, mu.class, S.class))
+
+  # crossed signal
+  Sigma.1 <- cbind(c(2,0), c(0,0.1))
+  Sigma.2 <- cbind(c(0.1,0), c(0,2))  # covariances are orthogonal
+  mus=cbind(rep(0, d), rep(0, d))
+
+  rho <- runif(1, min=-.2, max=.2)
+
+  # add random correlation
+  Sigmas <- abind(Sigma.1, Sigma.2, along = 3)
+  Sigmas[1,2,1] <- Sigmas[2,1,1] <- rho
+  Sigmas[1,2,2] <- Sigmas[2,1,2] <- -rho
+  # sample from crossed gaussians w p=0.5, 0.5 respectively
+  sim <- sim_gmm(mus=cbind(rep(0, d), rep(0, d)), Sigmas=Sigmas, n, priors=c(0.5, 0.5))
+
+  X <- sim$X + array(rnorm(n*d)*sigma, dim=c(n, d))
+  Y <- sim$Y
+  return(list(X=X, Y=Y, Z=Y))
+}
+
+
+# 8 pairs of annulus/discs
+sim.multiclass_ann_disc2 <- function(n, d, sigma=0) {
+
+  mus <- cbind(c(0, 0))
+
+  # probability of being each individual is 1/K
+  ni <- rowSums(rmultinom(n, 1, prob=rep(1/2, 2)))
+
+  X <- array(NaN, dim=c(n, d))
+  X[1:ni[1],] <- sweep(mgc.sims.2ball(ni[1], d, r=1, cov.scale=0.1), 2, mus[,1], "+")
+  X[(ni[1] + 1):n,] <- sweep(mgc.sims.2sphere(ni[2], r=1.5, d=d, cov.scale=0.1), 2, mus[,1], "+")
+
+  X <- X + array(rnorm(n*d)*sigma, dim=c(n, d))
+
+  Y <- c(rep(1, ni[1]), rep(2, ni[2]))
+  return(list(X=X, Y=Y, Z=Y))
+}
+
+sim.xor2 <- function(n, d, sigma=0) {
+  mus <- cbind(c(0, 0), c(1,1), c(1, 0), c(0, 1))
+  Y <- rep(1:ncol(mus), n/ncol(mus))
+  X <- mvrnorm(n=n, mu=c(0, 0), Sigma=sigma*diag(d)) + t(mus[,Y])
+  ordx.Y <- sort(Y, index.return=TRUE, decreasing=FALSE)$ix
+  Y <- floor((Y-1)/2)
+  return(list(X=X[ordx.Y,], Y=Y[ordx.Y] + 1, Z=Y[ordx.Y] + 1))
+}
+```
+
+```{r, fig.width=10, fig.height=2}
+n <- 256; d <- 2
+
+simulations <- list(sim.multiclass_gaussian, sim.crossed_sig2, sim.multiclass_ann_disc2, sim.xor2, sim.no_signal)
+names(simulations) <- c("(i) Gaussian", "(ii) Cross", "(iii) Ball/Circle", "(iv) XOR", "(v) No Signal")
+
+colors <- c('#e6194b','#4363d8', '#ffe119', '#3cb44b', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff')
+
+sim.dat <- lapply(names(simulations), function(sim.name) {
+  print(sim.name)
+  set.seed(1234)
+  if (sim.name == "(iv) XOR") {
+    sim <- do.call(simulations[[sim.name]], list(n=n, d=d, sigma=0.05))
+  } else {
+    sim <- do.call(simulations[[sim.name]], list(n=n, d=d, sigma=0))
+  }
+  if (sim.name == "(ii) Cross") {
+    # sort cross distance matrix within-spoke
+    for (class in unique(sim$Y)) {
+      if (class == 1) {
+        samp.y1 <- which(sim$Y == class)
+        idx.y1 <- sort(sim$X[samp.y1,1], decreasing = TRUE, index.return=TRUE)$ix
+        samp.y1 <- samp.y1[idx.y1]
+      } else {
+        samp.y2 <- which(sim$Y == class)
+        idx.y2 <- sort(sim$X[samp.y2,2], decreasing = TRUE, index.return=TRUE)$ix
+        samp.y2 <- samp.y2[idx.y2]
+      }
+    }
+    samp.order <- c(samp.y1, samp.y2)
+    sim$X <- sim$X[samp.order,]; sim$Y <- sim$Y[samp.order]
+  } else if (sim.name == "(iii) Ball/Circle") {
+    # sort Annulus/Disc by spherical angle
+    for (class in unique(sim$Y)) {
+      if (class == 1) {
+        samp.y1 <- which(sim$Y == class)
+        idx.y1 <- sort(apply(sim$X[samp.y1,], 1, function(x) atan(x[2]/x[1])),
+                       decreasing = TRUE, index.return=TRUE)$ix
+        samp.y1 <- samp.y1[idx.y1]
+      } else {
+        samp.y2 <- which(sim$Y == class)
+        idx.y2 <- sort(apply(sim$X[samp.y2,], 1, function(x) atan(x[2]/x[1])),
+                       decreasing = TRUE, index.return=TRUE)$ix
+        samp.y2 <- samp.y2[idx.y2]
+      }
+    }
+    samp.order <- c(samp.y1, samp.y2)
+    sim$X <- sim$X[samp.order,]; sim$Y <- sim$Y[samp.order]
+  }
+  dmtx <- melt(mgc.distance(sim$X))
+  dmtx$value <- dmtx$value^2
+  dmtx$value <- (dmtx$value - min(dmtx$value))/(max(dmtx$value) - min(dmtx$value))
+  dmtx$sim.name <- sim.name
+  return(list(data=data.frame(sim.name=sim.name,
+                    x1=(sim$X[,1] - min(sim$X[,1]))/(max(sim$X[,1]) - min(sim$X[,1])),
+                    x2=(sim$X[,2] - min(sim$X[,2]))/(max(sim$X[,2]) - min(sim$X[,2])),
+                    y=sim$Y, z=sim$Z),
+              dmtx=dmtx))
+})
+
+sim.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$data)) %>%
+  mutate(sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
+         y=factor(y), z=factor(z), plot.name="(A) Sample Data") %>%
+    filter(sim.name %in% names(simulations)[1:3]) %>%
+  ggplot(aes(x=x1, y=x2, color=y, shape=z)) +
+    geom_point() +
+    facet_grid(plot.name ~ sim.name, scales="free", switch="y") +
+    xlab("Dimension 1") +
+    ylab("Dimension 2") +
+    scale_color_manual(values=colors, guide=FALSE) +
+    theme_bw() +
+    scale_shape_discrete(name="Class") +
+    theme(axis.text=element_text(color="#FFFFFF"),
+          axis.ticks=element_blank(),
+          legend.position="bottom")
+
+dmtx.plots <- ggplotGrob(do.call(rbind, lapply(sim.dat, function(sim) sim$dmtx)) %>%
+  mutate(sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE), 
+         plot.name="(B) Distance Matrix") %>%
+    filter(sim.name %in% names(simulations)[1:3]) %>%
+  ggplot(aes(x=Var1, y=Var2, fill=sqrt(value))) +
+    geom_tile() +
+  xlab("Sample 1") +
+  ylab("Sample 2") +
+  scale_x_continuous(labels=c(1, 128), breaks=c(1, 256), expand=c(0,0)) +
+  scale_y_continuous(labels=c(1, 128), breaks=c(1, 256), expand=c(0,0)) +
+  theme_bw() +
+  scale_fill_gradient(name="Distance", low="#FFFFFF", high="#9900FF",
+                      labels=c(0, 1), breaks=c(0, 1)) +
+  facet_grid(plot.name ~ sim.name, scales="free", switch="y") +
+    theme(strip.background.x = element_blank(),
+          strip.text.x=element_blank(),
+          legend.position="bottom") +
+    guides(fill=guide_colorbar(barheight = .5)))
+
+dmtx.plots.filtered <- gtable_filter_remove(dmtx.plots, name=paste0("axis-b-", c(2,3), ""),
+                                            trim=FALSE)
+```
+```{r, fig.height=7, fig.width=7.5}
+grid.arrange(sim.plots, dmtx.plots.filtered, nrow=2)
+```
+
+## Bound, One, and Two Sample Plots
+
+```{r}
+al=0.05  # alpha for the power testing
+sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
+  dplyr::filter(stat.name != "Kernel" & !(stat.name == "MMD" & sim.name == "Gaussian") & !(stat.name == "HSIC" & sim.name != "Gaussian") & !(stat.name == "DISCO")) %>%
+  dplyr::mutate(stat.name=recode_factor(stat.name, "HSIC"="Kernel", "MMD"="Kernel")) %>%
+  dplyr::mutate(test.name="(D) One Sample Test") %>%
+  rbind(
+    readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
+      dplyr::filter(stat.name != "Kernel" & !(stat.name == "MMD" & sim.name == "Gaussian") &
+                      !(stat.name == "HSIC" & sim.name != "Gaussian") & !(stat.name == "DISCO")) %>%
+      dplyr::mutate(stat.name=recode_factor(stat.name, "HSIC"="Kernel", "MMD"="Kernel")) %>%
+      dplyr::mutate(test.name="(E) Two Sample Test")
+  ) %>%
+  dplyr::mutate(outcome=p.value < al) %>%
+  dplyr::select(sim.name, n, d, i, stat.name, sigma, outcome, test.name) %>%
+  rbind(
+    readRDS('../data/sims/discr_sims_bound.rds')$bound.results %>%
+      dplyr::mutate(test.name="(C) Comparison to Error") %>%
+      dplyr::rename(stat.name=algorithm, outcome=value) %>%
+      dplyr::filter(stat.name != "Kernel" & !(stat.name == "MMD" & sim.name == "Gaussian") & 
+                      !(stat.name == "HSIC" & sim.name != "Gaussian") & !(stat.name == "DISCO")) %>%
+      dplyr::mutate(stat.name=recode_factor(stat.name, "HSIC"="Kernel", "MMD"="Kernel")) %>%
+      dplyr::mutate(outcome=round(outcome, digits=2)) %>%
+      dplyr::mutate(outcome=ifelse(stat.name=="bayes", 1-outcome, outcome),
+                    sim.name=recode_factor(sim.name, "Annulus/Disc"="Ball/Circle"))
+  ) %>%
+  dplyr::rename("Simulation"=sim.name, "Statistic"=stat.name, "Test"=test.name) %>%
+  dplyr::group_by(n, d, Statistic, Simulation, sigma, Test) %>%
+  dplyr::summarise(Value=mean(outcome)) %>%
+  dplyr::filter(Simulation %in% c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")) %>%
+  dplyr::group_by(n, d, Statistic, Simulation, Test) %>%
+  dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+        Statistic=recode_factor(Statistic, "Discr"="Discr.", "FPI"="Finger.", "bayes"="Bayes Accuracy"),
+        Simulation=recode_factor(Simulation, "No Signal" = "(v) No Signal",
+                             "Gaussian" = "(i) Gaussian",
+                             "Cross" = "(ii) Cross", "Ball/Circle"="(iii) Ball/Circle",
+                             "XOR"="(iv) XOR")
+      ) %>%
+  dplyr::mutate(Test=factor(Test),
+         Simulation=factor(Simulation, levels=names(simulations), ordered=TRUE),
+         Statistic=factor(Statistic, levels=c("Discr.", "PICC", "I2C2", "Finger.", "Kernel", "Bayes Accuracy"),
+                          ordered=TRUE)) %>%
+  dplyr::filter(Simulation %in% names(simulations))
+
+
+alg.colors <- c("#c70000", "#a65628", "#984ea3", "#ff8c00", "#377eb8", "#4daf4a")
+line.types <- c(1, 1, 1, 1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr.", "PICC", "Finger.", "I2C2", "Kernel", "Bayes Accuracy")
+```
+
+### Sample Test Plot
+
+```{r}
+bound.plots <- sample.test.results %>%
+  dplyr::filter(Test == "(C) Comparison to Error") %>%
+  dplyr::group_by(n, d, Statistic, Simulation, Test) %>%
+  dplyr::mutate(stat.wt=(Value - min(Value))/(max(.02, max(c(Value)) - min(Value)))) %>%
+  filter(Simulation %in% names(simulations)[1:3]) %>%
+  ggplot(aes(x=sigma.wt, y=stat.wt, color=Statistic)) +
+    geom_line() +
+    scale_color_manual(values=alg.colors, name="Statistic") +
+    facet_grid(Test~Simulation, scales="free_x", switch="y") +
+    theme_bw() +
+    scale_y_continuous(limits=c(-.05, 1), breaks=c(0, 1)) +#, expand=c(0, 0)) +
+    scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
+    #geom_hline(yintercept=0.05, color="black") +
+    xlab("Normalized Variance") +
+    ylab("Normalized Statistic") +
+    theme(strip.background.x = element_blank(),
+          strip.text.x=element_blank(),
+          legend.position="bottom") +
+  guides(color=guide_legend(nrow=2,byrow=TRUE))
+
+bound.plots.filtered <- gtable_filter_remove(bound.plots, name=paste0("axis-b-", c(2,3), ""),
+                                            trim=FALSE)
+```
+
+```{r}
+grid.arrange(sim.plots, bound.plots.filtered, nrow=2, heights=c(1, 1))
+```
+
+```{r}
+os.plots <- sample.test.results %>%
+  dplyr::filter(Test == "(D) One Sample Test") %>%
+  filter(Simulation %in% names(simulations)[1:3]) %>%
+  ggplot(aes(x=sigma.wt, y=Value, color=Statistic)) +
+    geom_line() +
+    scale_color_manual(values=alg.colors, name="Statistic") +
+    facet_grid(Test~Simulation, scales="free_x", switch="y") +
+    theme_bw() +
+    scale_y_continuous(limits=c(-.05, 1), breaks=c(0, 1)) +#, expand=c(0, 0)) +
+    scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
+    geom_hline(yintercept=0.05, color="black") +
+    xlab("Normalized Variance") +
+    ylab("Statistical Power") +
+    theme(strip.background.x = element_blank(),
+          strip.text.x=element_blank(),
+          legend.position="bottom")
+
+os.plots.filtered <- gtable_filter_remove(os.plots, name=paste0("axis-b-", c(2,3), ""),
+                                            trim=FALSE)
+```
+
+```{r}
+grid.arrange(sim.plots, os.plots.filtered, nrow=2, heights=c(1, 1))
+```
+
+
+```{r}
+ts.plots <- sample.test.results %>%
+  dplyr::filter(Test == "(E) Two Sample Test") %>%
+  filter(Simulation %in% names(simulations)[1:3]) %>%
+  ggplot(aes(x=sigma.wt, y=Value, color=Statistic)) +
+    geom_line() +
+    scale_color_manual(values=alg.colors, name="Statistic") +
+    facet_grid(Test~Simulation, scales="free_x", switch="y") +
+    theme_bw() +
+    scale_y_continuous(limits=c(-.05, 1), breaks=c(0, 1)) +#, expand=c(0, 0)) +
+    scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
+    geom_hline(yintercept=0.05, color="black") +
+    xlab("Normalized Variance") +
+    ylab("Statistical Power") +
+    theme(strip.background.x = element_blank(),
+          strip.text.x=element_blank(),
+          legend.position="bottom")
+
+ts.plots.filtered <- gtable_filter_remove(ts.plots, name=paste0("axis-b-", c(2,3), ""),
+                                            trim=FALSE)
+```
+
+```{r}
+grid.arrange(sim.plots, ts.plots.filtered, nrow=2, heights=c(1, 1))
+```

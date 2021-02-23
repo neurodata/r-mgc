@@ -99,9 +99,10 @@ mgc.stat.driver <- function(DX, DY, option='mgc') {
     sz <- nrow(DX) - 1 # sample size minus 1
     R <- Thresholding(localCorr, m, n, sz) # find a connected region of significant local correlations
     res <- Smoothing(localCorr,m, n, R) # find the maximal within the significant region
+    optimalScale <- res$optimalScale; stat <- res$stat
   }
 
-  return(list(stat=res$stat, localCorr=localCorr, optimalScale=res$optimalScale, option=option))
+  return(list(stat=stat, localCorr=localCorr, optimalScale=optimalScale, option=option))
 }
 
 #' An auxiliary function that finds a region of significance in the local correlation map by thresholding.
@@ -187,7 +188,7 @@ Smoothing <- function(localCorr,m,n,R){
       #  down=min(m,ki+km)
 
        # tmp1=min(localCorr[upper:down,li]) # take minimal correlation at given row and along adjacent columns
-      #  tmp2=min(localCorr[ki,left:right]) # take minimal correlation at given column and along adjacent rows
+       #  tmp2=min(localCorr[ki,left:right]) # take minimal correlation at given column and along adjacent rows
        # tmp=max(tmp1,tmp2) # take the min for sample mgc
         if (tmp>=stat){
           stat=tmp

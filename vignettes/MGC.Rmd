@@ -83,7 +83,7 @@ res <- mgc.test(data$X, data$Y, nperm=20)  # 20 permutations test; typically sho
 plot_mtx(res$localCorr, main.title="Local Correlation Map")
 
 print(res$optimalScale)
-print(res$statMGC)
+print(res$stat)
 ```
 
 As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between `x` and `y`, and as we can see in the local correlation map, `k=n=200` and `l=n=200` shows the best smoothed `p`.

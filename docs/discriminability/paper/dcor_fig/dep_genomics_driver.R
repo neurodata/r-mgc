@@ -38,37 +38,8 @@ genom.covs <- genomics.dat$covariates[, grepl("characteristic", names(genomics.d
 #                    }))))))
 Sex=rowSums(genom.covs == "Sex: Male")
 
-# one-way ICC
-icc.os <- function(X, y) {
-  x <- lol.project.pca(X, r=1)$Xr
-  data <- data.frame(x=x, y=y)
-  fit <- anova(aov(x ~ y, data=data))
-  MSa <- fit$"Mean Sq"[1]
-  MSw <- var.w <- fit$"Mean Sq"[2]
-  a <- length(unique(y))
-  tmp.outj <- as.numeric(aggregate(x ~ y, data=data, FUN = length)$x)
-  k <- (1/(a - 1)) * (sum(tmp.outj) - (sum(tmp.outj^2)/sum(tmp.outj)))
-  var.a <- (MSa - MSw)/k
-  r <- var.a/(var.w + var.a)
-  return(r)
-}
-
-# one-sample MANOVA
-manova.os <- function(X, Y) {
-  fit <- manova(X ~ Y)
-  return(summary(fit)$stats["Y", "approx F"])
-}
-
-# I2C2 wrapper
-i2c2.os <- function(X, Y) {
-  return(I2C2.original(y=X, id=Y, visit=rep(1, length(Y)), twoway=FALSE)$lambda)
-}
-
-discr.os <- function(X, Y) {
-  return(discr.stat(X, Y)$discr)
-}
-
-stats <- list(Stability=discr.os, PICC=icc.os, I2C2=i2c2.os, DISCO=disco.os, AFPI=fpi.os)
+stats <- list(Discr=discr.os, PICC=icc.os, I2C2=i2c2.os, Kernel=ksamp.os, FPI=fpi.os,
+              DISCO=disco.os, HSIC=hsic.os)#, manova.os)
 
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
@@ -84,13 +55,13 @@ experiments <- do.call(rbind, lapply(names(data), function(dat) {
   }))
 }))
 
-result.stat <- do.call(rbind, lapply(experiments, function(experiment) {
+result.stat <- do.call(rbind, mclapply(experiments, function(experiment) {
   print(sprintf("Data=%s, XFM=%s, Alg=%s", experiment$dat.name, experiment$xfm.name, experiment$alg.name))
   stat <- tryCatch({
-    if (experiment$alg.name != "AFPI") {
-      withTimeout(do.call(experiment$alg, list(experiment$X, experiment$ID)), timeout=2000)
+    if (experiment$alg.name != "FPI") {
+      withTimeout(do.call(experiment$alg, list(experiment$X, experiment$ID, is.dist=FALSE)), timeout=2000)
     } else {
-      withTimeout(do.call(experiment$alg, list(experiment$X, experiment$ID, experiment$Session)), timeout=5000)
+      withTimeout(do.call(experiment$alg, list(experiment$X, experiment$ID, experiment$Session, is.dist=FALSE)), timeout=5000)
     }
   }, error=function(e) {
     print(e)
@@ -102,30 +73,31 @@ result.stat <- do.call(rbind, lapply(experiments, function(experiment) {
   } else {
     return(NULL)
   }
-}))
+  return(stat)
+}, mc.cores=detectCores() - 1))
 
 experiments <- do.call(rbind, lapply(names(data), function(dat) {
   X <- t(data[[dat]])
   lapply(names(xfms), function(xfm) {
     X.xfm <- do.call(xfms[[xfm]], list(X))
-    return(list(X=X.xfm, dat.name=dat, Sex=Covariates$Sex, xfm.name=xfm))
+    return(list(X=X.xfm, dat.name=dat, Sex=Sex, xfm.name=xfm))
   })
 }))
 
 result.dcor <- do.call(rbind, mclapply(experiments, function(experiment) {
   stat=tryCatch({
-    do.call(dcor, list(experiment$X, experiment$Sex))
+    do.call(ksamp.test, list(experiment$X, experiment$Sex))
   }, error=function(e) {
     print(sprintf("Data=%s, XFM=%s", experiment$dat.name, experiment$xfm.name))
     return(NULL)
   })
   if (!is.null(stat)) {
-    return(data.frame(Data=experiment$dat.name, xfm=experiment$xfm.name, Algorithm="DCor",
-                      Statistic=stat))
+    return(data.frame(Data=experiment$dat.name, xfm=experiment$xfm.name, Algorithm="DCorr",
+                      statistic=stat$statistic, pvalue=stat$pvalue))
   } else {
     return(NULL)
   }
+  return(stat)
 }, mc.cores=detectCores() - 1))
 
-saveRDS(result.stat, '../data/real/stat_genetics.rds')
-saveRDS(result.dcor, '../data/real/dcor_genetics.rds')
+saveRDS(list(Reference=result.stat, Effect=result.dcor), '../data/real/genomics_sex.rds')

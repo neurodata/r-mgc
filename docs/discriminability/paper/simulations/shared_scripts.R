@@ -143,7 +143,7 @@ disco.os <- function(X, Y, is.dist=TRUE, ...) {
   } else {
     DX <- mgc.distance(X, method="euclidean")
   }
-  as.numeric(disco(DX, factor(Y), R=0, method="disco", distance=TRUE)$statistic)
+  as.numeric(disco(as.dist(DX), factor(Y), R=0, method="disco", distance=TRUE)$statistic)
 }
 
 hsic.os <- function(X, Y, is.dist=FALSE, ...) {

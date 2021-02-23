@@ -25,7 +25,7 @@ require(dplyr)
 ```{r}
 n = 10
 
-data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), function (sim) {
+data <- lapply(c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), function (sim) {
   X.d <- matrix(NaN, nrow=n*2, ncol=1)
   if (sim == "(ii) Offset") {
     centers <- seq(-1, 1, length.out=n)
@@ -46,7 +46,7 @@ data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), function (sim)
     X.d[rpts,1] <- X.d[rpts,1] + 8
     Z <- c(rep(1, n), rep(2, n))
   }
-  else if (sim == "(i) Reliable") {
+  else if (sim == "(i) Discriminable") {
     centers <- seq(-1, 1, length.out=n)
     ids <- 1:n
     dist <- .5/n
@@ -64,7 +64,7 @@ data <- lapply(c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), function (sim)
   }
   return(data.frame(X=X.d, Y=Y, Z=Z, Simulation=sim))
 })
-names(data) <- c("(i) Reliable", "(ii) Offset", "(iii) Outlier")
+names(data) <- c("(i) Discriminable", "(ii) Offset", "(iii) Outlier")
 ```
 
 ```{r}
@@ -73,9 +73,9 @@ results <- lapply(names(data), function(sim) {
   icc <- icc.os(dat$X, dat$Y)
   discr <- discr.os(dat$X, dat$Y, is.dist=FALSE)
   fpi <- fpi.os(matrix(dat$X, ncol=1), dat$Y, dat$Z, dist.xfm=dist.x, is.sim=FALSE)
-  dcorr <- ksamp.os(dat$X, dat$Y, is.dist=FALSE)
-  data.frame(Statistic=c(icc, discr, fpi, dcorr), Simulation=sim,
-             Algorithm=c("ICC/I2C2", "Discr.", "Finger.", "Kernel"))
+  disco <- disco.os(dat$X, dat$Y, is.dist=FALSE)
+  data.frame(Statistic=c(icc, discr, fpi, disco), Simulation=sim,
+             Algorithm=c("ICC", "Discr.", "Finger.", "Kernel"))
 })
 
 var.ord <- c(sapply(1:10, function(i) rep(i, 2)))
@@ -90,13 +90,13 @@ Dmtx_results <- lapply(names(data), function(sim) {
 })
 ```
 
-```{r}
+```{r, fig.height=10, fig.width=14}
 col.1 <- do.call(rbind, data) %>%
   group_by(Simulation) %>%
   mutate(X=(X - min(X))/(max(X) - min(X))) %>%
   ungroup() %>%
   mutate(Simulation=factor(Simulation, 
-                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE),
+                           levels=c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE),
          Z=factor(Z)) %>%
   ggplot(aes(x=X - min(X)/max(X), y=as.factor(Y),
              fill=as.factor(Y), shape=Z)) +
@@ -112,8 +112,9 @@ col.1 <- do.call(rbind, data) %>%
   facet_grid(Simulation~., switch="y")
 
 
-alg.colors <- c("#c70000", "#333333", "#777777", "#6699cc")
-names(alg.colors) <- c("Discr.", "ICC/I2C2", "Finger.", "Kernel")
+alg.colors <- c("#c70000", "#a65628", "#984ea3", "#ff8c00", "#377eb8", "#4daf4a")
+line.types <- c(1, 1, 1, 1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr.", "ICC", "Finger.", "I2C2", "Kernel", "Bayes Accuracy")
 
 Dmtx.results <- do.call(rbind, Dmtx_results) %>%
   group_by(Simulation) %>%
@@ -122,7 +123,7 @@ Dmtx.results <- do.call(rbind, Dmtx_results) %>%
          Var2=factor(Var2, levels=1:(2*n), ordered=TRUE)) %>%
   ungroup() %>%
   dplyr::mutate(Simulation=factor(Simulation, 
-                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE))
+                           levels=c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE))
 
 Dmtx_rank <- Dmtx.results %>%
   group_by(Simulation, Var2) %>%
@@ -142,11 +143,11 @@ rank.col <- c("Closer"="#b35806", "Tie"="blue", "Match"="darkgreen")
 col.2 <- Dmtx.results %>%
   ggplot(aes(x=Var1, y=Var2, fill=Distance)) +
     geom_tile() +
-    geom_tile(data=Dmtx.ranked %>% arrange(as.numeric(Rank == RankPair)), aes(x=Var1, y=Var2, color=color), size=.5) +
+    geom_tile(data=Dmtx.ranked %>% arrange(as.numeric(Rank == RankPair)), aes(x=Var1, y=Var2, color=color), size=.5, alpha=0) +
     scale_color_manual(values=rank.col, name="") +
     xlab("Measurement ID") +
     ylab("Measurement ID") +
-    scale_fill_continuous(low="white", high="purple", breaks=c(0, 1), labels=c(0, 1)) +
+    scale_fill_continuous(low="white", high="purple", breaks=c(0, 1), labels=c("small", "large")) +
     scale_x_discrete(breaks=c(1, 20), labels=c(1, 20)) +
     scale_y_discrete(breaks=c(1, 20), labels=c(1, 20)) +#, limits=rev(levels(Dmtx_results$Var2))) +
     facet_grid(Simulation~.) +
@@ -158,11 +159,12 @@ col.2 <- Dmtx.results %>%
     ggtitle("(B) Distance Matrices")
 
 sim.dat <- do.call(rbind, results) %>%
-  mutate(Algorithm=factor(Algorithm, ordered=TRUE, levels=c("Discr.", "Finger.", "ICC/I2C2", "Kernel"))) %>%
+  mutate(Algorithm=factor(Algorithm, ordered=TRUE, levels=c("Discr.", "Finger.", "ICC", "Kernel"))) %>%
   ungroup() %>%
   group_by(Algorithm) %>%
   mutate(Simulation=factor(Simulation, 
-                           levels=c("(i) Reliable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE)) %>%
+                           levels=c("(i) Discriminable", "(ii) Offset", "(iii) Outlier"), ordered=TRUE),
+         Statistic=ifelse(pmax(Statistic) > 1, Statistic/(max(Statistic)), Statistic)) %>%
   ungroup() %>%
   dplyr::group_by(Simulation) %>%
   dplyr::mutate(ymin=ifelse(min(Statistic) < 0,

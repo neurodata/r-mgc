@@ -200,7 +200,7 @@ sim.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$data)) %>%
   ggplot(aes(x=x1, y=x2, color=y, shape=z)) +
     geom_point() +
     facet_grid(sim.name ~ plot.name, scales="free", switch="y") +
-    xlab("Dimension 2") +
+    xlab("Dimension 1") +
     ylab("Dimension 2") +
     scale_color_manual(values=colors, guide=FALSE) +
     theme_bw() +
@@ -233,9 +233,14 @@ dmtx.plots <- do.call(rbind, lapply(sim.dat, function(sim) sim$dmtx)) %>%
 ```{r}
 al=0.05  # alpha for the power testing
 sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
+  dplyr::filter(stat.name != "Kernel" & !(stat.name == "MMD" & sim.name == "Gaussian") & !(stat.name == "HSIC" & sim.name != "Gaussian") & !(stat.name == "DISCO")) %>%
+  dplyr::mutate(stat.name=recode_factor(stat.name, "HSIC"="Kernel", "MMD"="Kernel")) %>%
   dplyr::mutate(test.name="(D) One Sample Test") %>%
   rbind(
     readRDS('../data/sims/discr_sims_ts.rds')$ts.results %>%
+      dplyr::filter(stat.name != "Kernel" & !(stat.name == "MMD" & sim.name == "Gaussian") &
+                      !(stat.name == "HSIC" & sim.name != "Gaussian") & !(stat.name == "DISCO")) %>%
+      dplyr::mutate(stat.name=recode_factor(stat.name, "HSIC"="Kernel", "MMD"="Kernel")) %>%
       dplyr::mutate(test.name="(E) Two Sample Test")
   ) %>%
   dplyr::mutate(outcome=p.value < al) %>%
@@ -244,45 +249,49 @@ sample.test.results <- readRDS('../data/sims/discr_sims_os.rds')$os.results %>%
     readRDS('../data/sims/discr_sims_bound.rds')$bound.results %>%
       dplyr::mutate(test.name="(C) Comparison to Error") %>%
       dplyr::rename(stat.name=algorithm, outcome=value) %>%
+      dplyr::filter(stat.name != "Kernel" & !(stat.name == "MMD" & sim.name == "Gaussian") & 
+                      !(stat.name == "HSIC" & sim.name != "Gaussian") & !(stat.name == "DISCO")) %>%
+      dplyr::mutate(stat.name=recode_factor(stat.name, "HSIC"="Kernel", "MMD"="Kernel")) %>%
       dplyr::mutate(outcome=round(outcome, digits=2)) %>%
       dplyr::mutate(outcome=ifelse(stat.name=="bayes", 1-outcome, outcome),
                     sim.name=recode_factor(sim.name, "Annulus/Disc"="Ball/Circle"))
   ) %>%
-  dplyr::group_by(n, d, stat.name, sim.name, sigma, test.name) %>%
-  dplyr::summarise(statistic=mean(outcome)) %>%
-  dplyr::filter(sim.name %in% c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")) %>%
-  dplyr::group_by(n, d, stat.name, sim.name, test.name) %>%
+  dplyr::rename("Simulation"=sim.name, "Statistic"=stat.name, "Test"=test.name) %>%
+  dplyr::group_by(n, d, Statistic, Simulation, sigma, Test) %>%
+  dplyr::summarise(Value=mean(outcome)) %>%
+  dplyr::filter(Simulation %in% c("No Signal", "Cross", "Gaussian", "Ball/Circle", "XOR")) %>%
+  dplyr::group_by(n, d, Statistic, Simulation, Test) %>%
   dplyr::mutate(sigma.wt=(sigma - min(sigma))/(max(sigma) - min(sigma))) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(
-        stat.name=recode_factor(stat.name, "discr"="SimilRR", "icc"="PICC", "i2c2"="I2C2", "bayes"="1-Bayes"),
-        sim.name=recode_factor(sim.name, "No Signal" = "(v) No Signal",
+        Statistic=recode_factor(Statistic, "Discr"="Discr.", "FPI"="Finger.", "bayes"="Bayes Accuracy"),
+        Simulation=recode_factor(Simulation, "No Signal" = "(v) No Signal",
                              "Gaussian" = "(i) Gaussian",
                              "Cross" = "(ii) Cross", "Ball/Circle"="(iii) Ball/Circle",
                              "XOR"="(iv) XOR")
       ) %>%
-  dplyr::mutate(test.name=factor(test.name),
-         sim.name=factor(sim.name, levels=names(simulations), ordered=TRUE),
-         stat.name=factor(stat.name, levels=c("SimilRR", "PICC", "I2C2", "MMD", "1-Bayes"),
+  dplyr::mutate(Test=factor(Test),
+         Simulation=factor(Simulation, levels=names(simulations), ordered=TRUE),
+         Statistic=factor(Statistic, levels=c("Discr.", "PICC", "I2C2", "Finger.", "Kernel", "Bayes Accuracy"),
                           ordered=TRUE))
 
 
-alg.colors <- c("#c70000", "#ffa500", "#6699cc", "#740ac4", "#3CB371")
-line.types <- c(1, 1, 1, 1, 1)
-names(alg.colors) <- names(line.types) <- c("SimilRR", "PICC", "I2C2", "MMD", "1-Bayes")
+alg.colors <- c("#c70000", "#a65628", "#984ea3", "#ff8c00", "#377eb8", "#4daf4a")
+line.types <- c(1, 1, 1, 1, 1, 1)
+names(alg.colors) <- names(line.types) <- c("Discr.", "PICC", "Finger.", "I2C2", "Kernel", "Bayes Accuracy")
 ```
 
 ### Sample Test Plot
 
 ```{r}
 bound.plot <- sample.test.results %>%
-  dplyr::filter(test.name == "(C) Comparison to Error") %>%
-  dplyr::group_by(n, d, stat.name, sim.name, test.name) %>%
-  dplyr::mutate(stat.wt=(statistic - min(statistic))/(max(.02, max(c(statistic)) - min(statistic)))) %>%
-  ggplot(aes(x=sigma.wt, y=stat.wt, color=stat.name)) +
+  dplyr::filter(Test == "(C) Comparison to Error") %>%
+  dplyr::group_by(n, d, Statistic, Simulation, Test) %>%
+  dplyr::mutate(stat.wt=(Value - min(Value))/(max(.02, max(c(Value)) - min(Value)))) %>%
+  ggplot(aes(x=sigma.wt, y=stat.wt, color=Statistic)) +
     geom_line() +
     scale_color_manual(values=alg.colors, name="Statistic") +
-    facet_grid(sim.name ~ test.name, scales="free_x") +
+    facet_grid(Simulation ~ Test, scales="free_x") +
     theme_bw() +
     scale_y_continuous(limits=c(-.05, 1), breaks=c(0, 1)) +#, expand=c(0, 0)) +
     scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
@@ -295,11 +304,11 @@ bound.plot <- sample.test.results %>%
   guides(color=guide_legend(nrow=2,byrow=TRUE))
 
 sample.plot <- sample.test.results %>%
-  dplyr::filter(test.name != "(C) Comparison to Error") %>%
-  ggplot(aes(x=sigma.wt, y=statistic, color=stat.name)) +
+  dplyr::filter(Test != "(C) Comparison to Error") %>%
+  ggplot(aes(x=sigma.wt, y=Value, color=Statistic)) +
     geom_line() +
     scale_color_manual(values=alg.colors, name="Statistic") +
-    facet_grid(sim.name ~ test.name, scales="free_x") +
+    facet_grid(Simulation ~ Test, scales="free_x") +
     theme_bw() +
     scale_y_continuous(limits=c(-.05, 1), breaks=c(0, 1)) +#, expand=c(0, 0)) +
     scale_x_continuous(limits=c(0, 1), breaks=c(0, 1)) +
@@ -316,6 +325,20 @@ sample.plot <- sample.test.results %>%
 9.3 x 6.66
 
 ```{r}
+grid.arrange(arrangeGrob(sim.plots + theme(legend.position="none"),
+                         dmtx.plots + theme(legend.position="none"),
+                         widths=c(1,.9), nrow=1),
+             arrangeGrob(g_legend(sim.plots),
+                         g_legend(dmtx.plots),
+                         widths=c(1.1, 1)),
+             nrow=2, heights=c(.8,.1))
+
+grid.arrange(arrangeGrob(bound.plot + theme(legend.position="none"),
+                         sample.plot + theme(legend.position="none"),
+                         widths=c(1.1, 1.9)), g_legend(bound.plot), nrow=2,
+             heights=c(.8, .1))
+
+
 grid.arrange(arrangeGrob(sim.plots + theme(legend.position="none"),
              dmtx.plots + theme(legend.position="none"),
              bound.plot + theme(legend.position="none"),

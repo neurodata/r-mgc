@@ -142,7 +142,8 @@ flashx.pca <- function(X, r, ...) {
 }
 
 
-stats <- list(Stability=discr.os, PICC=icc.os, I2C2=i2c2.os, Kernel=ksamp.os, FPI=fpi.os)
+stats <- list(Discr=discr.os, PICC=icc.os, I2C2=i2c2.os, Kernel=ksamp.os, FPI=fpi.os,
+              DISCO=disco.os, HSIC=hsic.os)#, manova.os)
 xfms <- list(Raw=nofn.xfm, Rank=ptr.xfm, Log=log.xfm, Unit=unit.xfm, Center=center.xfm,
              UnitVar=unitvar.xfm, ZScore=zscore.xfm)
 
@@ -171,12 +172,13 @@ if (!file.exists('/genomics/genomics_prep.rds')) {
   experiments.base <- readRDS('/genomics/genomics_prep.rds')
 }
 
+
 results.reference <- do.call(rbind, mclapply(experiments.base, function(experiment) {
   print(sprintf("Resolution=%s, XFM=%s", experiment$Resolution,
                 experiment$xfm.name))
-  test=do.call(rbind, lapply(names(stats), function(stat.name) {
+  do.call(rbind, lapply(names(stats), function(stat.name) {
     tryCatch({
-      if (stat.name %in% c("Discr", "Kernel")) {
+      if (stat.name %in% c("Discr", "Kernel", "HSIC")) {
         X.dat = experiment$DX
       } else if (stat.name == "PICC") {
         X.dat = experiment$Xr
@@ -186,7 +188,7 @@ results.reference <- do.call(rbind, mclapply(experiments.base, function(experime
         X.dat = experiment$X
       }
       if (stat.name == "FPI") {
-        stat.res=do.call(stats[[stat.name]], list(X=X.dat, Y=experiment$Individual, Z=experiment$Sessions, is.corr=TRUE))
+        stat.res=do.call(stats[[stat.name]], list(X=X.dat, Y=experiment$Individual, Z=experiment$Sessions, is.sim_or_dist=TRUE, is.sim=TRUE))
       } else {
         stat.res=do.call(stats[[stat.name]], list(X.dat, experiment$Individual))
       }
@@ -198,24 +200,22 @@ results.reference <- do.call(rbind, mclapply(experiments.base, function(experime
     return(data.frame(Resolution=experiment$Resolution, xfm=experiment$xfm.name,
                       Algorithm=stat.name, Statistic=stat.res))
   }))
-}, mc.cores=detectCores()-1))
-
-saveRDS(results.reference, '../data/real/genomics_chris_ref.rds')
+}, mc.cores=detectCores()))
 
 results.effect <- do.call(rbind, mclapply(experiments.base, function(experiment) {
   print(sprintf("Resolution=%s, XFM=%s", experiment$Resolution, experiment$xfm.name))
   stat=tryCatch({
-    do.call(dcor, list(as.dist(experiment$DX), as.dist(mgc.distance(experiment$Sex, method="ohe"))))
+    ksamp.test(experiment$DX, experiment$Cancer, nrep=1000L)
   }, error=function(e) {
     print(sprintf("Data=%s, XFM=%s, ERROR=%s", experiment$dat.name, experiment$xfm.name, e))
     return(NULL)
   })
   if (!is.null(stat)) {
-    return(data.frame(Resolution=experiments, xfm=experiment$xfm.name, #Aggregation=experiment$Aggregation,
-                      Algorithm="DCor", Statistic=stat))
+    return(data.frame(Resolution=experiment$Resolution, xfm=experiment$xfm.name, #Aggregation=experiment$Aggregation,
+                      Algorithm="DCorr", statistic=stat$statistic, pvalue=stat$pvalue))
   } else {
     return(NULL)
   }
-}, mc.cores=detectCores() - 1))
+}, mc.cores=detectCores()))
 
-saveRDS(results.effect, '../data/real/genomics_chris_ref.rds')
+saveRDS(list(Reference=results.reference, Effect=results.effect), '../data/real/genomics_cancer.rds')

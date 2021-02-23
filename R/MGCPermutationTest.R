@@ -96,12 +96,6 @@ mgc.test <-function(X, Y, is.dist.X=FALSE, dist.xfm.X=mgc.distance, dist.params.
   }
   N = nrow(DY)
 
-  # if (!(isFALSE(fast))) {
-  #   if (!(min(abs(c(fast%%1, fast%%1-1))) < 1e-5 & fast > 1 & fast < N)) {
-  #     stop("You have not specified a valid option for `fast`. Should be FALSE, or an integer greater than 1 and less than n.")
-  #   }
-  # }
-
   if (nperm < 100) {
     warning("nperm is < 100. nperm should typically be set > 100.")
   }

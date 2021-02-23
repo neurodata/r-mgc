@@ -17,6 +17,7 @@ require(tie)
 require(robustbase)
 require(tidyverse)
 require(plm)
+require(gridExtra)
 
 
 # a function for regressing the effect size of interest onto the statistic of interest
@@ -39,28 +40,29 @@ reg.ana <- function(stat.x, stat.y) {
 
 
 ```{r}
-results <- readRDS('../data/real/dep_wt_fmri_results_fpi.rds')
+results <- readRDS('../data/real/dep_wt_fmri_results.rds')
 
 dset.cols <- readRDS("../data/real/dset_colors.rds")
 
-merged.dat <- results$statistics %>%
+merged.dat <- results$processed$statistics %>%
   # merge with dcorr results
-  dplyr::left_join(results$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation",
+  dplyr::left_join(results$processed$dcor, by=c("Reg", "FF", "Scr", "GSR", "Parcellation",
                                "xfm", "Dataset", "nsub", "nses", "nroi", "nscans")) %>%
   dplyr::rename(Method=method, Algorithm=alg, Task=task) %>%
-  # remove ANOVA results and purge IPCAS6 dataset with only 2 subjects
-  # and non-mgc effect sizes, as well as the raw, non-xfm'd graphs
-  dplyr::filter(Method == "dcor" & xfm == "N" & embed == "Raw" & 
-                  Dataset != "IPCAS6" & Algorithm != "ANOVA") %>%
+  # purge IPCAS6 dataset with only 2 subjects and no variance
+  # effect size as measured by DCorr
+  dplyr::filter(Method == "DCorr" & xfm == "P" & embed == "Raw" & Dataset != "IPCAS6" & !(Algorithm %in% c("Kernel", "HSIC"))) %>%
   # make it ordered so we can force the plot format
   dplyr::mutate(Task=factor(Task, levels=c("Sex", "Age"), ordered=TRUE),
-         Algorithm=factor(Algorithm, levels=c("SimilRR", "PICC", "I2C2", "FPI", "DISCO"), ordered=TRUE)) %>%
+         Algorithm=factor(Algorithm, levels=c("Discr", "PICC", "I2C2", "FPI", "DISCO"), ordered=TRUE)) %>%
   # add information about the letter for the subplot
-  dplyr::mutate(Task=recode_factor(Task, "Sex"="(A) Sex (Classification)",
-                            "Age"="(B) Age (Regression)"),
-                Algorithm=recode_factor(Algorithm, "SimilRR" = "(i) SimilRR", 
+  dplyr::mutate(Task=recode_factor(Task, "Sex"="(A) Sex",
+                            "Age"="(B) Age"),
+                Algorithm=recode_factor(Algorithm, "Discr" = "(i) Discr.", 
                                         "PICC" = "(ii) PICC", "I2C2" = "(iii) I2C2",
-                                        "FPI"="(iv) FPI", "DISCO"="(v) DISCO"))
+                                        "FPI"="(iv) Finger.", "DISCO"="(v) Kernel"))
+
+alpha = .05
 ```
 
 # Regression of Effect Size onto Statistic of interest
@@ -75,21 +77,38 @@ stat.vs.perf <- merged.dat %>%
   # normalize by the max/min statistics across datasets for cross-statistic
   # comparisons; does not effect p-values as is a affine xfm
   dplyr::mutate(stat.x=(stat.x - min(stat.x, na.rm=TRUE))/(max(stat.x, na.rm=TRUE) - min(stat.x, na.rm=TRUE)),
-         stat.y=(stat.y - min(stat.y, na.rm=TRUE))/(max(stat.y, na.rm=TRUE) - min(stat.y, na.rm=TRUE))) %>%
+                stat.y=(stat.y - min(stat.y, na.rm=TRUE))/(max(stat.y, na.rm=TRUE) - min(stat.y, na.rm=TRUE))) %>%
   dplyr::group_by(xfm, Task, Algorithm, Dataset, nsub) %>%
   # regress effect size onto the statistic
   bow(tie(Slope, Intercept, p.value, min.x, max.x) := reg.ana(stat.x, stat.y))
+
+neuro.ct <- stat.vs.perf %>%
+  dplyr::group_by(Task) %>%
+  dplyr::summarise(N.Datasets=length(unique(Dataset)))
 
 # analyze p-values per-algorithm/task
 test.results <- stat.vs.perf %>%
   dplyr::group_by(xfm, Task, Algorithm) %>%
   # compute Fisher-corrected p-value and the weighted mean slope (by subjects)
-  dplyr::summarize(p.value=round(median(p.value, na.rm=TRUE), digits=3), Slope=weighted.mean(Slope, nsub, na.rm=TRUE),
-                   Intercept=weighted.mean(Intercept, nsub, na.rm=TRUE)) %>%
+  dplyr::summarize(pval.ct = sum(p.value < alpha, na.rm=TRUE),
+                   slope.ct = sum(Slope > 0, na.rm=TRUE),
+                   p.value=round(median(p.value, na.rm=TRUE), digits=3), Slope=weighted.mean(Slope, nsub, na.rm=TRUE),
+                   Intercept=weighted.mean(Intercept, nsub, na.rm=TRUE)
+                   ) %>%
   dplyr::mutate(Alg.Title=ifelse(p.value == 0, sprintf("Mean(Slope)=%.3f, p-value<%.3f", Slope, p.value + .001), 
                           sprintf("Mean(Slope)=%.3f, p-value=%.3f", Slope, p.value)))
 
-stat.vs.perf %>%
+tabl.neuro <- test.results %>%
+  dplyr::mutate(Task=recode_factor(Task, "(A) Sex"="(I.A) Sex, Neuro", "(B) Age"="(I.B) Age, Neuro")) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(Algorithm, Task, slope.ct, pval.ct) %>%
+  dplyr::left_join(neuro.ct %>% dplyr::ungroup() %>%
+                     dplyr::mutate(Task=recode_factor(Task, "(A) Sex"="(I.A) Sex, Neuro", "(B) Age"="(I.B) Age, Neuro")), 
+                   by="Task") %>%
+  dplyr::mutate(Algorithm=recode_factor(Algorithm, "(i) Discr."="Discr.", "(ii) PICC"="PICC", "(iii) I2C2"="I2C2",
+                                        "(iv) Finger."="Finger.", "(v) Kernel"="Kernel"))
+
+neuro.plt <- stat.vs.perf %>%
   tidyr::gather("Condition", "xval", min.x, max.x) %>%
   dplyr::mutate(y.pos=Slope*xval + Intercept) %>%
   # add the pvalues and slopes
@@ -103,72 +122,140 @@ stat.vs.perf %>%
     xlab("Reference Statistic") +
     ylab("Effect Size") +
     scale_color_manual(values=dset.cols) +
-    scale_y_continuous(limits=c(0, 1), expand = c(0, 0)) +
-    scale_x_continuous(limits=c(0, 1), expand = c(0, 0)) +
+    scale_y_continuous(expand=c(.01, .01)) +
+    scale_x_continuous(expand=c(.01, .01)) +
+    coord_cartesian(ylim=c(0, 1), xlim=c(0,1)) +
     guides(color=FALSE) +
     scale_size(range=c(0.5, 3)) +
     guides(size=FALSE, color=FALSE) +
-    ggtitle("(I) Neuroimaging")
-
-print(test.results)
+    ggtitle("(I) Neuroimaging") +
+    theme(text=element_text(size=18))
+neuro.plt
 ```
 
 # Genomics Experiment
 
 ```{r, fig.width=4, fig.height=2}
-genomics.results <- readRDS('../data/real/stat_genetics.rds') %>%
-  dplyr::left_join(readRDS('../data/real/dcorr_genetics.rds'), by=c("Data", "xfm")) %>%
+genetics.sex <- readRDS('../data/real/genomics_sex.rds')
+genomics.sex.results <- genetics.sex$Reference %>%
+  dplyr::filter(xfm %in% c("Raw", "Rank", "Log") & !(Algorithm %in% c("HSIC", "Kernel"))) %>%
+  dplyr::left_join(genetics.sex$Effect %>% dplyr::rename("Statistic"=statistic), by=c("Data", "xfm")) %>%
   dplyr::group_by(Algorithm.x) %>%
   # normalize by the max/min statistics across datasets for cross-statistic
   # comparisons; does not effect p-values as is a affine xfm
   dplyr::mutate(Statistic.x=(Statistic.x - min(Statistic.x))/(max(Statistic.x) - min(Statistic.x)),
-         Statistic.y=(Statistic.y - min(Statistic.y))/(max(Statistic.y) - min(Statistic.y)))
+         Statistic.y=(Statistic.y - min(Statistic.y))/(max(Statistic.y) - min(Statistic.y))) %>%
+  dplyr::mutate(Task="(A) Sex") %>%
+  dplyr::rename(Resolution=Data)
+
+genetics.cancer <- readRDS('../data/real/genomics_cancer.rds')
+
+genomics.canc.results <- genetics.cancer$Reference %>%
+  dplyr::filter(xfm %in% c("Raw", "Rank", "Log") & !(Algorithm %in% c("HSIC", "Kernel"))) %>%
+  dplyr::left_join(genetics.cancer$Effect %>% dplyr::rename("Statistic"=statistic), by=c("Resolution", "xfm")) %>%
+  dplyr::group_by(Algorithm.x) %>%
+  # normalize by the max/min statistics across datasets for cross-statistic
+  # comparisons; does not effect p-values as is a affine xfm
+  dplyr::mutate(Statistic.x=(Statistic.x - min(Statistic.x))/(max(Statistic.x) - min(Statistic.x)),
+         Statistic.y=(Statistic.y - min(Statistic.y))/(max(Statistic.y) - min(Statistic.y))) %>%
+  dplyr::mutate(Task="(B) Cancer")
+
+genomics.results <- genomics.canc.results %>%
+  rbind(genomics.sex.results) %>%
+  dplyr::mutate(Algorithm.x=recode_factor(Algorithm.x, "DISCO"="Kernel"))
 
 reg.results <- genomics.results %>%
-  dplyr::group_by(Algorithm.x) %>%
+  dplyr::group_by(Algorithm.x, Task) %>%
   # regress effect size onto the statistic
   bow(tie(Slope, Intercept, p.value, min.x, max.x) := reg.ana(Statistic.x, Statistic.y))
 
-reg.results %>%
+tabl.gen <- reg.results %>%
+  dplyr::rename(Algorithm="Algorithm.x") %>%
+  dplyr::group_by(Algorithm, Task) %>%
+  dplyr::summarise(slope.ct = sum(Slope > 0), pval.ct = sum(p.value < .05), N.Datasets=n()) %>%
+  dplyr::select(Task, Algorithm, slope.ct, pval.ct, N.Datasets) %>%
+  dplyr::mutate(Task=recode_factor(Task, "(A) Sex"="(II.A) Sex, Genomics", "(B) Cancer"="(II.B) Cancer, Genomics"))
+
+res.shapes=c(19,18,17,16,15,19,18)
+names(res.shapes) <- c("chr", "50kb", "500kb", "5MB", "amplicon", "CPM", "counts")
+genomics.result <- reg.results %>%
+  dplyr::mutate(Task=factor(Task, levels=rev(c("(A) Sex", "(B) Cancer")), ordered=TRUE)) %>%
+  dplyr::mutate(Algorithm.x = recode_factor(Algorithm.x, "Discr" = "(i) Discr.", 
+                                        "PICC" = "(ii) PICC", "I2C2" = "(iii) I2C2",
+                                        "FPI"="(iv) Finger.", "DISCO"="(v) Kernel")) %>%
   gather("Condition", "xval", min.x, max.x) %>%
   mutate(y.pos=Slope*xval + Intercept) %>%
   ggplot(aes(x=xval, y=y.pos, group)) +
   geom_line() +
-  geom_point(data=genomics.results, aes(x=Statistic.x, y=Statistic.y, color=xfm, shape=Data)) +
-  facet_grid(~Algorithm.x) +
-  scale_y_continuous(limits=c(0, 1), expand = c(0, 0)) +
-  scale_x_continuous(limits=c(0, 1), expand = c(0, 0)) +
+  geom_point(data=genomics.results %>% dplyr::mutate(Algorithm.x=recode_factor(Algorithm.x, "Discr" = "(i) Discr.", 
+                                        "PICC" = "(ii) PICC", "I2C2" = "(iii) I2C2",
+                                        "FPI"="(iv) Finger.", "DISCO"="(v) Kernel")), 
+             aes(x=Statistic.x, y=Statistic.y, color=xfm, shape=Resolution)) +
+  facet_grid(Task~Algorithm.x) +
+  scale_shape_manual(values=res.shapes) +
+  scale_y_continuous(expand=c(.01, .01)) +
+  scale_x_continuous(expand=c(.01, .01)) +
+  coord_cartesian(xlim=c(0,1), ylim=c(0,1)) +
   xlab("Reference Statistic") +
   ylab("Effect Size") +
-  theme_bw()
+  ggtitle("(II) Genomics") +
+  theme_bw() +
+  guides(shape=FALSE, color=FALSE) +
+    theme(text=element_text(size=18))
 ```
 
-# Cancer Experiment
+```{r}
+tabl.overall <- tabl.neuro %>%
+  rbind(tabl.gen %>% dplyr::mutate(Algorithm=recode_factor(Algorithm,"Discr"="Discr.", "FPI"="Finger.")))
+
+total.row <- tabl.overall %>%
+  dplyr::group_by(Algorithm) %>%
+  dplyr::summarize(N.Datasets=sum(N.Datasets),
+                   pval.ct=sum(pval.ct),
+                   slope.ct=sum(slope.ct)) %>%
+  dplyr::mutate(Task="Total")
+
+tabl.overall <- tabl.overall %>%
+  rbind(total.row)
+
+tab.plt <- tabl.overall %>%
+  dplyr::mutate(pval.frac = pval.ct/N.Datasets, slope.frac=slope.ct/N.Datasets) %>%
+  pivot_longer(cols=c("pval.frac", "slope.frac"), names_to="Type", values_to="Fraction") %>%
+  dplyr::mutate(Text=sprintf("%.2f", Fraction)) %>%
+  dplyr::mutate(Task=factor(Task, levels=c("(I.A) Sex, Neuro", "(I.B) Age, Neuro", 
+                                               "(II.A) Sex, Genomics", "(II.B) Cancer, Genomics", "Total"), ordered=TRUE),
+                Type=factor(Type, levels=rev(c("pval.frac", "slope.frac")), ordered=TRUE),
+                TypeAlg=paste0(Algorithm, Type)) %>%
+  dplyr::select(Task, Text, TypeAlg, Fraction) %>%
+  rbind(data.frame(TypeAlg="#Datasets", Task=c("(I.A) Sex, Neuro", "(I.B) Age, Neuro", "(II.A) Sex, Genomics",
+                                                 "(II.B) Cancer, Genomics", "Total"),
+                   Text=c("n=22", "n=22", "n=1", "n=1", "n=46"), Fraction=NA)) %>%
+  dplyr::mutate(TypeAlg=factor(TypeAlg,
+                               levels=c("Discr.slope.frac", "Discr.pval.frac", "PICCslope.frac", "PICCpval.frac",
+                                        "I2C2slope.frac", "I2C2pval.frac", "Finger.slope.frac", "Finger.pval.frac",
+                                        "Kernelslope.frac", "Kernelpval.frac", "#Datasets"))) %>%
+  ggplot(aes(x=0, y=0, fill=Fraction)) +
+  geom_tile() +
+  geom_text(color="white", aes(label=Text), size=14) +
+  scale_fill_gradient(low="red", high="forestgreen") +
+  scale_x_continuous(expand=c(0,0)) +
+  scale_y_continuous(expand=c(0,0)) +
+  facet_grid(Task ~ TypeAlg, switch="y") +
+  theme_bw() +
+  theme(panel.spacing=unit(0, "lines"),
+        strip.text.y.left=element_text(angle=0), legend.position = "bottom",
+        axis.title.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ggtitle("(III) Comparison") +
+  theme(text=element_text(size=18))
+```
+
+13 x 11
 
 ```{r}
-genomics.results <- readRDS('../data/real/genomics_chris_ref.rds') %>%
-  dplyr::left_join(readRDS('../data/real/genomics_chris_eff.rds'), by=c("Resolution", "xfm")) %>%
-  dplyr::group_by(Algorithm.x) %>%
-  # normalize by the max/min statistics across datasets for cross-statistic
-  # comparisons; does not effect p-values as is a affine xfm
-  dplyr::mutate(Statistic.x=(Statistic.x - min(Statistic.x))/(max(Statistic.x) - min(Statistic.x)),
-         Statistic.y=(Statistic.y - min(Statistic.y))/(max(Statistic.y) - min(Statistic.y)))
-
-reg.results <- genomics.results %>%
-  dplyr::group_by(Algorithm.x) %>%
-  # regress effect size onto the statistic
-  bow(tie(Slope, Intercept, p.value, min.x, max.x) := reg.ana(Statistic.x, Statistic.y))
-
-reg.results %>%
-  gather("Condition", "xval", min.x, max.x) %>%
-  mutate(y.pos=Slope*xval + Intercept) %>%
-  ggplot(aes(x=xval, y=y.pos, group)) +
-  geom_line() +
-  geom_point(data=genomics.results, aes(x=Statistic.x, y=Statistic.y, color=xfm, shape=Resolution)) +
-  facet_grid(~Algorithm.x) +
-  scale_y_continuous(limits=c(0, 1), expand = c(0, 0)) +
-  scale_x_continuous(limits=c(0, 1), expand = c(0, 0)) +
-  xlab("Reference Statistic") +
-  ylab("Effect Size") +
-  theme_bw()
+plot(arrangeGrob(neuro.plt, genomics.result, tab.plt, heights=c(.5, .5, .5)))
 ```

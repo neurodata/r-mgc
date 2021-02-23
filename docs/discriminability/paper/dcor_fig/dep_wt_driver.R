@@ -11,31 +11,19 @@ require(Metrics)
 require(randomForest)
 require(rARPACK)
 require(energy)
+source('../simulations/shared_scripts.R')
 
-# load/source MASE code
-mase.path <- './mase/R/'
-mase.files <- list.files(mase.path)
-mase.files <- mase.files[mase.files %in% c("mase.R", "omnibus-embedding.R", "getElbows.R")]
-sapply(mase.files, function(x) source(file.path(mase.path, x)))
 
-fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/'
-pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/'
+fmri.path <- '/mnt/nfs2/MR/cpac_3-9-2/' # '/mnt/nfs2/MR/cpac_3-9-2/'
+pheno.path <- '/mnt/nfs2/MR/all_mr/phenotypic/' # '/mnt/nfs2/MR/all_mr/phenotypic/'
 #fmri.path <- '/cis/project/ndmg/eric/discriminability/cpac_3-9-2/'
 #pheno.path <- '/cis/project/ndmg/eric/discriminability/phenotypic/'
 #fmri.path <- '/data/cpac_3-9-2/'
 #pheno.path <- '/data/all_mr/phenotypic/'
 opath <- '../data/real/'
-source('./data_xfms.R')
-source('../simulations/shared_scripts.R')
-no_cores <- parallel::detectCores() - 10
+no_cores <- parallel::detectCores() - 1
 
-mgc.testt <- function(x, y, R=1000) {
-  result <- mgc.test(X=x, Y=y, rep=R)
-  return(list(p.value=result$pMGC, statistic=result$statMGC))
-}
-
-# dependence test methods
-dep.tests <- list(dcor=dcor.test)
+dep.tests <- list(DCorr=ksamp.test)
 
 cpac.open_graphs <- function(fnames, dataset_id="", atlas_id="",
                              fmt='elist', verbose=FALSE, rtype='list', flatten=FALSE,
@@ -152,9 +140,6 @@ names(gsr_opts) <- c("gsr", "ngs")
 atlas_opts <- c("A", "C", "D", "H")
 names(atlas_opts) <- c("aal", "cc2", "des", "hox")
 
-graph.xfm <- list(nofn.xfm, ptr.xfm, log.xfm)
-names(graph.xfm) <- c("N", "P", "L")
-
 dsets <- list.dirs(path=fmri.path, recursive=FALSE)
 
 dsets <- dsets[!(dsets %in% c(".//MPG1", ".//BNU3"))]
@@ -195,9 +180,24 @@ experiments <- do.call(c, lapply(dsets, function(dset) {
   }))
 }))
 
+nofn.xfm <- function(x, ...) {
+  return(x)
+}
 
-stats <- list(discr.os, icc.os, i2c2.os, disco.os, fpi.os)#, manova.os)
-names(stats) <- c("SimilRR", "PICC", "I2C2", "DISCO", "FPI")#, "MANOVA")
+ptr.xfm <- function(x, ...) {
+  nz <- x[x != 0]
+  r <- rank(nz)*2/(length(nz) + 1)
+  x[x != 0] <- r
+  x <- (x - min(x))/(max(x) - min(x))
+  return(x)
+}
+
+log.xfm <- function(x, min.x=10^(-6)) {
+  return(log(x + min.x/exp(2)))
+}
+
+stats <- list(Discr=discr.os, PICC=icc.os, I2C2=i2c2.os, Kernel=ksamp.os, FPI=fpi.os,
+              DISCO=disco.os, HSIC=hsic.os)#, manova.os)
 
 graph.xfms <- list(nofn.xfm, ptr.xfm, log.xfm)
 names(graph.xfms) <- c("N", "P", "L")
@@ -214,31 +214,32 @@ dir.create(dep.res.path)
 
 # range of thresholds to try
 # multicore apply over dataset
-dep.results <- mclapply(experiments, function(exp) {
-  o.path <- file.path(dep.res.path, paste0("dep_dset-", exp$Dataset, "_",
-                                          paste0(exp$Reg, exp$FF, exp$Scr, exp$GSR, exp$Parcellation), ".rds"))
+dep.results <- mclapply(experiments, function(exper) {
+  t0 = Sys.time()
+  o.path <- file.path(dep.res.path, paste0("dep_dset-", exper$Dataset, "_",
+                                          paste0(exper$Reg, exper$FF, exper$Scr, exper$GSR, exper$Parcellation), ".rds"))
   tryCatch({
     #if (file.exists(o.path)) {
     # return(readRDS(o.path))
-    #} else if (file.exists(exp$pheno.path)) {
-      graphs <- cpac.open_graphs(exp$dat.path, dataset_id=exp$Dataset,
-                                 atlas_id=exp$Parcellation, sub_pos = exp$sub.pos, flatten=FALSE)
+    #} else if (file.exists(exper$pheno.path)) {
+      graphs <- cpac.open_graphs(exper$dat.path, dataset_id=exper$Dataset,
+                                 atlas_id=exper$Parcellation, sub_pos = exper$sub.pos, flatten=FALSE)
 
-      print(sprintf("Dataset: %s, Reg=%s, FF=%s, Scr=%s, GSR=%s, Parc=%s", exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                    Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation))
+      print(sprintf("Dataset: %s, Reg=%s, FF=%s, Scr=%s, GSR=%s, Parc=%s", exper$Dataset, Reg=exper$Reg, FF=exper$FF,
+                    Scr=exper$Scr, GSR=exper$GSR, Parcellation=exper$Parcellation))
 
       # flatten for statistics
       result <- lapply(names(graph.xfms), function(graph.xfm) {
         print(graph.xfm)
         test <- graphs
         min.gr <- min(sapply(test$graphs, function(gr) min(gr[gr != 0])))
-        test$graphs <- lapply(test$graphs, function(gr) do.call(graph.xfms[[graph.xfm]], list(gr)))
+        test$graphs <- lapply(test$graphs, function(gr) do.call(graph.xfms[[graph.xfm]], list(gr, min.x=min.gr)))
         flat.gr <- fmriu.list2array(test$graphs, flatten=TRUE)
 
         stat.res <- do.call(rbind, lapply(names(stats), function(stat) {
           tryCatch({
-            return(data.frame(Dataset=exp$Dataset, alg=stat, Reg=exp$Reg, FF=exp$FF,
-                              Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation,
+            return(data.frame(Dataset=exper$Dataset, alg=stat, Reg=exper$Reg, FF=exper$FF,
+                              Scr=exper$Scr, GSR=exper$GSR, Parcellation=exper$Parcellation,
                               xfm=graph.xfm, nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                               nroi=sqrt(dim(flat.gr$array)[2]), nsub=length(unique(graphs$subjects)),
                               stat=do.call(stats[[stat]], list(X=flat.gr$array, Y=graphs$subjects,
@@ -246,7 +247,7 @@ dep.results <- mclapply(experiments, function(exp) {
           }, error=function(e) {return(NULL)})
         }))
 
-        pheno.dat <- read.csv(exp$pheno.path)
+        pheno.dat <- read.csv(exper$pheno.path)
         pheno.dat$AGE_AT_SCAN_1 <- as.numeric(as.character(pheno.dat$AGE_AT_SCAN_1))
         pheno.dat <- pheno.dat[!duplicated(pheno.dat$SUBID),]
         pheno.dat <- pheno.dat[, c("SUBID", "AGE_AT_SCAN_1", "SEX")]
@@ -258,17 +259,17 @@ dep.results <- mclapply(experiments, function(exp) {
             return(NULL)
           }
         })
-        retain.idx <- which(sapply(matched.idx, is.null))
-        if ()
-        matched.idx <- unlist(matched.idx[-retain.idx])
-        test$graphs <- test$graphs[-retain.idx]
+        not.retain.idx <- sapply(matched.idx, is.null)
+
+        matched.idx <- unlist(matched.idx[!not.retain.idx])
+        test$graphs <- test$graphs[!not.retain.idx]
         pheno.scans <- pheno.dat[matched.idx,]
-        if (exp$Dataset == "KKI2009") {
+        if (exper$Dataset == "KKI2009") {
           pheno.scans$SEX <- as.factor((pheno.scans$SEX == "M") + 1)
         }
 
         graphs.embedded <- list(
-          Raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(x))))#,
+          Raw=t(simplify2array(lapply(test$graphs, function(x) as.vector(as.matrix(x)))))#,
           # mase=t(simplify2array(lapply(mase(test$graphs)$R, function(x) as.vector(x))))
         )
         #graphs.embedded$dist <- g.ase(as.matrix(dist(graphs.embedded$mase)))$X
@@ -282,20 +283,20 @@ dep.results <- mclapply(experiments, function(exp) {
               valid.idx.age <- (!is.na(Y.age) & !is.null(Y.age) & !is.nan(Y.age))
               Y.sex <- as.numeric(pheno.scans$SEX)
               valid.idx.sex <- (!is.na(Y.sex) & !is.null(Y.sex) & !is.nan(Y.sex))
-              dep.age <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.age,], y=Y.age[valid.idx.age], R=1))
-              dep.sex <- do.call(dep.tests[[dep]], list(x=embed.graphs[valid.idx.sex,], y=Y.sex[valid.idx.sex], R=1))
-              return(rbind(data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                                      Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
+              dep.age <- do.call(dep.tests[[dep]], list(embed.graphs[valid.idx.age,], Y.age[valid.idx.age], is.dist=FALSE, nrep=1000L))
+              dep.sex <- do.call(dep.tests[[dep]], list(embed.graphs[valid.idx.sex,], Y.sex[valid.idx.sex], is.dist=FALSE, nrep=1000L))
+              return(rbind(data.frame(Dataset=exper$Dataset, Reg=exper$Reg, FF=exper$FF,
+                                      Scr=exper$Scr, GSR=exper$GSR, Parcellation=exper$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
                                       nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                                       nroi=sqrt(dim(flat.gr$array)[2]), task="Age", embed=embed,
-                                      stat=dep.age$statistic, method=dep),# , pval=dep.age$p.value),
-                           data.frame(Dataset=exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                                      Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, xfm=graph.xfm,
+                                      stat=dep.age$statistic, method=dep, pvalue=dep.age$pvalue),
+                           data.frame(Dataset=exper$Dataset, Reg=exper$Reg, FF=exper$FF,
+                                      Scr=exper$Scr, GSR=exper$GSR, Parcellation=exper$Parcellation, xfm=graph.xfm,
                                       nsub=length(unique(graphs$subjects)),
                                       nses=length(unique(graphs$sessions)), nscans=dim(flat.gr$array)[1],
                                       nroi=sqrt(dim(flat.gr$array)[2]), task="Sex", embed=embed,
-                                      stat=dep.sex$statistic, method=dep)))#, pval=dep.sex$p.value)))
+                                      stat=dep.sex$statistic, method=dep, pvalue=dep.sex$pvalue)))
             }, error=function(e) {print(e)})
           })))
         }))
@@ -311,14 +312,30 @@ dep.results <- mclapply(experiments, function(exp) {
       return(result)
     #}
   }, error=function(e) {
-    print(sprintf("Dataset: %s, Reg=%s, FF=%s, Scr=%s, GSR=%s, Parc=%s, ERR=%s", exp$Dataset, Reg=exp$Reg, FF=exp$FF,
-                  Scr=exp$Scr, GSR=exp$GSR, Parcellation=exp$Parcellation, e))
+    print(sprintf("Dataset: %s, Reg=%s, FF=%s, Scr=%s, GSR=%s, Parc=%s, ERR=%s", exper$Dataset, Reg=exper$Reg, FF=exper$FF,
+                  Scr=exper$Scr, GSR=exper$GSR, Parcellation=exper$Parcellation, e))
   })
-}, mc.cores=no_cores)
+  t1 = Sys.time()
+  print(t1-t0)
+}, mc.cores=no_cores, mc.preschedule=FALSE)
 
-robj <- list(statistics=do.call(rbind, lapply(dep.results, function(res) res$statistics)),
-             dcor=do.call(rbind, lapply(dep.results, function(res) res$dcor)))
+dep.results.retain.idx <- sapply(dep.results, function(res) {
+  tryCatch({
+  if (ncol(res$statistics) != 13 || ncol(res$dcor) != 16) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }}, error=function(e) {return(FALSE)})
+})
+dep.results.purged <- dep.results[dep.results.retain.idx]
 
-saveRDS(robj, file.path(opath, "dep_wt_fmri_results.rds"))
+robj <- list(statistics=do.call(rbind, lapply(dep.results.purged, function(res) {
+  tryCatch({res$statistics}, error=function(e) {return(NULL)})
+  })),
+  dcor=do.call(rbind, lapply(dep.results.purged, function(res)  {
+    tryCatch({res$dcor}, error=function(e) {return(NULL)})
+  })))
+
+saveRDS(list(processed=robj, raw=dep.results), file.path(opath, "dep_wt_fmri_results.rds"))
 
 
